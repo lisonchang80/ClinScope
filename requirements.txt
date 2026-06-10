@@ -1,0 +1,9 @@
+# Install torch/torchvision from the CUDA 12.4 index first:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+torch
+torchvision
+ultralytics
+scikit-learn
+matplotlib
+pillow
+tqdm

@@ -1,0 +1,14 @@
+# data & artifacts (large / regenerable)
+data/
+models/
+reports/
+
+# python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# os
+Thumbs.db
+.DS_Store
