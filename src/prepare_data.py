@@ -16,6 +16,10 @@ import shutil
 import zipfile
 from pathlib import Path
 
+from PIL import Image, ImageFile
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+
 IMG_EXT = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
 
 
@@ -50,12 +54,29 @@ def find_subset_root(extracted: Path, keyword: str) -> Path:
     return best
 
 
-def collect(class_root: Path):
+def is_readable(path: Path) -> bool:
+    """True if PIL can fully decode the file (truncated-but-valid passes)."""
+    try:
+        with Image.open(path) as im:
+            im.convert("RGB").load()
+        return True
+    except Exception:
+        return False
+
+
+def collect(class_root: Path, verify: bool = True):
     classes = {}
+    dropped = 0
     for sub in sorted(p for p in class_root.iterdir() if p.is_dir()):
         imgs = [f for f in sub.rglob("*") if f.suffix.lower() in IMG_EXT]
+        if verify:
+            good = [f for f in imgs if is_readable(f)]
+            dropped += len(imgs) - len(good)
+            imgs = good
         if imgs:
             classes[sub.name] = imgs
+    if verify and dropped:
+        print(f"[verify] dropped {dropped} unreadable/corrupt image(s)")
     return classes
 
 
@@ -69,6 +90,8 @@ def main():
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--val-frac", type=float, default=0.2)
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--verify", action=argparse.BooleanOptionalAction, default=True,
+                    help="open each image with PIL; drop unreadable/corrupt ones (default on)")
     args = ap.parse_args()
 
     out = args.out or Path(f"data/{args.subset}_split")
@@ -77,7 +100,7 @@ def main():
         root = extract(args.zip, args.extracted)
         src = find_subset_root(root, args.subset)
 
-    classes = collect(src)
+    classes = collect(src, verify=args.verify)
     if not classes:
         raise SystemExit(f"No class folders with images found under {src}")
 

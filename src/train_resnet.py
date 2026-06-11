@@ -21,6 +21,11 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, models, transforms
+from PIL import ImageFile
+
+# Clinical microscopy archives (e.g. DIBaS) ship some truncated TIFs; tolerate them
+# instead of crashing the whole DataLoader. Genuinely-corrupt files are pruned upstream.
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 try:
     import matplotlib
@@ -97,6 +102,7 @@ def main():
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--out", type=Path, default=Path("models/resnet50_fungi.pt"))
     ap.add_argument("--report-dir", type=Path, default=Path("reports"))
+    ap.add_argument("--title", default="FungiScope", help="confusion-matrix title prefix")
     args = ap.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -172,7 +178,7 @@ def main():
         ax.set_xticks(range(len(classes)), classes, rotation=45, ha="right")
         ax.set_yticks(range(len(classes)), classes)
         ax.set_xlabel("Predicted"); ax.set_ylabel("True")
-        ax.set_title(f"OpenFungi micro — ResNet-50 (best val_acc={best_acc:.3f})")
+        ax.set_title(f"{args.title} — ResNet-50 (best val_acc={best_acc:.3f})")
         for i in range(len(classes)):
             for j in range(len(classes)):
                 ax.text(j, i, cm[i, j], ha="center", va="center",
