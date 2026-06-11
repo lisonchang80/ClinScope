@@ -49,6 +49,7 @@ unlabeled（只有一坨圖、沒標籤）：
 
 - **類別名要對得上**：對不上的資料夾會被跳過並印 `[warn] folders not matched`，這時補 `--class-map`。
 - **labeled 偵測規則**：`--data-dir` 底下只要有「含圖的子資料夾」就判 labeled；圖直接放在 `--data-dir` 下才判 unlabeled。混在一起時用 `--mode` 明確指定。
+- **也可拿來「補報表」**：訓練被中斷（如睡眠砍）沒產出原生 end-of-run 報表時，對**同一個 val split** 跑 labeled（`--report-dir reports/<name>`）→ drop 應 ≈ 0，即得到等價的分類報表+混淆矩陣，順便確認存到一半的 best checkpoint 完好（SIPaKMeD 即如此補回 0.9704）。
 - 壞檔會被容錯跳過（`LOAD_TRUNCATED_IMAGES`），不會中斷整批。
 - 大批圖（上千張）是逐張推論、會慢但會跑完；跨域實測通常只丟幾十張精選圖即可。
 - 找外部資料來源（不知道去哪抓）→ 交給 `dataset-scout` agent。新增整條 track → 見 `add-dataset-track` skill。

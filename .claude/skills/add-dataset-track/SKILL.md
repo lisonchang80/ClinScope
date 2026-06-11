@@ -81,9 +81,10 @@ app 只列「權重檔存在」的模型。**改完要重啟 server 才生效**�
 - venv `.venv\`（Py 3.11）、torch 2.6.0+**cu124**、ultralytics、sklearn、gradio 6.x。
 - **背景跑長任務**：下載/解壓/訓練一律 `run_in_background: true`，靠完成通知接續，不要前景 sleep 輪詢。
 - **背景 python stdout 會 block-buffer**（看不到即時進度）→ 用 `python -u`。好處：即時可監控，且**程序若被砍 log 也留得住**。
-- **電腦睡眠會把背景任務連同 gradio 一起砍掉**（曾靜默死掉一小時、0-byte log、無通知）。長跑前先 `powercfg /change standby-timeout-ac 0`，收工還原 `... 30`。
+- **電腦睡眠會把背景任務連同 gradio 一起砍掉**（靜默死、無完成/失敗通知；2026-06 連 AC standby=0 仍在 ep11 被砍）。長跑前把 AC+DC+螢幕睡眠都停（`powercfg /change standby-timeout-ac 0`、`standby-timeout-dc 0`、`monitor-timeout-ac 0`），收工還原。**判死活：比對輸出檔 mtime vs 現在**（停在某 epoch 且 mtime 很久沒動 = 已死，別被「還在背景清單」騙）。被砍時 `train_resnet` 每次 val 進步即存 best checkpoint → 模型不必重跑，用 `cross-domain-eval` / `eval_external.py` 在 val split 上補出分類報表+混淆矩陣。
 - Windows DataLoader 多 worker 需 `if __name__=="__main__"` guard——核心腳本都已有。
 - Mac 來源的 zip 會夾 `__MACOSX/` 與 `._*` resource fork（副檔名像圖但 PIL 開不了）→ 解壓後刪掉，或交給 prepare_data 的驗圖剔除。
+- **壓縮檔不是 zip**（`.7z`/`.rar`）→ `pip install py7zr`（或 `rarfile`）自行解壓（`prepare_data --zip` 只吃 zip），再用 `--src` 指 class 母目錄。解完**注意巢狀結構**：SIPaKMeD 每類同時有 cluster 全圖（`NNN.bmp`）+ `CROPPED/` 單細胞子夾，`collect()` 會 rglob 全抓 → 想要單一尺度就先把目標那組（如 CROPPED 4049 單細胞）複製成乾淨 ImageFolder 再切分。解完的中繼大檔（raw/extracted）記得清掉（SIPaKMeD raw+extracted 共 ~14GB）。
 
 ## 已驗證基準（in-distribution；跨到自己照片預期掉到 60–80%）
 
