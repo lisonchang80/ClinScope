@@ -34,7 +34,7 @@ aria2c 多連線下載（10h→~30min）：
 $aria = (Resolve-Path "C:\Users\hao80\AppData\Local\Microsoft\WinGet\Packages\aria2.aria2_*\aria2-*\aria2c.exe").Path
 & $aria -x16 -s16 -k1M --file-allocation=none --max-tries=5 --check-certificate=false -d "D:\Claude code\ClinScope\data" -o <name>.zip "<URL>"
 ```
-多檔批次：把 URL 寫進一個清單檔，`-i list.txt -j4 -x8`。
+**多檔一定要「一檔一個 aria2c process」**（迴圈逐一呼叫）。不要把多個 URL 塞進同一次呼叫、也不要用 `-j` 併發 —— 同一 process 內 aria2c 會把**前一檔的 Content-Length 套到下一檔的 range request**，報 `Invalid range header`，只有第一檔成功（SIPaKMeD 5 檔踩過）。再加 `--max-tries=10 --retry-wait=10` 抗網路抖動；被中斷的檔會留 `.7z.aria2` control file → 用 `--continue=true` 續傳即可。
 
 ## A. 分類 track（ResNet）
 
