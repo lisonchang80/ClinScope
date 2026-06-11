@@ -1,5 +1,5 @@
 """
-FungiScope — prepare the OpenFungi archive into an ImageFolder train/val split.
+ClinScope — prepare the OpenFungi archive into an ImageFolder train/val split.
 
 Steps:
   1. Extract openfungi.zip (skipped if already extracted).

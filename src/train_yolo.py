@@ -1,5 +1,5 @@
 """
-FungiScope — train a YOLO detector (ultralytics) on a YOLO-format dataset.
+ClinScope — train a YOLO detector (ultralytics) on a YOLO-format dataset.
 
 The detection counterpart to train_resnet.py: use this when one image holds many
 objects that must be localised + counted (blood cells, parasite eggs, AFB), rather

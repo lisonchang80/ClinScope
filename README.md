@@ -1,4 +1,4 @@
-# FungiScope
+# ClinScope
 
 真菌顯微影像辨識 PoC。先在公開資料集 **OpenFungi** 上以 ResNet-50 transfer learning 跑通流程，
 驗證「資料集內 ~97%」可重現，再評估是否投入收集自己的顯微鏡照片做臨床對齊。

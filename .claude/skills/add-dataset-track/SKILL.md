@@ -1,9 +1,9 @@
 ---
 name: add-dataset-track
-description: 在 FungiScope 新增一條臨床顯微辨識 track。分類走 ResNet（prepare_data → train_resnet → predict），偵測走 YOLO（prepare_yolo → train_yolo → predict_yolo），最後掛進 app.py 前端。觸發詞：新增資料集、加 track、train new dataset、加偵測模型、跑某資料集（DeFungi/PBC/HEp-2…）、補某菌種/某科別。涉及 src/ 六支腳本與 app.py。
+description: 在 ClinScope 新增一條臨床顯微辨識 track。分類走 ResNet（prepare_data → train_resnet → predict），偵測走 YOLO（prepare_yolo → train_yolo → predict_yolo），最後掛進 app.py 前端。觸發詞：新增資料集、加 track、train new dataset、加偵測模型、跑某資料集（DeFungi/PBC/HEp-2…）、補某菌種/某科別。涉及 src/ 六支腳本與 app.py。
 ---
 
-# Add a dataset track to FungiScope
+# Add a dataset track to ClinScope
 
 核心重複動作：拿一個新的臨床顯微影像資料集，跑出「資料集內成績 + 報表」，再掛進統一前端。
 pipeline 已通用化，新 track 不必改核心程式，只要餵資料 + 在 app.py registry 加一條。
@@ -32,7 +32,7 @@ curl.exe -sIL --max-time 30 "<URL>" | Select-String -Pattern "HTTP/|Content-Leng
 aria2c 多連線下載（10h→~30min）：
 ```powershell
 $aria = (Resolve-Path "C:\Users\hao80\AppData\Local\Microsoft\WinGet\Packages\aria2.aria2_*\aria2-*\aria2c.exe").Path
-& $aria -x16 -s16 -k1M --file-allocation=none --max-tries=5 --check-certificate=false -d "D:\Claude code\FungiScope\data" -o <name>.zip "<URL>"
+& $aria -x16 -s16 -k1M --file-allocation=none --max-tries=5 --check-certificate=false -d "D:\Claude code\ClinScope\data" -o <name>.zip "<URL>"
 ```
 多檔批次：把 URL 寫進一個清單檔，`-i list.txt -j4 -x8`。
 
@@ -40,7 +40,7 @@ $aria = (Resolve-Path "C:\Users\hao80\AppData\Local\Microsoft\WinGet\Packages\ar
 
 1. **切分** → `data/<name>_split/{train,val}/<class>/`
    ```powershell
-   .\.venv\Scripts\python.exe src\prepare_data.py --src "D:\Claude code\FungiScope\data\<extracted_class_root>" --out "D:\Claude code\FungiScope\data\<name>_split" --val-frac 0.15
+   .\.venv\Scripts\python.exe src\prepare_data.py --src "D:\Claude code\ClinScope\data\<extracted_class_root>" --out "D:\Claude code\ClinScope\data\<name>_split" --val-frac 0.15
    ```
    - `--src` 直接指 class 母目錄（最穩）；或 `--zip`+`--subset <keyword>` 自動找含圖最多的子目錄。
    - **內建自動驗圖**（預設開）：開不了的壞檔會被剔除並印 `[verify] dropped N`。DIBaS、PBC 都靠它擋掉 corrupt 檔。要關用 `--no-verify`。

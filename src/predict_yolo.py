@@ -1,5 +1,5 @@
 """
-FungiScope — run a trained YOLO detector on an image or folder; save annotated output
+ClinScope — run a trained YOLO detector on an image or folder; save annotated output
 and print per-class counts (useful for "how many parasites / cells in this field").
 
 Example:

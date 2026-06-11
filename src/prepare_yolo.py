@@ -1,5 +1,5 @@
 """
-FungiScope — convert a Pascal VOC detection dataset into YOLO (ultralytics) format.
+ClinScope — convert a Pascal VOC detection dataset into YOLO (ultralytics) format.
 
 Reads VOC annotations (xml) + ImageSets/Main split files and writes:
     <out>/images/{train,val,test}/<id>.jpg

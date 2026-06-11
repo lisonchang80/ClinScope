@@ -1,5 +1,5 @@
 """
-FungiScope — classify an image (or a folder of images) with a trained checkpoint.
+ClinScope — classify an image (or a folder of images) with a trained checkpoint.
 
 Example:
     python src/predict.py --model models/resnet50_fungi.pt --input some_photo.jpg

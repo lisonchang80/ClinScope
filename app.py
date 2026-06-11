@@ -1,5 +1,5 @@
 """
-FungiScope — unified clinical-microscopy recognition demo (Gradio).
+ClinScope — unified clinical-microscopy recognition demo (Gradio).
 
 Upload a microscopy image, pick the matching model:
   - classification models (ResNet-50)  -> top-k species/class probabilities
@@ -132,9 +132,9 @@ def run(image, model_label, topk, conf):
 
 
 def build():
-    with gr.Blocks(title="FungiScope — 臨床顯微辨識") as demo:
+    with gr.Blocks(title="ClinScope — 臨床顯微辨識") as demo:
         gr.Markdown(
-            "# 🔬 FungiScope — 臨床顯微影像辨識\n"
+            "# 🔬 ClinScope — 臨床顯微影像辨識\n"
             "上傳顯微影像,選擇對應模型。**分類**模型回傳機率;**偵測**模型回傳標註圖與計數。")
         if not AVAILABLE:
             gr.Markdown("⚠️ 找不到任何模型權重,請先完成至少一條 track 的訓練。")
@@ -160,6 +160,6 @@ def build():
 
 
 if __name__ == "__main__":
-    print(f"[FungiScope] device={DEVICE.type} | available models: "
+    print(f"[ClinScope] device={DEVICE.type} | available models: "
           f"{[m['key'] for m in AVAILABLE]}")
     build().launch()

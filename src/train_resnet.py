@@ -1,5 +1,5 @@
 """
-FungiScope — ResNet-50 transfer learning for fungal microscopy classification.
+ClinScope — ResNet-50 transfer learning for fungal microscopy classification.
 
 Trains on an ImageFolder-style dataset:
     <data-dir>/train/<class>/*.jpg
@@ -102,7 +102,7 @@ def main():
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--out", type=Path, default=Path("models/resnet50_fungi.pt"))
     ap.add_argument("--report-dir", type=Path, default=Path("reports"))
-    ap.add_argument("--title", default="FungiScope", help="confusion-matrix title prefix")
+    ap.add_argument("--title", default="ClinScope", help="confusion-matrix title prefix")
     args = ap.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
