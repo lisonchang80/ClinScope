@@ -1,46 +1,92 @@
 # ClinScope
 
-真菌顯微影像辨識 PoC。先在公開資料集 **OpenFungi** 上以 ResNet-50 transfer learning 跑通流程，
-驗證「資料集內 ~97%」可重現，再評估是否投入收集自己的顯微鏡照片做臨床對齊。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：7 個模型、跨醫檢 4 科、6 種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
+自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
 
 ## 現實定位（先讀這段）
 
-- **目標情境**：臨床真菌顯微辨識（醫院 AI 對應 Aspergillus / Penicillium / 皮癬菌 Trichophyton 等）。
-- **OpenFungi 涵蓋**：Aspergillus（Flavi + Nigri）、Penicillium、Rhizopus、Alternaria、Fusarium + mixed。
-  ✅ 有 Aspergillus / Penicillium，❌ **沒有 Trichophyton（皮癬菌）**；Rhizopus/Alternaria/Fusarium 偏食品/環境/植物黴菌。
-- 因此本 PoC 證明的是「**流程與模型能力**」，不是臨床皮癬菌對齊。
-- **跨域落差**：資料集內 val acc 預期 90–97%；換成你自己顯微鏡拍的照片，預期掉到 60–80%
-  （同 PoseLab 的 in-distribution vs out-of-distribution 坑）。資料集只有 ~571 張顯微影像、類別不平衡，更會放大這點。
+這個專案誠實的價值在「**流程與模型能力的展示**」，不是臨床對齊。幾個必須先知道的限制：
 
-## 資料集
+- **跨域落差最大**：每個模型只在它自己資料集的分布內準確。換成你自己顯微鏡拍的照片（不同染色法 / 相機 / 倍率），準確率預期掉到 **60–80%**（同 in-distribution vs out-of-distribution 的老坑）。
+- **無可下載的臨床「菌種級」模型**：市面上沒有現成可下載的臨床菌種辨識模型，只能自訓；而 LPCB 種級（如皮癬菌 Trichophyton）的公開資料缺口是**結構性的**（鎖在醫院）。
+- **成像模態不可混訓**：LPCB 培養 / KOH 直接鏡檢 / Giemsa 血抹片 / Gram 染色 / 免疫螢光（IIF）各自是獨立 track，不能混在一起訓練。
+- **小驗證集數字不可信**：DIBaS 每類僅 ~20 張，val=1.0 是採集洩漏 + 噪音造成的假象，需要 group-aware split / k-fold 才有意義。
 
-- 來源：OpenFungi (MDPI *Life* 2025, DOI 10.3390/life15071132)
-- 下載：Zenodo `https://doi.org/10.5281/zenodo.15692069`（`openfungi.zip` ≈ 8.0 GB）
-- 顯微 571 張（2560×1920）／巨觀 678 張（4624×3472）
-- 程式碼參考：github.com/rolandbolboaca/CNN_Fungi_classification
+## 已收錄模型（皆 in-distribution 成績）
+
+| 科別 | Track | 模態 / 染色 | 引擎 | 資料 | 成績 |
+|---|---|---|---|---|---|
+| 微生物（真菌） | OpenFungi | LPCB 培養 | ResNet-50 | 571 張 / 6 屬 | val 0.98 ⚠️ 小 val |
+| 微生物（真菌） | DeFungi | KOH 直接鏡檢 | ResNet-50 | 9,114 張 / 5 類 | val 0.905 |
+| 微生物（細菌） | DIBaS | Gram 染色 | ResNet-50 | 689 張 / 33 種 | ⚠️ val=1.0 小樣本不可信 |
+| 寄生蟲 | NIH Malaria | Giemsa 血抹片 | ResNet-50 | 27,558 張 / 2 類 | val 0.973 |
+| 血液 | PBC 白血球分類 | Wright/Giemsa | ResNet-50 | 17,093 張 / 8 類 | val 0.992 |
+| 血液 | BCCD 血球偵測 | 血抹片 | YOLOv8 | 364 張 | mAP50 0.919 |
+| 免疫 | HEp-2 ANA 型態 | 免疫螢光 IIF | ResNet-50 | 13,596 張 / 6 型態 | val 0.980 |
+
+> 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
+
+## 架構
+
+```
+分類 track：prepare_data.py → train_resnet.py → predict.py
+偵測 track：prepare_yolo.py → train_yolo.py → predict_yolo.py
+統一前端  ：app.py（Gradio, 127.0.0.1:7860）
+```
+
+pipeline 已通用化，新增一條 track 不必改核心程式 —— 只要備好資料、訓練、在 `app.py` 的 `REGISTRY` 加一條。完整流程與踩過的坑見 `.claude/skills/add-dataset-track/`。
 
 ## 環境
 
 - Python 3.11 venv（`.venv/`），不用 conda
-- GPU：RTX 4060 Ti 8GB，PyTorch CUDA 12.4 wheel
-- 安裝：見 `requirements.txt`
-
-## 執行步驟
+- GPU：RTX 4060 Ti 8GB，PyTorch **CUDA 12.4** wheel
+- 主要套件：torch / torchvision、ultralytics（YOLO）、scikit-learn、gradio、matplotlib、pillow、tqdm
 
 ```powershell
-# 1. 整理資料（解壓 + 顯微子集 stratified 8:2 切分）
-.\.venv\Scripts\python.exe src\prepare_data.py --zip data\openfungi.zip --subset micro
+# torch/torchvision 先從 cu124 index 裝，其餘走 requirements.txt
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+pip install -r requirements.txt
+```
 
-# 2. 訓練 ResNet-50
-.\.venv\Scripts\python.exe src\train_resnet.py --data-dir data\micro_split --epochs 30
+執行一律用 `.\.venv\Scripts\python.exe`，並傳**絕對路徑**（本機 CWD 是 `D:\Claude code` 不是專案根）。
 
-# 產出：models\resnet50_fungi.pt、reports\classification_report.txt、reports\confusion_matrix.png
+## 執行
+
+```powershell
+# 啟動統一前端（上傳圖 → 選模型 → 辨識）
+.\.venv\Scripts\python.exe app.py
+# 然後開 http://127.0.0.1:7860
+
+# 訓練一條分類 track（範例）
+.\.venv\Scripts\python.exe -u src\train_resnet.py --data-dir data\<name>_split --epochs 15 --title "<標題>"
+
+# 對單張或整夾推論
+.\.venv\Scripts\python.exe src\predict.py --model models\<name>_resnet50.pt --input <圖或資料夾> --topk 3
 ```
 
 ## 目錄
 
-- `src/prepare_data.py` — 解壓 + 自動定位顯微子集 + train/val 切分
+- `app.py` — Gradio 統一前端，含 7 個 track 的 model registry
+- `src/prepare_data.py` — 解壓 / 切分 ImageFolder（內建自動驗圖剔除壞檔）
 - `src/train_resnet.py` — ResNet-50 transfer learning（two-phase 凍結→微調、class-weighted loss、AMP）
-- `data/` — 資料集與切分（不進 git）
-- `models/` — 訓練好的權重
-- `reports/` — 分類報告與混淆矩陣
+- `src/predict.py` — 分類推論 / 跨域實測
+- `src/prepare_yolo.py` — Pascal VOC → YOLO 格式轉換
+- `src/train_yolo.py` — YOLOv8 偵測訓練（ultralytics，內建早停）
+- `src/predict_yolo.py` — YOLO 推論：標註圖 + 每類計數
+- `data/`、`models/`、`reports/`、`.venv/` — 已 gitignore，不進版控
+
+## 資料來源
+
+| Track | 來源 |
+|---|---|
+| OpenFungi | MDPI *Life* 2025（DOI 10.3390/life15071132），Zenodo 10.5281/zenodo.15692069 |
+| DeFungi | UCI Machine Learning Repository（id 773） |
+| NIH Malaria | NIH / NLM Cell Images for Malaria Detection |
+| PBC（白血球） | Mendeley Data `snkd93bnjr` |
+| DIBaS | 33 菌種 Gram 染色，學術鏡像 doctoral.matinf.uj.edu.pl |
+| HEp-2 | Hugging Face `Genius-Society/HEp2` |
+| BCCD | Blood Cell Count and Detection（Pascal VOC） |
+
+## 免責
+
+研究 / 作品集用途，**非臨床診斷**。所有成績皆為資料集分布內（in-distribution）數字，不代表臨床或真實採檢條件下的表現。
