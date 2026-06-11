@@ -3,6 +3,7 @@
 torch
 torchvision
 ultralytics
+gradio
 scikit-learn
 matplotlib
 pillow
