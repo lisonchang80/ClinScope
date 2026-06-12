@@ -101,6 +101,10 @@ REGISTRY = [
      "label": "🔬 有絲分裂偵測 Mitosis — 乳腺 H&E (YOLO)",
      "path": ROOT / "reports" / "yolo" / "mitosis" / "weights" / "best.pt",
      "blurb": "乳腺組織病理 H&E 有絲分裂象 mitotic figure 偵測 + 計數(每高倍視野有絲分裂數是乳癌分級指標)。YOLOv8,mAP50 0.941 / mAP50-95 0.651。第 2 條偵測 track(對照 BCCD 血球)。小資料 274 圖 demo。"},
+    {"key": "husem", "kind": "cls",
+     "label": "🔬 精子頭形態 HuSHeM (4 類)",
+     "path": ROOT / "models" / "husem_resnet50.pt",
+     "blurb": "男科:人類精子頭部形態 4 類 — 正常 Normal / 漸細 Tapered / 梨形 Pyriform / 無定形 Amorphous(Diff-Quik 染色頭部裁切)。對照 SMIDS 全細胞 3 類,本 track 聚焦頭部。⚠️ 極小資料(216 張、val 每類僅 8 張),val 0.94 噪音極大、不可信。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
