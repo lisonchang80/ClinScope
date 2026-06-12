@@ -1,6 +1,6 @@
 # ClinScope
 
-臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：8 個模型、跨醫檢 5 科、7 種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：9 個模型、跨醫檢 5 科、8 種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
 自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
 
 ## 現實定位（先讀這段）
@@ -20,6 +20,7 @@
 | 微生物（真菌） | DeFungi | KOH 直接鏡檢 | ResNet-50 | 9,114 張 / 5 類 | val 0.905 |
 | 微生物（細菌） | DIBaS | Gram 染色 | ResNet-50 | 689 張 / 33 種 | ⚠️ val=1.0 小樣本不可信 |
 | 寄生蟲 | NIH Malaria | Giemsa 血抹片 | ResNet-50 | 27,558 張 / 2 類 | val 0.973 |
+| 寄生蟲 | Chula-ParasiteEgg-11 | 糞便濕抹片 | ResNet-50 | 11,000 張 / 11 類 | val 0.995 |
 | 血液 | PBC 白血球分類 | Wright/Giemsa | ResNet-50 | 17,093 張 / 8 類 | val 0.992 |
 | 血液 | BCCD 血球偵測 | 血抹片 | YOLOv8 | 364 張 | mAP50 0.919 |
 | 免疫 | HEp-2 ANA 型態 | 免疫螢光 IIF | ResNet-50 | 13,596 張 / 6 型態 | val 0.980 |
@@ -83,6 +84,7 @@ pip install -r requirements.txt
 | OpenFungi | MDPI *Life* 2025（DOI 10.3390/life15071132），Zenodo 10.5281/zenodo.15692069 |
 | DeFungi | UCI Machine Learning Repository（id 773） |
 | NIH Malaria | NIH / NLM Cell Images for Malaria Detection |
+| Chula-ParasiteEgg-11 | Hugging Face `Abdelkareem/parasitic-egg`（parquet 內嵌圖，11 類腸道蟲卵） |
 | PBC（白血球） | Mendeley Data `snkd93bnjr` |
 | DIBaS | 33 菌種 Gram 染色，學術鏡像 doctoral.matinf.uj.edu.pl |
 | HEp-2 | Hugging Face `Genius-Society/HEp2` |
