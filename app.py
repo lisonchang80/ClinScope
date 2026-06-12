@@ -134,6 +134,10 @@ REGISTRY = [
      "label": "🧬 乳腺組織 4 級 BACH (H&E, 嚴重度梯度)",
      "path": ROOT / "models" / "bach_resnet50.pt",
      "blurb": "組織病理 H&E 乳腺顯微 4 級嚴重度分類:正常 Normal / 良性 Benign / 原位癌 InSitu / 浸潤癌 Invasive(ICIAR 2018 BACH)。400 張大圖(2048×1536)切成 512 tile;**影像級切分**(同一張圖的 tile 不跨 train/val,無 tile 洩漏)。val(tile 級、來自 80 張獨立來源圖)acc 0.873、macro-F1 0.873;Invasive 最佳 0.93,Benign↔Normal 較易混(臨床合理)。別於 BreakHis 良惡二元,本 track 是 4 級嚴重度梯度。"},
+    {"key": "pathotiroid", "kind": "cls",
+     "label": "🧬 甲狀腺乳突癌組織 PathoTiroid (H&E, PTC vs 非PTC)",
+     "path": ROOT / "models" / "pathotiroid_resnet50.pt",
+     "blurb": "組織病理 H&E 甲狀腺二元:乳突癌樣 PTC-like vs 非乳突癌 Non-PTC(PTIC 資料集)。**病人級(patient-disjoint)切分** —— 24 病人留 5 人當 val,同一病人不跨 train/val,無洩漏。val_acc 0.994、macro-F1 0.992(PTC 核特徵 Orphan-Annie 核/核溝辨識度高)。對照甲狀腺 FNA 細胞學 track(細胞抹片),本 track 是組織切片。⚠️ val 僅 5 病人 → 小 cohort、高變異,0.994 換新中心/掃描儀未必維持。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
