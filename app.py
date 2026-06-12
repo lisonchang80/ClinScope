@@ -77,6 +77,10 @@ REGISTRY = [
      "label": "🧬 肺/結腸組織病理 LC25000 (H&E, 5 類)",
      "path": ROOT / "models" / "lc25000_resnet50.pt",
      "blurb": "組織病理 H&E 切片 5 類:結腸腺癌/正常、肺腺癌/正常/鱗狀細胞癌。本專案首條組織病理 track。⚠️ LC25000 由 1250 原圖增強擴增成 25000 張,隨機 split 會把同源增強圖分到 train/val → val 1.0 偏樂觀,需 image-source-level split 才可信。"},
+    {"key": "breakhis", "kind": "cls",
+     "label": "🧬 乳腺腫瘤組織病理 BreakHis (H&E, 良性/惡性)",
+     "path": ROOT / "models" / "breakhis_resnet50.pt",
+     "blurb": "組織病理 H&E 乳腺腫瘤二元分類:良性 benign vs 惡性 malignant(40–400× 放大倍率混訓,magnification-independent)。val 0.978。⚠️ 隨機 split 會把同病人不同倍率分到 train/val → 偏樂觀,需 patient-level split 才完全可信。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
