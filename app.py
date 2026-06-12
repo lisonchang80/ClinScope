@@ -138,6 +138,10 @@ REGISTRY = [
      "label": "🧬 甲狀腺乳突癌組織 PathoTiroid (H&E, PTC vs 非PTC)",
      "path": ROOT / "models" / "pathotiroid_resnet50.pt",
      "blurb": "組織病理 H&E 甲狀腺二元:乳突癌樣 PTC-like vs 非乳突癌 Non-PTC(PTIC 資料集)。**病人級(patient-disjoint)切分** —— 24 病人留 5 人當 val,同一病人不跨 train/val,無洩漏。val_acc 0.994、macro-F1 0.992(PTC 核特徵 Orphan-Annie 核/核溝辨識度高)。對照甲狀腺 FNA 細胞學 track(細胞抹片),本 track 是組織切片。⚠️ val 僅 5 病人 → 小 cohort、高變異,0.994 換新中心/掃描儀未必維持。"},
+    {"key": "urine", "kind": "det",
+     "label": "🔬 尿沉渣顆粒 Urine sediment (7 類, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "urine" / "weights" / "best.pt",
+     "blurb": "尿液分析:明場尿沉渣顆粒偵測 + 分類 7 類 —— 管型 cast、結晶 cryst、上皮細胞 epith/epithn、紅血球 eryth、白血球 leuko、黴菌/酵母 mycete。YOLOv8s,官方 train/valid split。val mAP50 0.896 / mAP50-95 0.545(紅血球 eryth 0.957、白血球 leuko 0.942 最佳;管型 cast 0.753 稀少較弱)。第 4 條偵測 track,新增尿液分析 site。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
