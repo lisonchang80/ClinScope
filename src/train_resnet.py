@@ -17,16 +17,10 @@ import json
 import time
 from pathlib import Path
 
-import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader
-from torchvision import datasets, models, transforms
-from PIL import ImageFile
-
-# Clinical microscopy archives (e.g. DIBaS) ship some truncated TIFs; tolerate them
-# instead of crashing the whole DataLoader. Genuinely-corrupt files are pruned upstream.
-ImageFile.LOAD_TRUNCATED_IMAGES = True
-
+# IMPORT ORDER MATTERS: load the matplotlib / sklearn (numpy+MKL/OpenMP) stack
+# BEFORE torch. After `datasets` pulled in numpy 2.x, importing torch *before*
+# sklearn/matplotlib segfaults at startup on this machine (native OpenMP/MKL
+# load-order conflict; reproduced deterministically). sklearn-first is safe.
 try:
     import matplotlib
     matplotlib.use("Agg")
@@ -35,6 +29,18 @@ try:
     HAVE_METRICS = True
 except Exception:
     HAVE_METRICS = False
+
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from torchvision import datasets, models, transforms
+from PIL import ImageFile
+
+from keepawake import keep_awake  # local: block system sleep during the run
+
+# Clinical microscopy archives (e.g. DIBaS) ship some truncated TIFs; tolerate them
+# instead of crashing the whole DataLoader. Genuinely-corrupt files are pruned upstream.
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def build_loaders(data_dir: Path, img_size: int, batch_size: int, workers: int):
@@ -104,6 +110,8 @@ def main():
     ap.add_argument("--report-dir", type=Path, default=Path("reports"))
     ap.add_argument("--title", default="ClinScope", help="confusion-matrix title prefix")
     args = ap.parse_args()
+
+    keep_awake()  # don't let the machine sleep mid-training (monitor may still sleep)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"[device] {device} "

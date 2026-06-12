@@ -11,7 +11,19 @@ Example:
 import argparse
 from pathlib import Path
 
+# IMPORT ORDER MATTERS (see train_resnet.py): pre-load matplotlib (numpy+MKL/OpenMP)
+# BEFORE ultralytics pulls in torch, to dodge the native load-order segfault that a
+# numpy 2.x upgrade introduced on this machine. Harmless if matplotlib is absent.
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot  # noqa: F401
+except Exception:
+    pass
+
 from ultralytics import YOLO
+
+from keepawake import keep_awake  # local: block system sleep during the run
 
 
 def main():
@@ -27,6 +39,8 @@ def main():
     ap.add_argument("--name", default="run")
     ap.add_argument("--device", default="0", help="'0' for first GPU, 'cpu' to force CPU")
     args = ap.parse_args()
+
+    keep_awake()  # don't let the machine sleep mid-training (monitor may still sleep)
 
     model = YOLO(args.weights)
     model.train(

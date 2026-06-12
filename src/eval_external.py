@@ -28,6 +28,18 @@ import json
 from collections import Counter
 from pathlib import Path
 
+# IMPORT ORDER MATTERS: load matplotlib / sklearn (numpy+MKL/OpenMP) BEFORE torch.
+# After `datasets` pulled in numpy 2.x, importing torch first segfaults at startup
+# on this machine (native OpenMP/MKL load-order conflict). sklearn-first is safe.
+try:
+    from sklearn.metrics import classification_report, confusion_matrix
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    HAVE_METRICS = True
+except Exception:
+    HAVE_METRICS = False
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -86,15 +98,6 @@ def detect_mode(data_dir: Path):
 
 
 def run_labeled(model, tf, classes, val_acc, data_dir, report_dir, device, class_map):
-    try:
-        from sklearn.metrics import classification_report, confusion_matrix
-        import matplotlib
-        matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
-        have_metrics = True
-    except Exception:
-        have_metrics = False
-
     y_true, y_pred, skipped, unreadable = [], [], [], 0
     for sub in sorted(d for d in data_dir.iterdir() if d.is_dir()):
         ci = resolve_class(sub.name, classes, class_map)
@@ -128,7 +131,7 @@ def run_labeled(model, tf, classes, val_acc, data_dir, report_dir, device, class
               f"({drop / val_acc:+.1%} relative)")
 
     report_dir.mkdir(parents=True, exist_ok=True)
-    if have_metrics:
+    if HAVE_METRICS:
         present = sorted(set(y_true) | set(y_pred))
         names = [classes[i] for i in present]
         rep = classification_report(y_true, y_pred, labels=present,
