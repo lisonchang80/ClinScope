@@ -1,6 +1,6 @@
 # ClinScope
 
-臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：23 個模型、跨醫檢 7 科、11 種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：24 個模型、跨醫檢 7 科、11 種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
 自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
 
 ## 現實定位（先讀這段）
@@ -39,6 +39,7 @@
 | 血液腫瘤（白血病） | C-NMC 2019 | 血液抹片（單細胞） | ResNet-50 | 10,311 張 / 2 類 | val 0.853 ✅ 病人級切分、無洩漏 |
 | 寄生蟲（瘧原蟲種級） | MP-IDB | 薄血膜 Giemsa | ResNet-50 | 1,571 張 / 4 種 | val 0.997 ⚠️ 不平衡 + img/crop 同視野洩漏 |
 | 血液（鐮刀型紅血球） | erythrocytesIDB | 血液抹片（單顆 RBC） | ResNet-50 | 626 張 / 3 類 | val 0.984、macro-F1 0.984 ⚠️ val 偏小 |
+| 組織病理（細胞核偵測） | PanNuke | H&E 組織切片 | YOLOv8 | 7,901 圖 / 5 核類 | mAP50 0.654（val 6.7 萬框） |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -118,6 +119,7 @@ pip install -r requirements.txt
 | C-NMC leukemia | Hugging Face `dwb2023/cnmc-leukemia-2019`（B-ALL blast vs 正常,parquet 含 subject_id/fold,MIT;以 subject_id 做病人級切分避洩漏） |
 | MP-IDB malaria | GitHub `andrealoddo/MP-IDB-The-Malaria-Parasite-Image-Database`（瘧原蟲 4 種,全視野 img + 單寄生蟲 crops + mask;codeload zip） |
 | erythrocytesIDB | Zenodo `10.5281/zenodo.18299473`（鐮刀型紅血球 3 類,UIB;用 erythrocytesIDB1 individual cells 標註子集） |
+| PanNuke | Hugging Face `RationAI/PanNuke`（H&E 核 instance mask;自寫 `src/pannuke_to_yolo.py` 轉 mask→YOLO bbox） |
 
 ## 免責
 

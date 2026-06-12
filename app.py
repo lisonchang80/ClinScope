@@ -122,6 +122,10 @@ REGISTRY = [
      "label": "🩸 鐮刀型紅血球 erythrocytesIDB (3 類)",
      "path": ROOT / "models" / "erythrocytes_idb_resnet50.pt",
      "blurb": "血液抹片紅血球形狀 3 類:正常圓形 circular / 鐮刀變形 elongated(鐮刀型貧血 sickle cell)/ 其他 other。單顆紅血球裁切。val 0.984、macro-F1 0.984(三類均衡)。對照 RBC morphology 的 11 類異形,本 track 聚焦鐮刀型鑑別。⚠️ val 僅 125 張偏小、單細胞裁自 196 source 圖,隨機 split 可能同源跨組 → 嚴格需 group-aware split。"},
+    {"key": "pannuke", "kind": "det",
+     "label": "🔬 細胞核偵測 PanNuke — H&E (5 類, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "pannuke" / "weights" / "best.pt",
+     "blurb": "泛組織病理 H&E 細胞核偵測 + 分類 5 類:腫瘤 neoplastic / 發炎 inflammatory / 結締組織 connective / 壞死 dead / 上皮 epithelial。YOLOv8s,平均 23.8 核/圖、密集小目標(val 共 6.7 萬框)。val mAP50 0.654 / mAP50-95 0.405(neoplastic·epithelial ~0.79 最佳;dead 0.31 稀少最弱)。第 3 條偵測 track(對照 BCCD 血球、mitosis 有絲分裂)。mask→YOLO bbox 由 src/pannuke_to_yolo.py 轉換。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
