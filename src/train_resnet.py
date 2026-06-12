@@ -109,6 +109,10 @@ def main():
     ap.add_argument("--out", type=Path, default=Path("models/resnet50_fungi.pt"))
     ap.add_argument("--report-dir", type=Path, default=Path("reports"))
     ap.add_argument("--title", default="ClinScope", help="confusion-matrix title prefix")
+    ap.add_argument("--class-weight", choices=["inverse", "sqrt", "none"], default="inverse",
+                    help="loss class-weighting vs imbalance: inverse-freq (default); "
+                         "gentler sqrt(inverse-freq) for extreme imbalance (e.g. 21-class "
+                         "bone marrow with a 6-image class); or none")
     args = ap.parse_args()
 
     keep_awake()  # don't let the machine sleep mid-training (monitor may still sleep)
@@ -123,11 +127,22 @@ def main():
     print(f"[data] {len(train_ds)} train / {len(val_ds)} val | "
           f"{len(classes)} classes: {classes}")
 
-    # Class-weighted loss to counter imbalance.
+    # Class-weighted loss to counter imbalance. Raw inverse-freq can be too
+    # aggressive under extreme imbalance (a 6-image class would get ~1000x weight
+    # and dominate) -> sqrt softens it, none disables.
     counts = torch.zeros(len(classes))
     for _, y in train_ds.samples:
         counts[y] += 1
-    weights = (counts.sum() / (len(classes) * counts.clamp(min=1))).to(device)
+    inv = counts.sum() / (len(classes) * counts.clamp(min=1))
+    if args.class_weight == "none":
+        weights = torch.ones(len(classes))
+    elif args.class_weight == "sqrt":
+        weights = inv.sqrt()
+    else:
+        weights = inv
+    weights = weights.to(device)
+    print(f"[loss] class-weight={args.class_weight} "
+          f"(min={weights.min():.3f} max={weights.max():.3f})")
     criterion = nn.CrossEntropyLoss(weight=weights, label_smoothing=0.05)
 
     model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V2)
