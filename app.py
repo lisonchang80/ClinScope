@@ -93,6 +93,10 @@ REGISTRY = [
      "label": "🔬 大腸息肉 MHIST (H&E, HP vs SSA)",
      "path": ROOT / "models" / "mhist_resnet50.pt",
      "blurb": "消化道病理 H&E 大腸息肉二元『診斷』:增生性息肉 Hyperplastic vs 無柄鋸齒狀腺瘤 Sessile-serrated adenoma(臨床上易混、判讀者間一致性低)。val 0.922。與其他 H&E track 不同 —— 這是診斷鑑別、非組織分型。⚠️ 隨機 split 可能同片洩漏(同一 WSI 多 tile)。"},
+    {"key": "thyroid_cyto", "kind": "cls",
+     "label": "🔬 甲狀腺細胞學 Thyroid FNA (6 級)",
+     "path": ROOT / "models" / "thyroid_cyto_resnet50.pt",
+     "blurb": "細胞學:甲狀腺細針穿刺 FNA 6 類(原始標註 1–6,疑對應 Bethesda I–VI 報告分級,資料卡未明確定義)。val 0.947、6 類 F1 0.93–0.99。對照子宮頸 Pap,屬不同部位的細胞學。⚠️ 同片多 crop,隨機 split 有病人洩漏。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
