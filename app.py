@@ -110,6 +110,10 @@ REGISTRY = [
      "label": "🩸 紅血球形態 RBC morphology (11 類)",
      "path": ROOT / "models" / "rbc_morphology_resnet50.pt",
      "blurb": "血液抹片紅血球形態 11 類:正常 normal、標靶 Target cell、淚滴 teardrop、口形 Stomatocyte、球形 Spherocyte、橢圓 Ovalocyte、雪茄/鉛筆 cigar、棘 Acanthocyte、刺 Burr、裂片 Schistocyte、低色素 Hypochromia。poikilocytosis 異形紅血球形態學。val 0.978、macro-F1 0.972(sqrt 類別權重平衡不平衡)。⚠️ Schistocyte val 僅 12 張(<15)、單細胞裁切隨機 split 同抹片細胞可能跨 train/val,嚴格需 smear-level split。"},
+    {"key": "cnmc_leukemia", "kind": "cls",
+     "label": "🩸 急性淋巴芽細胞白血病 C-NMC (blast vs 正常)",
+     "path": ROOT / "models" / "cnmc_leukemia_resnet50.pt",
+     "blurb": "血液腫瘤:單細胞顯微下急性淋巴芽細胞白血病 B-ALL 芽細胞 cancer (blast) vs 正常 B 淋巴系 healthy (HEM) 二元分類(C-NMC 2019 ISBI challenge)。**病人級(subject_id disjoint)切分的誠實 val**:val_acc 0.853、macro-F1 0.824、weighted-F1 0.851 —— 同一病人不跨 train/val,無洩漏(對照本專案多數隨機 split track 的樂觀數字)。blast 與正常淋巴細胞形態高度相似為本任務難點。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]

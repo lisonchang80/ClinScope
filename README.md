@@ -1,6 +1,6 @@
 # ClinScope
 
-臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：20 個模型、跨醫檢 7 科、11 種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：21 個模型、跨醫檢 7 科、11 種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
 自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
 
 ## 現實定位（先讀這段）
@@ -36,6 +36,7 @@
 | 組織病理（乳腺 mitosis） | Mitosis 偵測 | H&E 組織切片 | YOLOv8 | 274 張 / 1 類 | mAP50 0.941 |
 | 男科（精子頭形態） | HuSHeM | Diff-Quik 精子頭 | ResNet-50 | 216 張 / 4 類 | val 0.94 ⚠️ 極小 val 不可信 |
 | 血液（紅血球形態） | RBC morphology | 血液抹片（單顆 RBC） | ResNet-50 | 6,240 張 / 11 類 | val 0.978、macro-F1 0.972 |
+| 血液腫瘤（白血病） | C-NMC 2019 | 血液抹片（單細胞） | ResNet-50 | 10,311 張 / 2 類 | val 0.853 ✅ 病人級切分、無洩漏 |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -112,6 +113,7 @@ pip install -r requirements.txt
 | Mitosis 偵測 | Hugging Face `Francesco/mitosis-gjs3g`（Roboflow RF100 COCO,COCO→YOLO 轉換） |
 | HuSHeM | Mendeley Data `tt3yj2pf38`（精子頭形態 4 類 `.rar`,Diff-Quik 染色） |
 | RBC morphology | Zenodo `10.5281/zenodo.14936017`（紅血球異形 poikilocytosis 11 類 `.rar`,CC-BY-4.0;血液抹片單顆紅血球） |
+| C-NMC leukemia | Hugging Face `dwb2023/cnmc-leukemia-2019`（B-ALL blast vs 正常,parquet 含 subject_id/fold,MIT;以 subject_id 做病人級切分避洩漏） |
 
 ## 免責
 
