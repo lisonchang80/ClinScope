@@ -72,6 +72,11 @@ REGISTRY = [
      "label": "🩸 血球偵測 Blood cells — BCCD (YOLO)",
      "path": ROOT / "reports" / "yolo" / "bccd" / "weights" / "best.pt",
      "blurb": "整片血抹片偵測 + 計數:RBC / WBC / Platelets。"},
+    # --- 組織病理 Histopathology (H&E 組織切片) ---
+    {"key": "lc25000", "kind": "cls",
+     "label": "🧬 肺/結腸組織病理 LC25000 (H&E, 5 類)",
+     "path": ROOT / "models" / "lc25000_resnet50.pt",
+     "blurb": "組織病理 H&E 切片 5 類:結腸腺癌/正常、肺腺癌/正常/鱗狀細胞癌。本專案首條組織病理 track。⚠️ LC25000 由 1250 原圖增強擴增成 25000 張,隨機 split 會把同源增強圖分到 train/val → val 1.0 偏樂觀,需 image-source-level split 才可信。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
