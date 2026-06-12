@@ -1,6 +1,6 @@
 # ClinScope
 
-臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：28 個模型、跨醫檢 8 科、12 種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：29 個模型、跨醫檢 8 科、12 種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
 自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
 
 ## 現實定位（先讀這段）
@@ -44,6 +44,7 @@
 | 組織病理（乳腺嚴重度） | BACH ICIAR2018 | H&E 組織切片（tile） | ResNet-50 | 400 圖→4,800 tile / 4 級 | val 0.873（影像級切分、無 tile 洩漏） |
 | 組織病理（甲狀腺 PTC） | PathoTiroid PTIC | H&E 組織切片 | ResNet-50 | 1,006 張 / 2 類 | val 0.994 ✅ 病人級切分（⚠️ 僅 5 病人） |
 | 尿液分析（尿沉渣） | Urine particles | 明場尿沉渣 | YOLOv8 | 4,250 圖 / 7 類 | mAP50 0.896 |
+| 血液（單細胞 18 類） | MLL23 | Giemsa 單 WBC | ResNet-50 | 41,621 張 / 18 類 | val 0.948、macro-F1 0.861（含毛細胞白血病） |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -128,6 +129,7 @@ pip install -r requirements.txt
 | BACH | Hugging Face `1aurent/BACH`（ICIAR2018 乳腺 4 級大圖;自寫 `src/bach_tile_group_split.py` 切 512 tile + 影像級切分） |
 | PathoTiroid | Zenodo `10.5281/zenodo.18827019`（甲狀腺 PTC vs 非PTC,24 病人 PTIC;以檔名 patient token 做病人級切分） |
 | Urine sediment | Hugging Face `dikaizm/urine-particle-image-dataset`（尿沉渣 7 類 Roboflow COCO,官方 split;`coco_to_yolo` 轉 YOLO） |
+| MLL23 | Zenodo `14277609`（周邊血 18 類 per-class zip,含毛細胞白血病/芽細胞/抹片細胞;MLL 慕尼黑） |
 
 ## 免責
 
