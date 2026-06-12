@@ -105,6 +105,11 @@ REGISTRY = [
      "label": "🔬 精子頭形態 HuSHeM (4 類)",
      "path": ROOT / "models" / "husem_resnet50.pt",
      "blurb": "男科:人類精子頭部形態 4 類 — 正常 Normal / 漸細 Tapered / 梨形 Pyriform / 無定形 Amorphous(Diff-Quik 染色頭部裁切)。對照 SMIDS 全細胞 3 類,本 track 聚焦頭部。⚠️ 極小資料(216 張、val 每類僅 8 張),val 0.94 噪音極大、不可信。"},
+    # --- batch 3 新增 (紅血球形態 / 白血病 / 瘧種 / 細胞核偵測 / 口腔) ---
+    {"key": "rbc_morphology", "kind": "cls",
+     "label": "🩸 紅血球形態 RBC morphology (11 類)",
+     "path": ROOT / "models" / "rbc_morphology_resnet50.pt",
+     "blurb": "血液抹片紅血球形態 11 類:正常 normal、標靶 Target cell、淚滴 teardrop、口形 Stomatocyte、球形 Spherocyte、橢圓 Ovalocyte、雪茄/鉛筆 cigar、棘 Acanthocyte、刺 Burr、裂片 Schistocyte、低色素 Hypochromia。poikilocytosis 異形紅血球形態學。val 0.978、macro-F1 0.972(sqrt 類別權重平衡不平衡)。⚠️ Schistocyte val 僅 12 張(<15)、單細胞裁切隨機 split 同抹片細胞可能跨 train/val,嚴格需 smear-level split。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
