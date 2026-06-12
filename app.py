@@ -81,6 +81,10 @@ REGISTRY = [
      "label": "🧬 乳腺腫瘤組織病理 BreakHis (H&E, 良性/惡性)",
      "path": ROOT / "models" / "breakhis_resnet50.pt",
      "blurb": "組織病理 H&E 乳腺腫瘤二元分類:良性 benign vs 惡性 malignant(40–400× 放大倍率混訓,magnification-independent)。val 0.978。⚠️ 隨機 split 會把同病人不同倍率分到 train/val → 偏樂觀,需 patient-level split 才完全可信。"},
+    {"key": "nct_crc", "kind": "cls",
+     "label": "🧬 結直腸組織 9 類 NCT-CRC-HE-100K (H&E)",
+     "path": ROOT / "models" / "nct_crc_resnet50.pt",
+     "blurb": "組織病理 H&E 結直腸組織 9 類:腫瘤上皮 TUM、基質 STR、淋巴球 LYM、平滑肌 MUS、黏液 MUC、正常黏膜 NORM、脂肪 ADI、碎屑 DEB、背景 BACK。在官方獨立 cohort(CRC-VAL-HE-7K)驗證 val 0.970 —— 跨 cohort、較誠實;STR 基質↔MUS 肌肉最易混。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
