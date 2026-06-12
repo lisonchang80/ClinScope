@@ -85,6 +85,10 @@ REGISTRY = [
      "label": "🧬 結直腸組織 9 類 NCT-CRC-HE-100K (H&E)",
      "path": ROOT / "models" / "nct_crc_resnet50.pt",
      "blurb": "組織病理 H&E 結直腸組織 9 類:腫瘤上皮 TUM、基質 STR、淋巴球 LYM、平滑肌 MUS、黏液 MUC、正常黏膜 NORM、脂肪 ADI、碎屑 DEB、背景 BACK。在官方獨立 cohort(CRC-VAL-HE-7K)驗證 val 0.970 —— 跨 cohort、較誠實;STR 基質↔MUS 肌肉最易混。"},
+    {"key": "pcam", "kind": "cls",
+     "label": "🧬 淋巴結轉移 PatchCamelyon (H&E, binary)",
+     "path": ROOT / "models" / "pcam_resnet50.pt",
+     "blurb": "組織病理 H&E 淋巴結 96×96 patch 二元分類:有無轉移腫瘤 metastasis(no_tumor / tumor)。知名 PatchCamelyon benchmark;在官方 32,768 張驗證集 val 0.913、兩類 F1 ~0.91。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
