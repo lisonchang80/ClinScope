@@ -49,11 +49,17 @@ def main():
     ap.add_argument("--quality", type=int, default=90)
     ap.add_argument("--class-names-json", default=None,
                     help='JSON list of ClassLabel names in index order, e.g. \'["a","b"]\'')
+    ap.add_argument("--group-col", default=None,
+                    help="optional 2nd column (e.g. organ/site) to prefix the folder "
+                         "name as <group>_<class>, recovering composite classes")
+    ap.add_argument("--group-names-json", default=None,
+                    help='JSON list of group ClassLabel names in index order')
     args = ap.parse_args()
 
     keep_awake()
 
     class_names = json.loads(args.class_names_json) if args.class_names_json else None
+    group_names = json.loads(args.group_names_json) if args.group_names_json else None
     files = sorted(args.src.glob("*.parquet"))
     if not files:
         raise SystemExit(f"no *.parquet under {args.src}")
@@ -63,9 +69,13 @@ def main():
     for fi, fp in enumerate(files):
         pfile = pq.ParquetFile(fp)
         for gi in range(pfile.num_row_groups):
-            tbl = pfile.read_row_group(gi, columns=[args.image_col, args.label_col])
+            cols = [args.image_col, args.label_col]
+            if args.group_col:
+                cols.append(args.group_col)
+            tbl = pfile.read_row_group(gi, columns=cols)
             images = tbl.column(args.image_col).to_pylist()
             labels = tbl.column(args.label_col).to_pylist()
+            groups = tbl.column(args.group_col).to_pylist() if args.group_col else None
             for ri, (img, lab) in enumerate(zip(images, labels)):
                 try:
                     raw = img["bytes"] if isinstance(img, dict) else img
@@ -73,6 +83,10 @@ def main():
                     if args.max_side and max(im.size) > args.max_side:
                         im.thumbnail((args.max_side, args.max_side))
                     cname = class_names[lab] if class_names else str(lab)
+                    if groups is not None:
+                        gv = groups[ri]
+                        gname = group_names[gv] if group_names else str(gv)
+                        cname = f"{gname}_{cname}"
                     cname = cname.replace("/", "-").strip()
                     cdir = args.out / cname
                     cdir.mkdir(exist_ok=True)
