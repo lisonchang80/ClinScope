@@ -89,6 +89,10 @@ REGISTRY = [
      "label": "🧬 淋巴結轉移 PatchCamelyon (H&E, binary)",
      "path": ROOT / "models" / "pcam_resnet50.pt",
      "blurb": "組織病理 H&E 淋巴結 96×96 patch 二元分類:有無轉移腫瘤 metastasis(no_tumor / tumor)。知名 PatchCamelyon benchmark;在官方 32,768 張驗證集 val 0.913、兩類 F1 ~0.91。"},
+    {"key": "mhist", "kind": "cls",
+     "label": "🔬 大腸息肉 MHIST (H&E, HP vs SSA)",
+     "path": ROOT / "models" / "mhist_resnet50.pt",
+     "blurb": "消化道病理 H&E 大腸息肉二元『診斷』:增生性息肉 Hyperplastic vs 無柄鋸齒狀腺瘤 Sessile-serrated adenoma(臨床上易混、判讀者間一致性低)。val 0.922。與其他 H&E track 不同 —— 這是診斷鑑別、非組織分型。⚠️ 隨機 split 可能同片洩漏(同一 WSI 多 tile)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
