@@ -118,6 +118,10 @@ REGISTRY = [
      "label": "🦟 瘧原蟲蟲種 MP-IDB (4 種)",
      "path": ROOT / "models" / "mpidb_species_resnet50.pt",
      "blurb": "寄生蟲種級:瘧原蟲 4 蟲種分類 — 惡性瘧 Falciparum / 三日瘧 Malariae / 卵形瘧 Ovale / 間日瘧 Vivax(薄血膜 Giemsa,全視野 img + 單寄生蟲 crops)。比 NIH『感染/未感染』更細的種級鑑別。⚠️ val 0.997 嚴重偏樂觀,非真實泛化 —— 資料極度不平衡(falciparum 獨大)且 img/crops 同視野跨 train/val 洩漏(同 LC25000 增強洩漏型),稀有種 Ovale/Malariae val 僅 6–7 張、無統計意義。"},
+    {"key": "erythrocytes_idb", "kind": "cls",
+     "label": "🩸 鐮刀型紅血球 erythrocytesIDB (3 類)",
+     "path": ROOT / "models" / "erythrocytes_idb_resnet50.pt",
+     "blurb": "血液抹片紅血球形狀 3 類:正常圓形 circular / 鐮刀變形 elongated(鐮刀型貧血 sickle cell)/ 其他 other。單顆紅血球裁切。val 0.984、macro-F1 0.984(三類均衡)。對照 RBC morphology 的 11 類異形,本 track 聚焦鐮刀型鑑別。⚠️ val 僅 125 張偏小、單細胞裁自 196 source 圖,隨機 split 可能同源跨組 → 嚴格需 group-aware split。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
