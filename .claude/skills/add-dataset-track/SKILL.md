@@ -25,9 +25,10 @@ curl.exe -sIL --max-time 30 "<URL>" | Select-String -Pattern "HTTP/|Content-Leng
 - **UCI**：`https://archive.ics.uci.edu/static/public/<id>/<name>.zip`，純 zip、最可靠（DeFungi=773）。
 - **Mendeley Data**：API 取直連 → `https://data.mendeley.com/public-api/datasets/<id>/files?folder_id=root&version=1`，解析 `content_details.download_url`（PBC=snkd93bnjr）。
 - **Hugging Face dataset（單檔 zip/檔案）**：`https://huggingface.co/datasets/<owner>/<name>/resolve/main/<file>`，免註冊、會 302 到 CDN，aria2c 自動跟跳（HEp-2=Genius-Society/HEp2）。
-- **Hugging Face parquet 資料集（`format:parquet`、圖內嵌、非 zip）**：先 `/api/datasets/<id>` 確認 `gated:false`、再 `/api/datasets/<id>/tree/main?recursive=true` 列出 `data/*.parquet`,aria2c 抓那些 parquet（一檔一 process），用 `src/hf_parquet_to_imagefolder.py` 解碼成 ImageFolder（`pip install datasets pyarrow`;⚠️ 見下方 import 順序坑）。類別名串流偷看一次:`load_dataset(id, split='train', streaming=True).features['label'].names`,再以 `--class-names-json` 傳入,`--max-side 512` 縮圖省碟。Chula-ParasiteEgg-11=`Abdelkareem/parasitic-egg`（11 類蟲卵,1000/類）。
+- **Hugging Face parquet 資料集（`format:parquet`、圖內嵌、非 zip）**：先 `/api/datasets/<id>` 確認 `gated:false`、再 `/api/datasets/<id>/tree/main?recursive=true` 列出 `data/*.parquet`,aria2c 抓那些 parquet（一檔一 process），用 `src/hf_parquet_to_imagefolder.py` 解碼成 ImageFolder（`pip install datasets pyarrow`;⚠️ 見下方 import 順序坑）。類別名串流偷看一次:`load_dataset(id, split='train', streaming=True).features['label'].names`,再以 `--class-names-json` 傳入,`--max-side 512` 縮圖省碟。Chula-ParasiteEgg-11=`Abdelkareem/parasitic-egg`（11 類蟲卵,1000/類）。**官方已切 train/val/test 的**(如 Matek 骨髓 `ekim15/bone_marrow_cell_dataset`,21 類、病人層級)→ 各 split 的 parquet 分別解到 `<out>/train`、`<out>/val` 子夾(直接餵 train_resnet，免 prepare_data 隨機切、避免病人洩漏)。
 - **憑證壞掉的學術站**：curl exit 35 → 加 `-k --tlsv1.2`；aria2c 加 `--check-certificate=false`（DIBaS 鏡像 doctoral.matinf.uj.edu.pl）。
 - **要登入的牆**：IEEE Dataport、Heywhale、原 i3a 註冊站 → **跳過，換鏡像或別的資料集**，別硬鑽。
+- **Google Drive「散檔資料夾」(非單一 zip)**：`gdown --folder` 雖能列完上千檔(6.x 已無 50 檔上限),但**逐檔 auth 握手 ~0.3 檔/秒**,上萬個小檔要 9+ 小時 → 等同軟牆,當「要登入的牆」處理:找單一 zip 鏡像(Kaggle/Zenodo/HF)或換資料集,別硬抓(尿沉渣 GitHub `174614361` 的 Drive 散檔踩過,改做 Mendeley 的 SMIDS)。
 - **死掉/被搶註的網域**：原 DIBaS 站 misztal.edu.pl 已變博弈站 → 找學術鏡像（GitHub `gallardorafael/DIBaS-Dataset` 指到新 host）。
 
 aria2c 多連線下載（10h→~30min）：
@@ -54,6 +55,7 @@ $aria = (Resolve-Path "C:\Users\hao80\AppData\Local\Microsoft\WinGet\Packages\ar
    - two-phase 凍結→微調、class-weighted loss、AMP、`--title` 進混淆矩陣。
    - 大圖（如 DeFungi 500×500）解碼吃 CPU 會餓著 GPU → 開 `--workers 12`（i7-13700F 夠）。
    - epoch 數：大乾淨資料 12–15 夠；小/雜資料 20–40。
+   - **極端不平衡**(如 Matek 骨髓 21 類、最稀有類僅 6 張):預設反頻率 class-weight 會給稀有類 ~1000× 權重、把常見類拖垮 → 用 `--class-weight sqrt`(較溫和,1088×→33×)或 `none`;預設 `inverse` 維持其他 track 不變。啟動會印 `[loss] class-weight=... (min=.. max=..)` 可核對。
 
 3. **推論 / 跨域實測**：`src\predict.py --model models\<name>_resnet50.pt --input <資料夾或單張> --topk 3`
 
@@ -99,5 +101,9 @@ app 只列「權重檔存在」的模型。**改完要重啟 server 才生效**�
 | DIBaS 細菌 | 微生物 | ResNet | 689/33類 | ⚠️ 小樣本 val=1.0 不可信 |
 | HEp-2 ANA | 免疫 | ResNet | 13596/6類 | val 0.980 |
 | BCCD 血球 | 血液 | YOLO | 364張 | mAP50 0.919 |
+| Chula-ParasiteEgg-11 蟲卵 | 寄生蟲 | ResNet | 11000/11類 | val 0.995 |
+| SIPaKMeD 子宮頸抹片 | 細胞學 | ResNet | 4049/5類 | val 0.970 |
+| SMIDS 精液形態 | 男科 | ResNet | 3000/3類 | val 0.902 |
+| Matek 骨髓細胞 | 血液 | ResNet | 137k+17k/21類 | val 0.865 weighted（macro-F1 0.71,極不平衡，用 `--class-weight sqrt`） |
 
 - 小驗證集（DIBaS 每類 4–5 張）數字噪音極大、且採集層級可能洩漏 → 別信單一 split，要 group-aware split / k-fold 才有意義。
