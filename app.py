@@ -130,6 +130,10 @@ REGISTRY = [
      "label": "🩸 白血球 14 類 UNIVALI (含未成熟顆粒球/芽細胞)",
      "path": ROOT / "models" / "univali_leukocyte_resnet50.pt",
      "blurb": "周邊血抹片白血球 14 類 —— 在 PBC 8 類基礎上擴入臨床更難的未成熟系列:芽細胞 Blast、前/中/晚幼顆粒球 Promyelocyte/Myelocyte/Metamyelocyte、桿狀 Band、紅血球母細胞 Erythroblast、非典型淋巴球 Atypical lymphocyte,以及人工物/碎屑 Artifact/Debris。val_acc 0.905、weighted-F1 0.90、macro-F1 0.816(成熟系強,未成熟稀有類弱:Metamyelocyte F1 0.43)。對照 PBC 周邊血 8 類,本 track 細到未成熟分化階段。⚠️ 官方 val 小(432)、多稀有類 val<15(Basophil/Erythroblast/Artifact 等)、augment ×2.6 可能增強同源洩漏。"},
+    {"key": "bach", "kind": "cls",
+     "label": "🧬 乳腺組織 4 級 BACH (H&E, 嚴重度梯度)",
+     "path": ROOT / "models" / "bach_resnet50.pt",
+     "blurb": "組織病理 H&E 乳腺顯微 4 級嚴重度分類:正常 Normal / 良性 Benign / 原位癌 InSitu / 浸潤癌 Invasive(ICIAR 2018 BACH)。400 張大圖(2048×1536)切成 512 tile;**影像級切分**(同一張圖的 tile 不跨 train/val,無 tile 洩漏)。val(tile 級、來自 80 張獨立來源圖)acc 0.873、macro-F1 0.873;Invasive 最佳 0.93,Benign↔Normal 較易混(臨床合理)。別於 BreakHis 良惡二元,本 track 是 4 級嚴重度梯度。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
