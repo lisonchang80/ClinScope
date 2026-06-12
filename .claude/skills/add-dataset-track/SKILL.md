@@ -24,7 +24,8 @@ curl.exe -sIL --max-time 30 "<URL>" | Select-String -Pattern "HTTP/|Content-Leng
 - **Zenodo / 大檔**：單連線限速，用 aria2c 多連線（見下）。
 - **UCI**：`https://archive.ics.uci.edu/static/public/<id>/<name>.zip`，純 zip、最可靠（DeFungi=773）。
 - **Mendeley Data**：API 取直連 → `https://data.mendeley.com/public-api/datasets/<id>/files?folder_id=root&version=1`，解析 `content_details.download_url`（PBC=snkd93bnjr）。
-- **Hugging Face dataset**：`https://huggingface.co/datasets/<owner>/<name>/resolve/main/<file>`，免註冊、會 302 到 CDN，aria2c 自動跟跳（HEp-2=Genius-Society/HEp2）。
+- **Hugging Face dataset（單檔 zip/檔案）**：`https://huggingface.co/datasets/<owner>/<name>/resolve/main/<file>`，免註冊、會 302 到 CDN，aria2c 自動跟跳（HEp-2=Genius-Society/HEp2）。
+- **Hugging Face parquet 資料集（`format:parquet`、圖內嵌、非 zip）**：先 `/api/datasets/<id>` 確認 `gated:false`、再 `/api/datasets/<id>/tree/main?recursive=true` 列出 `data/*.parquet`,aria2c 抓那些 parquet（一檔一 process），用 `src/hf_parquet_to_imagefolder.py` 解碼成 ImageFolder（`pip install datasets pyarrow`;⚠️ 見下方 import 順序坑）。類別名串流偷看一次:`load_dataset(id, split='train', streaming=True).features['label'].names`,再以 `--class-names-json` 傳入,`--max-side 512` 縮圖省碟。Chula-ParasiteEgg-11=`Abdelkareem/parasitic-egg`（11 類蟲卵,1000/類）。
 - **憑證壞掉的學術站**：curl exit 35 → 加 `-k --tlsv1.2`；aria2c 加 `--check-certificate=false`（DIBaS 鏡像 doctoral.matinf.uj.edu.pl）。
 - **要登入的牆**：IEEE Dataport、Heywhale、原 i3a 註冊站 → **跳過，換鏡像或別的資料集**，別硬鑽。
 - **死掉/被搶註的網域**：原 DIBaS 站 misztal.edu.pl 已變博弈站 → 找學術鏡像（GitHub `gallardorafael/DIBaS-Dataset` 指到新 host）。
@@ -78,10 +79,11 @@ app 只列「權重檔存在」的模型。**改完要重啟 server 才生效**�
 
 ## 環境與坑（血淚）
 
-- venv `.venv\`（Py 3.11）、torch 2.6.0+**cu124**、ultralytics、sklearn、gradio 6.x。
+- venv `.venv\`（Py 3.11）、torch 2.6.0+**cu124**、ultralytics、sklearn、gradio 6.x、datasets+pyarrow（HF parquet 用）。
+- **⚠️ import 順序 segfault 地雷(2026-06 裝 `datasets` 後)**:`pip install datasets` 把 numpy 升到 2.x → **先 import torch、再 import sklearn/matplotlib 會 segfault(exit 139)**(原生 OpenMP/MKL 載入順序衝突;`--workers 0`、`KMP_DUPLICATE_LIB_OK=TRUE` 都救不了)。症狀:啟動 ~4s 內崩、stdout 幾乎沒印就只剩 bash 的 `Segmentation fault` 行。**修法:每支會同時用到 torch 和 sklearn/matplotlib 的腳本,把 matplotlib/sklearn 移到 torch 之前 import**(`train_resnet.py`/`eval_external.py` 已改成 sklearn-block-在前;`train_yolo.py` 在 `from ultralytics import YOLO` 前先 `import matplotlib`)。一行驗證:`python -c "import sklearn.metrics, matplotlib; import torch; print('ok')"`(sklearn 先=OK)對照反序(=139)。
 - **背景跑長任務**：下載/解壓/訓練一律 `run_in_background: true`，靠完成通知接續，不要前景 sleep 輪詢。
 - **背景 python stdout 會 block-buffer**（看不到即時進度）→ 用 `python -u`。好處：即時可監控，且**程序若被砍 log 也留得住**。
-- **電腦睡眠會把背景任務連同 gradio 一起砍掉**（靜默死、無完成/失敗通知；2026-06 連 AC standby=0 仍在 ep11 被砍）。長跑前把 AC+DC+螢幕睡眠都停（`powercfg /change standby-timeout-ac 0`、`standby-timeout-dc 0`、`monitor-timeout-ac 0`），收工還原。**判死活：比對輸出檔 mtime vs 現在**（停在某 epoch 且 mtime 很久沒動 = 已死，別被「還在背景清單」騙）。被砍時 `train_resnet` 每次 val 進步即存 best checkpoint → 模型不必重跑，用 `cross-domain-eval` / `eval_external.py` 在 val split 上補出分類報表+混淆矩陣。
+- **背景長任務會被靜默砍掉**（無完成/失敗通知）。2026-06 查 Kernel-Power event log，真兇是**重開機**而非睡眠：6/11 `TrustedInstaller`/`MoUsoCoreWorker` 的 Windows Update 自動升級、6/12 `StartMenuExperienceHost` 的「更新並重新啟動」（log 完全無「事件 42 進入睡眠」）。本機 AC 睡眠/休眠早就 0x0、無 Modern Standby，**關螢幕不殺進程**。對策：① 長跑前**暫停 Windows Update**（最關鍵）② 訓練中別點「更新並重新啟動」③ 永久擋自動重開：`HKLM\...\WindowsUpdate\AU\NoAutoRebootWithLoggedOnUsers=1`（需管理員）④ 防睡眠保險：訓練開頭 `ctypes.windll.kernel32.SetThreadExecutionState(0x80000000|0x1)`。**判死活：比對輸出檔 mtime vs 現在**（停在某 epoch 且 mtime 很久沒動 = 已死）。被砍時 `train_resnet` 每次 val 進步即存 best checkpoint → 模型不必重跑，用 `cross-domain-eval` / `eval_external.py` 在 val split 上補報表。
 - Windows DataLoader 多 worker 需 `if __name__=="__main__"` guard——核心腳本都已有。
 - Mac 來源的 zip 會夾 `__MACOSX/` 與 `._*` resource fork（副檔名像圖但 PIL 開不了）→ 解壓後刪掉，或交給 prepare_data 的驗圖剔除。
 - **壓縮檔不是 zip**（`.7z`/`.rar`）→ `pip install py7zr`（或 `rarfile`）自行解壓（`prepare_data --zip` 只吃 zip），再用 `--src` 指 class 母目錄。解完**注意巢狀結構**：SIPaKMeD 每類同時有 cluster 全圖（`NNN.bmp`）+ `CROPPED/` 單細胞子夾，`collect()` 會 rglob 全抓 → 想要單一尺度就先把目標那組（如 CROPPED 4049 單細胞）複製成乾淨 ImageFolder 再切分。解完的中繼大檔（raw/extracted）記得清掉（SIPaKMeD raw+extracted 共 ~14GB）。
