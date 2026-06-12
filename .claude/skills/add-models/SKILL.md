@@ -114,6 +114,8 @@ scouted ──► downloading ──► prepared ──► training ──► tr
 | 磁碟保護 | 切分後立刻清 raw(壓縮檔/parquet);可用空間 < ~15GB 就暫停預取,先消化 GPU 佇列 |
 | 重複/已有 track | scout 階段就 dedup,直接 skip,不佔名額 |
 | 連續失敗 | 同類失敗 ≥ 3 或 backlog 補不到新候選 → 停止,回報「實際加了 M/N 個 + 為何停」 |
+| **下載卡死無通知** | HF `snapshot_download`/`load_dataset` 切網時會**卡死 socket 不報錯、不發完成通知** → 事件驅動迴圈會空等。**長下載一律 aria2c switch-proof 逐檔**(`--max-tries=0`+stall 偵測,撐過熱點↔wifi);疑似卡住就主動比對 raw 檔 mtime,`TaskStop`+`taskkill //F //IM aria2c.exe` 後重啟續傳(見 add-dataset-track) |
+| prep 腳本即 ledger | 每個候選一支 `data/_pipeline/prep_<id>.sh`(gitignore),內含「下載→解壓/解碼→切分→清 raw→印 PREPARED_OK」;當背景任務直接跑、可續跑可重啟。prep bug(非源頭牆)就地修腳本重跑、不算入連續失敗 |
 | 不靜默截斷 | 「想加 N 只加到 M」一定明講原因(牆/磁碟/品質),不假裝全做完 |
 
 ## 逐模型 checkpoint(每完成一個就 commit)
