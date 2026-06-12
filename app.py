@@ -114,6 +114,10 @@ REGISTRY = [
      "label": "🩸 急性淋巴芽細胞白血病 C-NMC (blast vs 正常)",
      "path": ROOT / "models" / "cnmc_leukemia_resnet50.pt",
      "blurb": "血液腫瘤:單細胞顯微下急性淋巴芽細胞白血病 B-ALL 芽細胞 cancer (blast) vs 正常 B 淋巴系 healthy (HEM) 二元分類(C-NMC 2019 ISBI challenge)。**病人級(subject_id disjoint)切分的誠實 val**:val_acc 0.853、macro-F1 0.824、weighted-F1 0.851 —— 同一病人不跨 train/val,無洩漏(對照本專案多數隨機 split track 的樂觀數字)。blast 與正常淋巴細胞形態高度相似為本任務難點。"},
+    {"key": "mpidb_species", "kind": "cls",
+     "label": "🦟 瘧原蟲蟲種 MP-IDB (4 種)",
+     "path": ROOT / "models" / "mpidb_species_resnet50.pt",
+     "blurb": "寄生蟲種級:瘧原蟲 4 蟲種分類 — 惡性瘧 Falciparum / 三日瘧 Malariae / 卵形瘧 Ovale / 間日瘧 Vivax(薄血膜 Giemsa,全視野 img + 單寄生蟲 crops)。比 NIH『感染/未感染』更細的種級鑑別。⚠️ val 0.997 嚴重偏樂觀,非真實泛化 —— 資料極度不平衡(falciparum 獨大)且 img/crops 同視野跨 train/val 洩漏(同 LC25000 增強洩漏型),稀有種 Ovale/Malariae val 僅 6–7 張、無統計意義。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
