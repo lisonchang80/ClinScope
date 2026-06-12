@@ -97,6 +97,10 @@ REGISTRY = [
      "label": "🔬 甲狀腺細胞學 Thyroid FNA (6 級)",
      "path": ROOT / "models" / "thyroid_cyto_resnet50.pt",
      "blurb": "細胞學:甲狀腺細針穿刺 FNA 6 類(原始標註 1–6,疑對應 Bethesda I–VI 報告分級,資料卡未明確定義)。val 0.947、6 類 F1 0.93–0.99。對照子宮頸 Pap,屬不同部位的細胞學。⚠️ 同片多 crop,隨機 split 有病人洩漏。"},
+    {"key": "mitosis", "kind": "det",
+     "label": "🔬 有絲分裂偵測 Mitosis — 乳腺 H&E (YOLO)",
+     "path": ROOT / "reports" / "yolo" / "mitosis" / "weights" / "best.pt",
+     "blurb": "乳腺組織病理 H&E 有絲分裂象 mitotic figure 偵測 + 計數(每高倍視野有絲分裂數是乳癌分級指標)。YOLOv8,mAP50 0.941 / mAP50-95 0.651。第 2 條偵測 track(對照 BCCD 血球)。小資料 274 圖 demo。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
