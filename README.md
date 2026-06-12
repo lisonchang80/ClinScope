@@ -102,6 +102,14 @@ pip install -r requirements.txt
 | SIPaKMeD | Univ. of Ioannina `cs.uoi.gr/~marina/SIPAKMED`（5× `.7z`，單細胞 CROPPED 子集） |
 | SMIDS | Mendeley Data `6xvdhc9fyb`（精液形態 3 類:正常/異常/非精子,3,000 張亮場 BMP） |
 | Matek 骨髓 | Hugging Face `ekim15/bone_marrow_cell_dataset`（parquet 內嵌圖,21 類骨髓細胞,官方病人層級 train/val/test 切分） |
+| LC25000 | Hugging Face `1aurent/LC25000`（parquet,organ×label 還原肺/結腸 5 類 H&E） |
+| BreakHis | Mendeley Data `jxwvdwhpc2`（乳腺腫瘤 H&E,40–400× 放大倍率混訓的二元良/惡） |
+| NCT-CRC-HE-100K | Zenodo 10.5281/zenodo.1214456（train 100K + 官方獨立 cohort CRC-VAL-HE-7K 當 val） |
+| PatchCamelyon | Hugging Face `1aurent/PatchCamelyon`（parquet,官方 train/val split,淋巴結轉移 binary） |
+| MHIST | Hugging Face `mamunrobi35/mhist_binary`（大腸息肉 HP vs SSA;mirror 為 flatten bytes/path schema） |
+| 甲狀腺細胞學 | Hugging Face `cupofmocha/cytoal-thyroid-cytology-labeled`（imagefolder,6 類 FNA,cc-by-nc-4.0） |
+| Mitosis 偵測 | Hugging Face `Francesco/mitosis-gjs3g`（Roboflow RF100 COCO,COCO→YOLO 轉換） |
+| HuSHeM | Mendeley Data `tt3yj2pf38`（精子頭形態 4 類 `.rar`,Diff-Quik 染色） |
 
 ## 免責
 
