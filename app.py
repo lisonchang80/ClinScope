@@ -126,6 +126,10 @@ REGISTRY = [
      "label": "🔬 細胞核偵測 PanNuke — H&E (5 類, YOLO)",
      "path": ROOT / "reports" / "yolo" / "pannuke" / "weights" / "best.pt",
      "blurb": "泛組織病理 H&E 細胞核偵測 + 分類 5 類:腫瘤 neoplastic / 發炎 inflammatory / 結締組織 connective / 壞死 dead / 上皮 epithelial。YOLOv8s,平均 23.8 核/圖、密集小目標(val 共 6.7 萬框)。val mAP50 0.654 / mAP50-95 0.405(neoplastic·epithelial ~0.79 最佳;dead 0.31 稀少最弱)。第 3 條偵測 track(對照 BCCD 血球、mitosis 有絲分裂)。mask→YOLO bbox 由 src/pannuke_to_yolo.py 轉換。"},
+    {"key": "univali_leukocyte", "kind": "cls",
+     "label": "🩸 白血球 14 類 UNIVALI (含未成熟顆粒球/芽細胞)",
+     "path": ROOT / "models" / "univali_leukocyte_resnet50.pt",
+     "blurb": "周邊血抹片白血球 14 類 —— 在 PBC 8 類基礎上擴入臨床更難的未成熟系列:芽細胞 Blast、前/中/晚幼顆粒球 Promyelocyte/Myelocyte/Metamyelocyte、桿狀 Band、紅血球母細胞 Erythroblast、非典型淋巴球 Atypical lymphocyte,以及人工物/碎屑 Artifact/Debris。val_acc 0.905、weighted-F1 0.90、macro-F1 0.816(成熟系強,未成熟稀有類弱:Metamyelocyte F1 0.43)。對照 PBC 周邊血 8 類,本 track 細到未成熟分化階段。⚠️ 官方 val 小(432)、多稀有類 val<15(Basophil/Erythroblast/Artifact 等)、augment ×2.6 可能增強同源洩漏。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
