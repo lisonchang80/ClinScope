@@ -199,6 +199,10 @@ REGISTRY = [
      "label": "🦠 皮膚利什曼原蟲偵測 Leishmania (Giemsa 皮膚抹片, YOLO)",
      "path": ROOT / "reports" / "yolo" / "leishmania" / "weights" / "best.pt",
      "blurb": "寄生蟲(本平台首條利什曼原蟲 track,皮膚黏膜利什曼病):Giemsa 皮膚抹片偵測利什曼原蟲無鞭毛體 amastigote(單類 parasite)。官方 slide-disjoint 切分(德文 geteilte Slides,合併兩子資料集、同片不跨 train/val、無洩漏)、含兩種顯微鏡來源(含可攜式)增加域變異。YOLOv8s val mAP50 0.651 / mAP50-95 0.265 —— amastigote 微小、皮膚抹片背景雜,屬合理中等偵測;定位精度(mAP50-95)偏低。對照血液原蟲分類 track(Babesia/Toxoplasma/Trypanosoma),本 track 是皮膚利什曼的偵測。AGPL-3.0 授權。"},
+    {"key": "giardia_crypto", "kind": "det",
+     "label": "🦠 Giardia/Cryptosporidium 囊體偵測 (明場顯微, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "giardia" / "weights" / "best.pt",
+     "blurb": "寄生蟲(水源性原蟲囊體偵測,新增 Cryptosporidium):明場顯微偵測 2 類 — 梨形鞭毛蟲囊體 Giardia cyst / 隱孢子蟲卵囊 Cryptosporidium oocyst(水質/食媒寄生蟲監測核心)。合併 brightfield reference + sample 兩子集(同明場模態)、各用官方 fold_1 split。YOLOv8s val mAP50 0.895 / mAP50-95 0.463(Giardia 0.947、Crypto 0.844)。⚠️ 來源為水/蔬菜環境樣本、非臨床糞便檢體(囊體/卵囊形態可遷移,但臨床糞便基質更雜);對照 ParasitoBank(臨床糞便腸道原蟲),本 track 聚焦環境水源、且新增 Cryptosporidium。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
