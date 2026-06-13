@@ -96,7 +96,7 @@ REGISTRY = [
     {"key": "thyroid_cyto", "kind": "cls",
      "label": "🔬 甲狀腺細胞學 Thyroid FNA (6 級)",
      "path": ROOT / "models" / "thyroid_cyto_resnet50.pt",
-     "blurb": "細胞學:甲狀腺細針穿刺 FNA 6 類(原始標註 1–6,疑對應 Bethesda I–VI 報告分級,資料卡未明確定義)。val 0.947、6 類 F1 0.93–0.99。對照子宮頸 Pap,屬不同部位的細胞學。⚠️ 同片多 crop,隨機 split 有病人洩漏。"},
+     "blurb": "細胞學:甲狀腺細針穿刺 FNA 6 類(原始標註 1–6,疑對應 Bethesda I–VI,資料卡未明確定義)。**slide(片)級切分**(118 片,每類留 3–6 片 disjoint、同片不跨 train/val)誠實 val 0.505、macro-F1 0.518。⚠️ 對比舊隨機 split 的 0.947 暴跌約 44pt —— 三條修正中洩漏最嚴重,0.947 幾乎全是在背同一抹片的外觀(每片數百 tile)。slide-disjoint 下:形態明確的 class 1(F1 0.79)、class 6(0.89)能學,中間級 class 2–5(0.16–0.50)很難——與臨床上 Bethesda 中間類判讀者間變異大一致。對照子宮頸 Pap,屬不同部位細胞學。"},
     {"key": "mitosis", "kind": "det",
      "label": "🔬 有絲分裂偵測 Mitosis — 乳腺 H&E (YOLO)",
      "path": ROOT / "reports" / "yolo" / "mitosis" / "weights" / "best.pt",

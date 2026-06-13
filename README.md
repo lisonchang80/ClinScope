@@ -32,7 +32,7 @@
 | 組織病理（結直腸） | NCT-CRC-HE-100K | H&E 組織切片（224px） | ResNet-50 | 100,000 張 / 9 類 | val 0.970（官方外部 7K cohort） |
 | 組織病理（淋巴結） | PatchCamelyon | H&E 組織切片（96px patch） | ResNet-50 | 262,144 張 / 2 類 | val 0.913（官方 val 32k） |
 | 組織病理（大腸息肉） | MHIST | H&E 組織切片 | ResNet-50 | 3,152 張 / 2 類 | val 0.922（HP vs SSA 診斷）|
-| 細胞學（甲狀腺 FNA） | CytoAtlas 甲狀腺 | 細胞學抹片（FNA） | ResNet-50 | 27,496 張 / 6 類 | val 0.947 ⚠️ 同片洩漏 |
+| 細胞學（甲狀腺 FNA） | CytoAtlas 甲狀腺 | 細胞學抹片（FNA） | ResNet-50 | 27,496 張 / 118 片 / 6 類 | val 0.505 ✅ 片級切分、macro-F1 0.518（⚠️ 舊 0.947 為同片洩漏假象）|
 | 組織病理（乳腺 mitosis） | Mitosis 偵測 | H&E 組織切片 | YOLOv8 | 274 張 / 1 類 | mAP50 0.941 |
 | 男科（精子頭形態） | HuSHeM | Diff-Quik 精子頭 | ResNet-50 | 216 張 / 4 類 | val 0.94 ⚠️ 極小 val 不可信 |
 | 血液（紅血球形態） | RBC morphology | 血液抹片（單顆 RBC） | ResNet-50 | 6,240 張 / 11 類 | val 0.978、macro-F1 0.972 |
