@@ -39,6 +39,7 @@ def main():
     ap.add_argument("--name", default="run")
     ap.add_argument("--device", default="0", help="'0' for first GPU, 'cpu' to force CPU")
     args = ap.parse_args()
+    args.project = args.project.resolve()  # absolute path: stop new-ultralytics nesting output under runs/detect/
 
     keep_awake()  # don't let the machine sleep mid-training (monitor may still sleep)
 
