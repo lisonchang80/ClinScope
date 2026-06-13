@@ -166,6 +166,10 @@ REGISTRY = [
      "label": "🧠 腦膠質瘤亞型 IPD-Brain (H&E, 3 類)",
      "path": ROOT / "models" / "ipdbrain_resnet50.pt",
      "blurb": "組織病理 H&E 腦膠質瘤亞型 3 類:膠質母細胞瘤 Glioblastoma / 星形細胞瘤 Astrocytoma / 寡突膠質瘤 Oligodendroglioma(IPD-Brain,大圖切 512 tile)。**病人級(Case Number disjoint)切分、無洩漏**。val_acc 0.529、macro-F1 0.332 —— ⚠️ **誠實的弱結果**:模型幾乎只猜多數類 GBM(F1 0.71),星形/寡突召回極低(0.15/0.06),0.529 ≈ GBM 佔比基線;膠質瘤亞型需 H&E 形態 + 分子標記(IDH/1p19q),低倍 tile 已失判別訊號 → 非臨床可用,示範 WSI 降採樣的極限。新增腦組織器官。"},
+    {"key": "blood_protozoa", "kind": "cls",
+     "label": "🦠 血液原蟲 3 類 (Babesia/Toxoplasma/Trypanosoma)",
+     "path": ROOT / "models" / "blood_protozoa_resnet50.pt",
+     "blurb": "血液/組織原蟲分類 3 類:焦蟲 Babesia(紅血球內環狀)/ 弓形蟲 Toxoplasma(新月形速殖子)/ 錐蟲 Trypanosoma(鞭毛蟲體)。Giemsa 顯微。val 1.0 —— ⚠️ 三種形態差異極大、本就易;val 僅 158 張、隨機 split 可能同源洩漏,1.0 偏樂觀。Babesia/Toxoplasma 為新增蟲種;對照 Tryp 偵測 track,本 track 是多蟲種分類。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
