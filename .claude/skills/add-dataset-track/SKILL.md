@@ -93,6 +93,11 @@ app 只列「權重檔存在」的模型。**改完要重啟 server 才生效**�
 - Mac 來源的 zip 會夾 `__MACOSX/` 與 `._*` resource fork（副檔名像圖但 PIL 開不了）→ 解壓後刪掉，或交給 prepare_data 的驗圖剔除。
 - **Windows `tar` 把 `D:/x.tar.gz` 的冒號當「遠端主機 D:」**（`tar: Cannot connect to D: resolve failed` / `gzip: unexpected end of file`）→ **`cd` 進該資料夾用相對路徑解壓**（`( cd "$ROOT/data" && tar xzf foo.tar.gz -C dest )`），或加 `--force-local`（mitosis COCO tar.gz 踩過）。
 - **壓縮檔不是 zip**（`.7z`/`.rar`）→ `.7z` 用 `pip install py7zr`；**`.rar` 本機直接用 `"/c/Program Files/WinRAR/UnRAR.exe" x -o+ -y <a>.rar <dest>/`**（WinRAR 已裝、免 python module;HuSHeM `tt3yj2pf38` 用過）。解完用 `--src` 指 class 母目錄（找法:`CR=$(dirname "$(dirname "$(find <raw> -iname '*.bmp'|head -1)")")` 自動定位,免假設夾名）。解完**注意巢狀結構**：SIPaKMeD 每類同時有 cluster 全圖（`NNN.bmp`）+ `CROPPED/` 單細胞子夾，`collect()` 會 rglob 全抓 → 想要單一尺度就先把目標那組（如 CROPPED 4049 單細胞）複製成乾淨 ImageFolder 再切分。解完的中繼大檔（raw/extracted）記得清掉（SIPaKMeD raw+extracted 共 ~14GB）。
+- **下載後先驗「真的有 class 標籤」再訓**（batch4 兩次教訓,各浪費一次下載）：標榜 cls 的 HF/zenodo 集可能 (a) 根本沒標籤——只是按片分的未標 patch（KidneyAI 只有 glomeruli patch、檔名=`slide-idx-bbox`）,或 (b) 只有自由文字 caption、無離散 label、甚至多器官混（`arch_gastric` features=image+text、sample 是骨肉瘤非胃）。**下載前/後先驗：資料夾是否 class 子夾 / HF `/info` features 是否含 `ClassLabel` / csv 是否有可離散化欄**;沒有就 skip 換候選。同理「YOLO 偵測」集可能是分類集 re-host（label 全是整圖退化框 `0 0.5 0.5 1 1`）→ 訓前 `cat` 一個 label 檔。**det/大檔 track 一律先 download+inspect（印 tree/副檔名/`unzip -l`/sample label）再寫 prep**,別盲寫。
+- **自帶官方 k-fold / train-val-test 就直接用**：MK-11 `MK-11_5folds/fold_1/{train,val,test}`、urine/Tryp/BACH 都附官方 split → 省自切且多為病人級（無洩漏）。沒 metadata 也能病人級切——**檔名前綴 token 常就是 patient/slide id**。
+- **無洩漏切分 helper（優先用,別預設隨機 split）**：`hf_parquet_group_split.py`(parquet 按 group 欄位病人/片) / `patchgastric_wsi_split.py`(扁平 patch+caption-csv→WSI 級,stream zip) / `bach_tile_group_split.py`(大圖 tile+影像級) / `ipdbrain_tile_split.py`(大圖 tile+病人級,檔名 token 分組) / `hf_parquet_to_imagefolder.py`(扁平 ImageFolder) / `hf_dataset_to_imagefolder.py`(datasets 庫救 flatten schema)。**組織分級類(PatchGastric 0.49 / IPD-Brain 0.53)在無洩漏切分下本就低分,是誠實非 bug**;塌成多數類(IPD-Brain→GBM)代表低倍 tile 失判別訊號。
+- **多檔/動態檔名 URL 同中 `\r`→`%0D` 404**：從 Windows venv python 印出的檔名清單接到 URL 前一律 `tr -d '\r'`（MLL23 18 個 zenodo zip 清單踩過,同 HF 檔名坑）。
+- **訓練被外部中止再現**（IPD-Brain ep10 無 traceback,疑 GPU TDR/重開）→ 判死活：**`tasklist|grep python` 無進程 + 輸出 log 凍結在某 epoch**。best.pt 逐 epoch 存→權重在,但 `classification_report` 最後才寫故**需重跑完整才有報表**(或用 eval_external 補)。
 
 ## 已驗證基準（in-distribution；跨到自己照片預期掉到 60–80%）
 
@@ -117,6 +122,8 @@ app 只列「權重檔存在」的模型。**改完要重啟 server 才生效**�
 | 甲狀腺 FNA | 細胞學 | ResNet | 27496/6類 | val 0.947（1-6 疑 Bethesda）⚠️同片洩漏 |
 | Mitosis 偵測 | 組織病理 | YOLO | 274/1類 | mAP50 0.941（COCO→YOLO,小資料 demo） |
 | HuSHeM 精子頭 | 男科 | ResNet | 216/4類 | val 0.94 ⚠️極小 val(每類 8)不可信 |
+
+> 此表為早期 19-track 快照。**batch3/4 另加 16 條,完整 35 模型以 `app.py` REGISTRY 為準**:血液細分(RBC 11類異形 / erythrocytesIDB 鐮刀 / UNIVALI 14類 / MLL23 18類含毛細胞白血病 / MK-11 巨核 11亞型 / rouleaux 串錢狀)、白血病 C-NMC、瘧種 MP-IDB、錐蟲 Tryp(det)/血液原蟲 3類、尿沉渣 urine(det,🆕第8科尿液分析)、核偵測 PanNuke(det)、組織病理(BACH 乳腺4級 / PatchGastric 胃4級 / IPD-Brain 腦膠質瘤 / PathoTiroid 甲狀腺)。**其中 6 條無洩漏(C-NMC/BACH/PathoTiroid/MK-11/PatchGastric/IPD-Brain);PatchGastric 0.49 / IPD-Brain 0.53 是誠實低分(無洩漏+硬任務)。**
 
 - 小驗證集（DIBaS 每類 4–5 張、HuSHeM 每類 8 張）數字噪音極大、且採集層級可能洩漏 → 別信單一 split，要 group-aware split / k-fold 才有意義。
 - **組織病理/細胞學的洩漏特別常見**:同一 WSI / 同片抹片切出多 tile-crop,隨機 split 會把同源 tile 分到 train/val → val 偏高(LC25000 增強擴增是極端案例 val=1.0)。誠實作法是 patient/slide-level split;沒做就在 blurb 掛 caveat。

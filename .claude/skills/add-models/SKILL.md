@@ -116,6 +116,9 @@ scouted ──► downloading ──► prepared ──► training ──► tr
 | 連續失敗 | 同類失敗 ≥ 3 或 backlog 補不到新候選 → 停止,回報「實際加了 M/N 個 + 為何停」 |
 | **下載卡死無通知** | HF `snapshot_download`/`load_dataset` 切網時會**卡死 socket 不報錯、不發完成通知** → 事件驅動迴圈會空等。**長下載一律 aria2c switch-proof 逐檔**(`--max-tries=0`+stall 偵測,撐過熱點↔wifi);疑似卡住就主動比對 raw 檔 mtime,`TaskStop`+`taskkill //F //IM aria2c.exe` 後重啟續傳(見 add-dataset-track) |
 | prep 腳本即 ledger | 每個候選一支 `data/_pipeline/prep_<id>.sh`(gitignore),內含「下載→解壓/解碼→切分→清 raw→印 PREPARED_OK」;當背景任務直接跑、可續跑可重啟。prep bug(非源頭牆)就地修腳本重跑、不算入連續失敗 |
+| **資料集無可用標籤** | 標榜 cls 的 HF/zenodo 集可能 (a) 只有未標 patch(KidneyAI 只有 glomeruli patch、檔名=slide-bbox)或 (b) 只有自由文字 caption、無離散 label、甚至多器官混(arch_gastric)→ **下載後先驗 label/features(class 子夾 / HF `ClassLabel` / csv 可離散欄)才訓,沒有就 skip 換 backlog**。「YOLO 偵測」集可能是分類集 re-host(label 全整圖退化框 `0 0.5 0.5 1 1`)→ 訓前 `cat` 一個 label。det/大檔一律先 download+inspect 再寫 prep(見 add-dataset-track) |
+| 訓練被外部中止 | 背景訓練可能無 traceback、無完成通知就死(Windows Update 重開 / GPU TDR;IPD-Brain ep10 中過)。判死活:`tasklist\|grep python` 無進程 + 輸出 log 凍結在某 epoch。best.pt 逐 epoch 存→權重在,但 `classification_report` 最後才寫故**重跑完整才有報表**。長批前暫停 Windows Update |
+| 無洩漏切分優先 | 有官方 k-fold/患者 id 就用病人/片/WSI-disjoint(helper: `hf_parquet_group_split`/`patchgastric_wsi_split`/`bach_tile_group_split`/`ipdbrain_tile_split`)。組織分級在無洩漏下本就低分(PatchGastric 0.49/IPD-Brain 0.53)= 誠實,非丟棄條件(仍 >隨機、macro>0.30) |
 | 不靜默截斷 | 「想加 N 只加到 M」一定明講原因(牆/磁碟/品質),不假裝全做完 |
 
 ## 逐模型 checkpoint(每完成一個就 commit)
