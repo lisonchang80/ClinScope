@@ -179,6 +179,10 @@ REGISTRY = [
      "label": "🟤 HER2 免疫組化評分 — IHC (0/1+/2+/3+)",
      "path": ROOT / "models" / "her2ihc_resnet50.pt",
      "blurb": "免疫組化 IHC(本平台首條 IHC track、DAB 棕色顯色,別於所有 H&E 組織 track):乳腺癌 HER2 細胞膜染色強度 4 級評分 0 / 1+ / 2+ / 3+(對應 HER2 標靶治療資格判讀)。官方 patch 級切分(split-before-extract,WSI/case 不跨 train/val → 低洩漏)val_acc 0.985、macro-F1 0.982,4 類 F1≥0.97(含最少的 2+,150 val)。HER2 分數本質是膜染色強度梯度、視覺可分性高,故高準確率屬合理而非洩漏。"},
+    {"key": "parasitobank", "kind": "det",
+     "label": "🦠 腸道寄生蟲偵測 ParasitoBank (糞便濕抹片, 13 類, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "parasitobank" / "weights" / "best.pt",
+     "blurb": "寄生蟲學(本平台首條腸道原蟲 track):糞便濕抹片(saline + Lugol 碘染)腸道寄生蟲偵測 13 類 — 腸道原蟲(梨形鞭毛蟲 Giardia / 大腸阿米巴 E. coli / 哈氏阿米巴 E. hartmanni / 內阿米巴複合 / 微小內蜒阿米巴 Endolimax nana / 碘阿米巴 Iodamoeba / 唇鞭毛蟲 Chilomastix / 人芽囊原蟲 Blastocystis / 球蟲 coccidia)+ 蠕蟲卵(蛔蟲 Ascaris / 絛蟲 Taenia / 鞭蟲 Trichuris / 糞線蟲 Strongyloides)。YOLOv8s,val mAP50 0.752 / mAP50-95 0.456。別於既有 Chula 蟲卵 track —— 本 track 聚焦腸道原蟲、糞便濕抹片不同染色。⚠️ 長尾:最常見的人芽囊原蟲 mAP50 0.43(形態變異大)反而最難;稀有蠕蟲(taenia/tricocefalo 等 val 僅 1–2 框)mAP 雖高但統計不可信。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
