@@ -203,6 +203,11 @@ REGISTRY = [
      "label": "🦠 Giardia/Cryptosporidium 囊體偵測 (明場顯微, YOLO)",
      "path": ROOT / "reports" / "yolo" / "giardia" / "weights" / "best.pt",
      "blurb": "寄生蟲(水源性原蟲囊體偵測,新增 Cryptosporidium):明場顯微偵測 2 類 — 梨形鞭毛蟲囊體 Giardia cyst / 隱孢子蟲卵囊 Cryptosporidium oocyst(水質/食媒寄生蟲監測核心)。合併 brightfield reference + sample 兩子集(同明場模態)、各用官方 fold_1 split。YOLOv8s val mAP50 0.895 / mAP50-95 0.463(Giardia 0.947、Crypto 0.844)。⚠️ 來源為水/蔬菜環境樣本、非臨床糞便檢體(囊體/卵囊形態可遷移,但臨床糞便基質更雜);對照 ParasitoBank(臨床糞便腸道原蟲),本 track 聚焦環境水源、且新增 Cryptosporidium。"},
+    # --- batch 6 (2026-06-14) ---
+    {"key": "kupbc13", "kind": "cls",
+     "label": "🩸 白血球+血小板 13 類 KU-optofil (May-Grünwald-Giemsa)",
+     "path": ROOT / "models" / "kupbc13_resnet50.pt",
+     "blurb": "血液(13 類單顆細胞,新增血小板形態):Sysmex DI-60 自動數位顯微、May-Grünwald-Giemsa 周邊血。11 種白血球(節狀/桿狀嗜中性球、嗜酸/嗜鹼球、淋巴球、反應性淋巴球、單核球、後髓/髓/晚幼粒細胞、芽細胞、紅血球母細胞)+ 2 種血小板形態(巨大血小板 Giant Platelet / 血小板聚集 Platelet Cluster)。官方 patient-level split(無洩漏)。ResNet-50 val_acc 0.961 / macro-F1 0.845。血小板形態 2 類為既有 WBC track(PBC/UNIVALI/MLL23)所無;其餘細胞與之重疊。⚠️ 類別不平衡:Segmented Neutrophil 佔多數;Myelocyte(val 僅 9 張)F1 0.36、Band Neutrophil/Reactive Lymphocyte 偏弱,macro(0.84) vs weighted(0.96) 落差反映稀有類較弱。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]

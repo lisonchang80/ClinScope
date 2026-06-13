@@ -59,6 +59,7 @@
 | 微生物（培養盤菌落） | Dataset19 | 白光巨觀 agar plate | YOLOv8 | 950 圖 / 19 菌種 | mAP50 0.970 ✅ mAP50-95 0.764 |
 | 寄生蟲（皮膚利什曼） | Leishmania | Giemsa 皮膚抹片 | YOLOv8 | ~1,300 圖 / 1 類 | mAP50 0.651 ✅ slide-disjoint 切分 |
 | 寄生蟲（水源性囊體） | Giardia/Crypto | 明場顯微 | YOLOv8 | 1,837 圖 / 2 類 | mAP50 0.895 ✅（環境樣本,非臨床糞便） |
+| 血液（白血球+血小板） | KU-optofil 13 類 | May-Grünwald-Giemsa（Sysmex DI-60 數位） | ResNet-50 | 25,178 張 / 13 類 | val 0.961、macro-F1 0.845 ✅ patient-level split（⚠️ Myelocyte val 9 張學不起來、稀有類弱） |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -158,6 +159,7 @@ pip install -r requirements.txt
 | Dataset19 | Zenodo `18256864`（19 菌種瓊脂培養盤菌落偵測,現成 YOLO_txt + images/<種>;stratified-by-species split,類名沿用原始代碼） |
 | Leishmania | Zenodo `17964511`（皮膚利什曼原蟲偵測,YOLO bbox + 官方 slide-disjoint split;合併 Dataset_1+2,test 併入 val） |
 | Giardia/Crypto | Zenodo `7813183`（Giardia 囊體 + Cryptosporidium 卵囊偵測 COCO;合併 brightfield reference+sample,官方 fold_1 split。⚠️ 用直連檔 `cysts_dataset_all.zip` 非 files-archive） |
+| KU-optofil 13 類 | Zenodo `17333317`（Sysmex DI-60 周邊血 13 類單顆細胞,官方 patient-level split CSV;含巨大血小板/血小板聚集 2 類為既有 WBC track 所無） |
 
 ## 免責
 
