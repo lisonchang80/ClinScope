@@ -57,6 +57,7 @@
 | 寄生蟲（瘧分期） | BBBC041 | Giemsa 薄血膜全視野 | YOLOv8 | 1,328 圖 / 5 類 | mAP50 0.395 ✅（瘧蟲期偵測本就難,稀有期不可信） |
 | 微生物（革蘭氏痰抹片） | M-ROSE | Gram 染色下呼吸道抹片 | YOLOv8 | 6,005 tile / 2 類(G±) | mAP50 0.908 ✅ source-disjoint 切分 |
 | 微生物（培養盤菌落） | Dataset19 | 白光巨觀 agar plate | YOLOv8 | 950 圖 / 19 菌種 | mAP50 0.970 ✅ mAP50-95 0.764 |
+| 寄生蟲（皮膚利什曼） | Leishmania | Giemsa 皮膚抹片 | YOLOv8 | ~1,300 圖 / 1 類 | mAP50 0.651 ✅ slide-disjoint 切分 |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -154,6 +155,7 @@ pip install -r requirements.txt
 | BBBC041 | Broad BBBC041（P. vivax 瘧分期,自訂 r/c JSON;官方 split,保留 4 蟲期+WBC、剔 RBC 背景轉 YOLO） |
 | M-ROSE | Zenodo `10526360`（CPLAG 革蘭氏痰抹片 DeepDataSet;用 640 json 染色標註做 2 類 G+/G- 偵測,source-disjoint 切分） |
 | Dataset19 | Zenodo `18256864`（19 菌種瓊脂培養盤菌落偵測,現成 YOLO_txt + images/<種>;stratified-by-species split,類名沿用原始代碼） |
+| Leishmania | Zenodo `17964511`（皮膚利什曼原蟲偵測,YOLO bbox + 官方 slide-disjoint split;合併 Dataset_1+2,test 併入 val） |
 
 ## 免責
 

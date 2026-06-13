@@ -195,6 +195,10 @@ REGISTRY = [
      "label": "🧫 培養盤菌落偵測 Dataset19 (19 菌種, YOLO)",
      "path": ROOT / "reports" / "yolo" / "dataset19" / "weights" / "best.pt",
      "blurb": "臨床微生物培養(本平台首條巨觀培養盤 track、全新模態 — 白光巨觀攝影而非顯微):瓊脂培養盤上 19 種臨床細菌的菌落偵測 + 菌種辨識。類別沿用資料集原始 3-字母代碼(aba/eco/kpn/sau/ses/sma/sep/efa/stm/eca/enc/cst/mmo/bce/spy/sag/ppu/spn/bcp;涵蓋 Acinetobacter / E. coli / Klebsiella / S. aureus / Enterococcus / Streptococcus 等)。YOLOv8s val mAP50 0.970 / mAP50-95 0.764,19 種 mAP50 0.93–0.99 均勻優異。菌落判讀是臨床微生物鑑定的核心。⚠️ stratified-by-species 切分(每種 40 train/10 val 圖);若同株多影像為同盤裁切可能輕微洩漏。對照 DIBaS(顯微 Gram 菌落 cls),本 track 是整盤巨觀偵測。"},
+    {"key": "leishmania", "kind": "det",
+     "label": "🦠 皮膚利什曼原蟲偵測 Leishmania (Giemsa 皮膚抹片, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "leishmania" / "weights" / "best.pt",
+     "blurb": "寄生蟲(本平台首條利什曼原蟲 track,皮膚黏膜利什曼病):Giemsa 皮膚抹片偵測利什曼原蟲無鞭毛體 amastigote(單類 parasite)。官方 slide-disjoint 切分(德文 geteilte Slides,合併兩子資料集、同片不跨 train/val、無洩漏)、含兩種顯微鏡來源(含可攜式)增加域變異。YOLOv8s val mAP50 0.651 / mAP50-95 0.265 —— amastigote 微小、皮膚抹片背景雜,屬合理中等偵測;定位精度(mAP50-95)偏低。對照血液原蟲分類 track(Babesia/Toxoplasma/Trypanosoma),本 track 是皮膚利什曼的偵測。AGPL-3.0 授權。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
