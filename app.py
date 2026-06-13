@@ -80,7 +80,7 @@ REGISTRY = [
     {"key": "breakhis", "kind": "cls",
      "label": "🧬 乳腺腫瘤組織病理 BreakHis (H&E, 良性/惡性)",
      "path": ROOT / "models" / "breakhis_resnet50.pt",
-     "blurb": "組織病理 H&E 乳腺腫瘤二元分類:良性 benign vs 惡性 malignant(40–400× 放大倍率混訓,magnification-independent)。val 0.978。⚠️ 隨機 split 會把同病人不同倍率分到 train/val → 偏樂觀,需 patient-level split 才完全可信。"},
+     "blurb": "組織病理 H&E 乳腺腫瘤二元分類:良性 benign vs 惡性 malignant(40–400× 放大倍率混訓,magnification-independent)。**病人級切分**(70 病人,val 18 人 disjoint、同病人不跨 train/val)val 0.839、macro-F1 0.829。對比舊隨機 split 的 0.978 掉約 14pt —— 那是同病人不同倍率洩漏灌出的假象,0.839 才是誠實泛化;benign recall 偏低 0.69(模型偏判 malignant)。"},
     {"key": "nct_crc", "kind": "cls",
      "label": "🧬 結直腸組織 9 類 NCT-CRC-HE-100K (H&E)",
      "path": ROOT / "models" / "nct_crc_resnet50.pt",

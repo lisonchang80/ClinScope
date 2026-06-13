@@ -28,7 +28,7 @@
 | 男科（精液分析） | SMIDS 精液形態 | 精液抹片（亮場） | ResNet-50 | 3,000 張 / 3 類 | val 0.902 |
 | 血液（骨髓細胞學） | Matek 骨髓細胞 | May-Grünwald-Giemsa（骨髓抹片） | ResNet-50 | 154,239 張 / 21 類 | val 0.865 weighted ⚠️ macro-F1 0.71 |
 | 組織病理（肺/結腸） | LC25000 | H&E 組織切片 | ResNet-50 | 25,000 張 / 5 類 | val 1.00 ⚠️ 增強擴增、隨機 split 洩漏 |
-| 組織病理（乳腺） | BreakHis | H&E 組織切片（40–400×） | ResNet-50 | 7,909 張 / 2 類 | val 0.978 ⚠️ 隨機 split 病人洩漏 |
+| 組織病理（乳腺） | BreakHis | H&E 組織切片（40–400×） | ResNet-50 | 7,909 張 / 70 病人 / 2 類 | val 0.839 ✅ 病人級切分、macro-F1 0.829 |
 | 組織病理（結直腸） | NCT-CRC-HE-100K | H&E 組織切片（224px） | ResNet-50 | 100,000 張 / 9 類 | val 0.970（官方外部 7K cohort） |
 | 組織病理（淋巴結） | PatchCamelyon | H&E 組織切片（96px patch） | ResNet-50 | 262,144 張 / 2 類 | val 0.913（官方 val 32k） |
 | 組織病理（大腸息肉） | MHIST | H&E 組織切片 | ResNet-50 | 3,152 張 / 2 類 | val 0.922（HP vs SSA 診斷）|
