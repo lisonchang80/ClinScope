@@ -60,6 +60,10 @@
 | 寄生蟲（皮膚利什曼） | Leishmania | Giemsa 皮膚抹片 | YOLOv8 | ~1,300 圖 / 1 類 | mAP50 0.651 ✅ slide-disjoint 切分 |
 | 寄生蟲（水源性囊體） | Giardia/Crypto | 明場顯微 | YOLOv8 | 1,837 圖 / 2 類 | mAP50 0.895 ✅（環境樣本,非臨床糞便） |
 | 血液（白血球+血小板） | KU-optofil 13 類 | May-Grünwald-Giemsa（Sysmex DI-60 數位） | ResNet-50 | 25,178 張 / 13 類 | val 0.961、macro-F1 0.845 ✅ patient-level split（⚠️ Myelocyte val 9 張學不起來、稀有類弱） |
+| 血液（骨髓 MDS） | MDS 骨髓 29 類 | May-Grünwald-Giemsa（骨髓抹片） | ResNet-50 | 25,001 張 / 29 類 | val 0.773、macro-F1 0.590 ⚠️ 隨機 split、稀有發育不良類弱 |
+| 組織病理（攝護腺 Gleason） | SICAPv2 | H&E patch | ResNet-50 | 9,959 patch / 4 類 | val 0.721、macro-F1 0.630 ✅ slide-disjoint 切分（G5 弱） |
+| 血液（裂紅細胞偵測） | SBSD | Giemsa 血抹片 | YOLOv8 | 615 圖 / 6 類 | mAP50 0.895、mAP50-95 0.713 |
+| 男科（精子偵測） | EVISAN | 顯微（200X/600X） | YOLOv8 | 6,000 圖 / 2 類 | mAP50 0.436 ✅ video-disjoint 切分 |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -160,6 +164,10 @@ pip install -r requirements.txt
 | Leishmania | Zenodo `17964511`（皮膚利什曼原蟲偵測,YOLO bbox + 官方 slide-disjoint split;合併 Dataset_1+2,test 併入 val） |
 | Giardia/Crypto | Zenodo `7813183`（Giardia 囊體 + Cryptosporidium 卵囊偵測 COCO;合併 brightfield reference+sample,官方 fold_1 split。⚠️ 用直連檔 `cysts_dataset_all.zip` 非 files-archive） |
 | KU-optofil 13 類 | Zenodo `17333317`（Sysmex DI-60 周邊血 13 類單顆細胞,官方 patient-level split CSV;含巨大血小板/血小板聚集 2 類為既有 WBC track 所無） |
+| MDS 骨髓 29 類 | Figshare `28737170`（MDS 骨髓細胞學,合併 main+add 子集;ndownloader 直連,丟 <10 張類後 32→29 類,隨機 split） |
+| SICAPv2 | Zenodo `14178894`（攝護腺 Gleason,NormalizedSICAPv2 子集 + Train/Val.xlsx 官方 slide-disjoint split;argmax one-hot→NC/G3/G4/G5） |
+| SBSD | Zenodo `15676241`（血抹片 6 類含裂紅細胞 Schistocyte,現成 YOLO txt + classes.txt;影像級切分） |
+| EVISAN | Zenodo `4303768`（多精子偵測 VOC xml,自寫 xml→YOLO;video-block-disjoint split 避免相鄰幀洩漏） |
 
 ## 免責
 

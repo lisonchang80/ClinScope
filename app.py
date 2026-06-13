@@ -208,6 +208,22 @@ REGISTRY = [
      "label": "🩸 白血球+血小板 13 類 KU-optofil (May-Grünwald-Giemsa)",
      "path": ROOT / "models" / "kupbc13_resnet50.pt",
      "blurb": "血液(13 類單顆細胞,新增血小板形態):Sysmex DI-60 自動數位顯微、May-Grünwald-Giemsa 周邊血。11 種白血球(節狀/桿狀嗜中性球、嗜酸/嗜鹼球、淋巴球、反應性淋巴球、單核球、後髓/髓/晚幼粒細胞、芽細胞、紅血球母細胞)+ 2 種血小板形態(巨大血小板 Giant Platelet / 血小板聚集 Platelet Cluster)。官方 patient-level split(無洩漏)。ResNet-50 val_acc 0.961 / macro-F1 0.845。血小板形態 2 類為既有 WBC track(PBC/UNIVALI/MLL23)所無;其餘細胞與之重疊。⚠️ 類別不平衡:Segmented Neutrophil 佔多數;Myelocyte(val 僅 9 張)F1 0.36、Band Neutrophil/Reactive Lymphocyte 偏弱,macro(0.84) vs weighted(0.96) 落差反映稀有類較弱。"},
+    {"key": "mdsbm27", "kind": "cls",
+     "label": "🦴 骨髓 MDS 細胞 29 類 (May-Grünwald-Giemsa)",
+     "path": ROOT / "models" / "mdsbm27_resnet50.pt",
+     "blurb": "血液/骨髓(本平台首條 MDS 骨髓異常增生 track,別於既有健康/AML 骨髓 Matek/MK-11):骨髓抹片 May-Grünwald-Giemsa,29 類含 MDS 特徵性發育不良細胞(發育不良紅血球母細胞/顆粒球、假 Pelger 等)與正常各階段。125 名 MDS 病人,合併 main+add 子集。ResNet-50 val_acc 0.773 / macro-F1 0.590。⚠️ 隨機 split(資料集無病人 id 可分組,同片細胞可能輕微洩漏);類別重度不平衡,稀有發育不良類偏弱;已剔除 <10 張無法切分的 3 類(原 32→29)。"},
+    {"key": "sicap", "kind": "cls",
+     "label": "🔬 攝護腺 Gleason 分級 — SICAPv2 (H&E, NC/G3/G4/G5)",
+     "path": ROOT / "models" / "sicap_resnet50.pt",
+     "blurb": "組織病理(本平台首條攝護腺 track):攝護腺切片 H&E patch,Gleason 分級 4 類 — 非癌 NC / Gleason pattern 3 / 4 / 5(SICAPv2 正規化子集,G4 cribriform 併入 G4)。官方 slide-disjoint split(train 7472 / val 2487,同片不跨、無洩漏)。ResNet-50 val_acc 0.721 / macro-F1 0.630。Gleason 分級本就困難、形態連續。⚠️ G5(高惡性度、較稀)F1 0.28 偏弱;NC 最佳 0.84。"},
+    {"key": "sbsd", "kind": "det",
+     "label": "🩸 血抹片細胞偵測 SBSD (含裂紅細胞 Schistocyte, 6 類, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "sbsd" / "weights" / "best.pt",
+     "blurb": "血液(本平台首條含裂紅細胞 schistocyte 的偵測 track):周邊血抹片 Giemsa,偵測 6 類 — RBC / 裂紅細胞 Schistocyte(微血管病性溶血、TTP/HUS 標誌)/ 血小板 PLT / 顆粒球 GRAN / 單核球 MONO / 淋巴球 LYM。YOLOv8s val mAP50 0.895 / mAP50-95 0.713。裂紅細胞為既有血液 track 所無的關鍵形態。⚠️ 影像級隨機 split(檔名僅流水號、無 slide id 可分組,可能輕微洩漏)。"},
+    {"key": "evisan", "kind": "det",
+     "label": "🔬 精子偵測 EVISAN (多精子偵測, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "evisan" / "weights" / "best.pt",
+     "blurb": "男科(精子偵測,新任務 — 別於既有精子形態分類 SMIDS/HuSHeM):顯微多精子偵測,2 類依精子頭外觀 black/white(沿用資料集原始標註碼)。源為連續影片幀(200X+600X),採 video-block-disjoint 切分(整段不跨 train/val、避免相鄰幀洩漏)。YOLOv8s val mAP50 0.436 / mAP50-95 0.253 —— 誠實中等:video-disjoint + 200X/600X 倍率分布差異使 val 偏難(比隨機幀切誠實)。對應電腦輔助精液分析 CASA 的精子定位/計數。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
