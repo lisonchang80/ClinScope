@@ -162,6 +162,10 @@ REGISTRY = [
      "label": "🧬 胃腺癌分化分級 PatchGastric (H&E, 4 級)",
      "path": ROOT / "models" / "patchgastric_resnet50.pt",
      "blurb": "組織病理 H&E 胃腺癌分化分級 4 類:高分化 Well / 中分化 Moderate / 低分化 Poor / 乳突狀 Papillary(PatchGastricADC22,WSI patch、每片 cap 40)。**WSI 級切分(同片 patch 不跨 train/val,無洩漏)**。val_acc 0.489、macro-F1 0.477 —— ⚠️ 分化分級是連續譜、判讀者間變異大,WSI 級無洩漏下本就難(隨機 0.25、本模型 0.49,有學到但偏弱);此 track 正是『誠實切分 vs 洩漏樂觀數字』的對照。新增胃組織病理器官。"},
+    {"key": "ipdbrain", "kind": "cls",
+     "label": "🧠 腦膠質瘤亞型 IPD-Brain (H&E, 3 類)",
+     "path": ROOT / "models" / "ipdbrain_resnet50.pt",
+     "blurb": "組織病理 H&E 腦膠質瘤亞型 3 類:膠質母細胞瘤 Glioblastoma / 星形細胞瘤 Astrocytoma / 寡突膠質瘤 Oligodendroglioma(IPD-Brain,大圖切 512 tile)。**病人級(Case Number disjoint)切分、無洩漏**。val_acc 0.529、macro-F1 0.332 —— ⚠️ **誠實的弱結果**:模型幾乎只猜多數類 GBM(F1 0.71),星形/寡突召回極低(0.15/0.06),0.529 ≈ GBM 佔比基線;膠質瘤亞型需 H&E 形態 + 分子標記(IDH/1p19q),低倍 tile 已失判別訊號 → 非臨床可用,示範 WSI 降採樣的極限。新增腦組織器官。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
