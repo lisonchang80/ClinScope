@@ -191,6 +191,10 @@ REGISTRY = [
      "label": "🦠 革蘭氏染色痰抹片偵測 M-ROSE (G+/G-, YOLO)",
      "path": ROOT / "reports" / "yolo" / "mrose" / "weights" / "best.pt",
      "blurb": "微生物快速現場評估 M-ROSE(本平台首條革蘭氏染色抹片 track,別於 DIBaS 菌落 cls):下呼吸道痰抹片 Gram 染色,偵測菌體並依染色反應分 2 類 — 革蘭氏陽性 G+(紫)/ 革蘭氏陰性 G-(紅)。源圖切 640 tile、source-disjoint 切分(1798/449 源圖,同源 tile 不跨 train/val、無洩漏)。YOLOv8s val mAP50 0.908 / mAP50-95 0.667(G- 0.937、G+ 0.879)。Gram 反應是臨床微生物的第一線判讀。⚠️ 資料集另有 4 類(染色×菌形)變體,但無類名檔故本 track 採語意明確的 2 類 Gram 反應;G+ 為少數類(train 2045 vs G- 6989)。"},
+    {"key": "dataset19_colony", "kind": "det",
+     "label": "🧫 培養盤菌落偵測 Dataset19 (19 菌種, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "dataset19" / "weights" / "best.pt",
+     "blurb": "臨床微生物培養(本平台首條巨觀培養盤 track、全新模態 — 白光巨觀攝影而非顯微):瓊脂培養盤上 19 種臨床細菌的菌落偵測 + 菌種辨識。類別沿用資料集原始 3-字母代碼(aba/eco/kpn/sau/ses/sma/sep/efa/stm/eca/enc/cst/mmo/bce/spy/sag/ppu/spn/bcp;涵蓋 Acinetobacter / E. coli / Klebsiella / S. aureus / Enterococcus / Streptococcus 等)。YOLOv8s val mAP50 0.970 / mAP50-95 0.764,19 種 mAP50 0.93–0.99 均勻優異。菌落判讀是臨床微生物鑑定的核心。⚠️ stratified-by-species 切分(每種 40 train/10 val 圖);若同株多影像為同盤裁切可能輕微洩漏。對照 DIBaS(顯微 Gram 菌落 cls),本 track 是整盤巨觀偵測。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
