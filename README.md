@@ -1,6 +1,6 @@
 # ClinScope
 
-臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：32 個模型、跨醫檢 8 科、12 種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：33 個模型、跨醫檢 8 科、12 種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
 自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
 
 ## 現實定位（先讀這段）
@@ -48,6 +48,7 @@
 | 血液（RBC 排列） | Rouleaux | Giemsa 全視野薄血膜 | ResNet-50 | 1,544 張 / 2 類 | val 1.0 ⚠️ 任務易+val 小，恐受試者洩漏 |
 | 血液/骨髓（巨核細胞） | MK-11 | Wright-Giemsa 單細胞 | ResNet-50 | 7,204 張 / 11 亞型 | val 0.810 ✅ 病人級切分 |
 | 寄生蟲（錐蟲） | Tryp | 未染色厚血膜 | YOLOv8 | 3,166 圖 / 1 類 | mAP50 0.807 |
+| 組織病理（胃分化分級） | PatchGastric | H&E WSI patch | ResNet-50 | 37,930 patch / 4 級 | val 0.489 ✅ WSI 級切分（分級本就難） |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -136,6 +137,7 @@ pip install -r requirements.txt
 | Rouleaux | Zenodo `13763939`（串錢狀 vs 正常 RBC 薄血膜,100 受試者;用 original-form 全視野） |
 | MK-11 | figshare `29264819`（骨髓巨核細胞 11 亞型,class 子資料夾 + 官方 5-fold 病人級切分） |
 | Tryp | figshare `32397798`（錐蟲未染色厚血膜偵測,YOLO 標註 v3 + 陰性背景;Sci Data 2023） |
+| PatchGastric | Zenodo `6550925`（胃腺癌 ADC22 WSI patch + captions.csv subtype;自寫 `src/patchgastric_wsi_split.py` WSI 級切分、9 亞型併 4 分化分級） |
 
 ## 免責
 

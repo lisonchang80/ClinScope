@@ -158,6 +158,10 @@ REGISTRY = [
      "label": "🦟 錐蟲偵測 Trypanosome — 厚血膜 (YOLO)",
      "path": ROOT / "reports" / "yolo" / "tryp" / "weights" / "best.pt",
      "blurb": "血液寄生蟲:未染色厚血膜錐蟲 trypanosome 偵測(非洲昏睡病 T. brucei / 美洲查加斯病 T. cruzi)。YOLOv8s 單類偵測(含陰性背景圖降假陽性),官方 v3 split。val mAP50 0.807 / mAP50-95 0.439。第 5 條偵測 track,新增血液寄生蟲(對照瘧原蟲血抹片分類)。"},
+    {"key": "patchgastric", "kind": "cls",
+     "label": "🧬 胃腺癌分化分級 PatchGastric (H&E, 4 級)",
+     "path": ROOT / "models" / "patchgastric_resnet50.pt",
+     "blurb": "組織病理 H&E 胃腺癌分化分級 4 類:高分化 Well / 中分化 Moderate / 低分化 Poor / 乳突狀 Papillary(PatchGastricADC22,WSI patch、每片 cap 40)。**WSI 級切分(同片 patch 不跨 train/val,無洩漏)**。val_acc 0.489、macro-F1 0.477 —— ⚠️ 分化分級是連續譜、判讀者間變異大,WSI 級無洩漏下本就難(隨機 0.25、本模型 0.49,有學到但偏弱);此 track 正是『誠實切分 vs 洩漏樂觀數字』的對照。新增胃組織病理器官。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
