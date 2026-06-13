@@ -117,7 +117,7 @@ REGISTRY = [
     {"key": "mpidb_species", "kind": "cls",
      "label": "🦟 瘧原蟲蟲種 MP-IDB (4 種)",
      "path": ROOT / "models" / "mpidb_species_resnet50.pt",
-     "blurb": "寄生蟲種級:瘧原蟲 4 蟲種分類 — 惡性瘧 Falciparum / 三日瘧 Malariae / 卵形瘧 Ovale / 間日瘧 Vivax(薄血膜 Giemsa,全視野 img + 單寄生蟲 crops)。比 NIH『感染/未感染』更細的種級鑑別。⚠️ val 0.997 嚴重偏樂觀,非真實泛化 —— 資料極度不平衡(falciparum 獨大)且 img/crops 同視野跨 train/val 洩漏(同 LC25000 增強洩漏型),稀有種 Ovale/Malariae val 僅 6–7 張、無統計意義。"},
+     "blurb": "寄生蟲種級:瘧原蟲 4 蟲種分類 — 惡性瘧 Falciparum / 三日瘧 Malariae / 卵形瘧 Ovale / 間日瘧 Vivax(薄血膜 Giemsa,**全視野影像**、非單一寄生蟲裁切)。**slide(血片)級切分**(17 片,5 片 disjoint 留 val、同片不跨 train/val)誠實 val 0.509、macro-F1 0.348 —— 對比舊隨機 split 的 0.997 崩落,正是 img/crops 同視野洩漏灌出的假象。⚠️ 但資料集結構性受限:Falciparum 10 片、其餘僅 2–3 片 → Malariae 完全失敗(F1 0.00、僅 1 片可訓)、Ovale 0.18,只有 Falciparum(0.53)/Vivax(0.68)有意義;且全視野於 224px 下寄生蟲過小,模型多依染片外觀而非蟲體形態。"},
     {"key": "erythrocytes_idb", "kind": "cls",
      "label": "🩸 鐮刀型紅血球 erythrocytesIDB (3 類)",
      "path": ROOT / "models" / "erythrocytes_idb_resnet50.pt",

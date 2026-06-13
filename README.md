@@ -37,7 +37,7 @@
 | 男科（精子頭形態） | HuSHeM | Diff-Quik 精子頭 | ResNet-50 | 216 張 / 4 類 | val 0.94 ⚠️ 極小 val 不可信 |
 | 血液（紅血球形態） | RBC morphology | 血液抹片（單顆 RBC） | ResNet-50 | 6,240 張 / 11 類 | val 0.978、macro-F1 0.972 |
 | 血液腫瘤（白血病） | C-NMC 2019 | 血液抹片（單細胞） | ResNet-50 | 10,311 張 / 2 類 | val 0.853 ✅ 病人級切分、無洩漏 |
-| 寄生蟲（瘧原蟲種級） | MP-IDB | 薄血膜 Giemsa | ResNet-50 | 1,571 張 / 4 種 | val 0.997 ⚠️ 不平衡 + img/crop 同視野洩漏 |
+| 寄生蟲（瘧原蟲種級） | MP-IDB | 薄血膜 Giemsa（全視野） | ResNet-50 | 210 圖 / 17 片 / 4 種 | val 0.509 ✅ 片級切分、macro-F1 0.348（⚠️ 稀有種僅 2–3 片、Malariae 失敗）|
 | 血液（鐮刀型紅血球） | erythrocytesIDB | 血液抹片（單顆 RBC） | ResNet-50 | 626 張 / 3 類 | val 0.984、macro-F1 0.984 ⚠️ val 偏小 |
 | 組織病理（細胞核偵測） | PanNuke | H&E 組織切片 | YOLOv8 | 7,901 圖 / 5 核類 | mAP50 0.654（val 6.7 萬框） |
 | 血液（白血球擴充） | UNIVALI | 周邊血抹片 | ResNet-50 | 10,697 張 / 14 類 | val 0.905、macro-F1 0.816 ⚠️ 未成熟稀有類弱 |
@@ -128,7 +128,7 @@ pip install -r requirements.txt
 | HuSHeM | Mendeley Data `tt3yj2pf38`（精子頭形態 4 類 `.rar`,Diff-Quik 染色） |
 | RBC morphology | Zenodo `10.5281/zenodo.14936017`（紅血球異形 poikilocytosis 11 類 `.rar`,CC-BY-4.0;血液抹片單顆紅血球） |
 | C-NMC leukemia | Hugging Face `dwb2023/cnmc-leukemia-2019`（B-ALL blast vs 正常,parquet 含 subject_id/fold,MIT;以 subject_id 做病人級切分避洩漏） |
-| MP-IDB malaria | GitHub `andrealoddo/MP-IDB-The-Malaria-Parasite-Image-Database`（瘧原蟲 4 種,全視野 img + 單寄生蟲 crops + mask;codeload zip） |
+| MP-IDB malaria | GitHub `andrealoddo/MP-IDB-The-Malaria-Parasite-Image-Database-for-Image-Processing-and-Analysis`（瘧原蟲 4 種,全視野 img + mask + 部分 crops;codeload zip。片級切分用全視野 img、檔名前綴=血片 id） |
 | erythrocytesIDB | Zenodo `10.5281/zenodo.18299473`（鐮刀型紅血球 3 類,UIB;用 erythrocytesIDB1 individual cells 標註子集） |
 | PanNuke | Hugging Face `RationAI/PanNuke`（H&E 核 instance mask;自寫 `src/pannuke_to_yolo.py` 轉 mask→YOLO bbox） |
 | UNIVALI leukocyte | Zenodo `10.5281/zenodo.17743609`（白血球 14 類 ViT class-folder export,Roboflow one-hot CSV→ImageFolder,UNIVALI 巴西） |
