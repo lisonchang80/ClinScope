@@ -146,6 +146,10 @@ REGISTRY = [
      "label": "🩸 周邊血 18 類 MLL23 (含毛細胞白血病/芽細胞)",
      "path": ROOT / "models" / "mll23_resnet50.pt",
      "blurb": "周邊血單細胞 18 類 —— 比 PBC-8/UNIVALI-14 更細的診斷導向分類:含毛細胞白血病 hairy cell、芽細胞 myeloblast、非典型前髓細胞 promyelocyte atypical、抹片細胞 smudge cell、漿細胞 plasma cell、反應性/腫瘤性淋巴球、紅血球母細胞 normoblast 及各階段顆粒球。MLL 大型血液病理庫。val_acc 0.948、weighted-F1 0.948、macro-F1 0.861(hairy cell 0.99、myeloblast 0.98 等診斷關鍵類佳;過渡型 band/metamyelocyte 較弱)。⚠️ 長尾,lymphocyte_reactive val 僅 5 張(F1 0.33 不可信)。"},
+    {"key": "rouleaux", "kind": "cls",
+     "label": "🩸 紅血球串錢狀 Rouleaux (正常 vs rouleaux)",
+     "path": ROOT / "models" / "rouleaux_resnet50.pt",
+     "blurb": "血液抹片紅血球排列 二元:正常分散 vs 串錢狀聚集 rouleaux(RBC 像錢幣堆疊,見於高球蛋白血症/發炎/多發性骨髓瘤)。用全視野影像(rouleaux 是排列現象、需看整片,非單細胞)。val 1.0 —— ⚠️ 此任務視覺差異極大、本就易;val 僅 232 張、檔名受試者編碼不一致無法保證 subject-disjoint,1.0 偏樂觀,需 subject-level split 才可信(同 DIBaS/LC25000 型)。對照鐮刀/異形單細胞 track,本 track 看 RBC 整體排列。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
