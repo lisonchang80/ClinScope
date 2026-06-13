@@ -154,6 +154,10 @@ REGISTRY = [
      "label": "🦴 骨髓巨核細胞 MK-11 (11 亞型)",
      "path": ROOT / "models" / "mk11_resnet50.pt",
      "blurb": "骨髓巨核細胞 megakaryocyte 形態 11 亞型(MK-blast 芽細胞、各成熟階段 Pro/N/PP/MMK、低分葉 HL-MK、微小巨核 MN-MK、裸核 NN-MK、細胞質異常 CA-MK 等)。Wright-Giemsa 單細胞。**官方 5-fold 病人級切分(無洩漏誠實 val)**:val_acc 0.810、macro-F1 0.758(MK-blast 0.98 等診斷關鍵類佳;稀有 Pro-MK/MN-MK 較弱)。新增巨核細胞譜系(對照 Matek 骨髓全細胞、PBC/MLL23 周邊血)。⚠️ 長尾,數個稀有亞型 val<20。"},
+    {"key": "tryp", "kind": "det",
+     "label": "🦟 錐蟲偵測 Trypanosome — 厚血膜 (YOLO)",
+     "path": ROOT / "reports" / "yolo" / "tryp" / "weights" / "best.pt",
+     "blurb": "血液寄生蟲:未染色厚血膜錐蟲 trypanosome 偵測(非洲昏睡病 T. brucei / 美洲查加斯病 T. cruzi)。YOLOv8s 單類偵測(含陰性背景圖降假陽性),官方 v3 split。val mAP50 0.807 / mAP50-95 0.439。第 5 條偵測 track,新增血液寄生蟲(對照瘧原蟲血抹片分類)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
