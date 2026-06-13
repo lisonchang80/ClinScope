@@ -54,6 +54,7 @@
 | 細胞遺傳學（染色體） | Chromosome | G-band 灰階單條染色體 | ResNet-50 | 2,986 張 / 24 類 | val 0.886 ✅ macro-F1 0.889（⚠️ 隨機 split、無 karyotype 分組） |
 | 免疫組化（HER2 評分） | HER2-IHC | IHC/DAB 棕染 patch | ResNet-50 | 9,940 patch / 4 級 | val 0.985 ✅ macro-F1 0.982、官方 patch 級切分 |
 | 寄生蟲（腸道原蟲） | ParasitoBank | 糞便濕抹片 saline+Lugol | YOLOv8 | 779 圖 / 13 類 | mAP50 0.752 ✅（⚠️ 稀有蠕蟲類 val 1–2 框不可信） |
+| 寄生蟲（瘧分期） | BBBC041 | Giemsa 薄血膜全視野 | YOLOv8 | 1,328 圖 / 5 類 | mAP50 0.395 ✅（瘧蟲期偵測本就難,稀有期不可信） |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -148,6 +149,7 @@ pip install -r requirements.txt
 | Chromosome | GitHub `CloudDataLab/CIR-Net`（G-band 單條染色體 24 類 `origin.tar.gz`,類別編在檔名;隨機 split，無 karyotype 分組可還原） |
 | HER2-IHC | Zenodo `15179608`（HER2 乳腺 IHC 40× patch 0/1+/2+/3+;官方 train/test split-before-patch,低洩漏） |
 | ParasitoBank | Mendeley `725hpzpwzf`（糞便腸道寄生蟲 13 類單一 COCO,779 圖;自寫腳本 image-level split + COCO→YOLO） |
+| BBBC041 | Broad BBBC041（P. vivax 瘧分期,自訂 r/c JSON;官方 split,保留 4 蟲期+WBC、剔 RBC 背景轉 YOLO） |
 
 ## 免責
 

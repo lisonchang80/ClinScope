@@ -183,6 +183,10 @@ REGISTRY = [
      "label": "🦠 腸道寄生蟲偵測 ParasitoBank (糞便濕抹片, 13 類, YOLO)",
      "path": ROOT / "reports" / "yolo" / "parasitobank" / "weights" / "best.pt",
      "blurb": "寄生蟲學(本平台首條腸道原蟲 track):糞便濕抹片(saline + Lugol 碘染)腸道寄生蟲偵測 13 類 — 腸道原蟲(梨形鞭毛蟲 Giardia / 大腸阿米巴 E. coli / 哈氏阿米巴 E. hartmanni / 內阿米巴複合 / 微小內蜒阿米巴 Endolimax nana / 碘阿米巴 Iodamoeba / 唇鞭毛蟲 Chilomastix / 人芽囊原蟲 Blastocystis / 球蟲 coccidia)+ 蠕蟲卵(蛔蟲 Ascaris / 絛蟲 Taenia / 鞭蟲 Trichuris / 糞線蟲 Strongyloides)。YOLOv8s,val mAP50 0.752 / mAP50-95 0.456。別於既有 Chula 蟲卵 track —— 本 track 聚焦腸道原蟲、糞便濕抹片不同染色。⚠️ 長尾:最常見的人芽囊原蟲 mAP50 0.43(形態變異大)反而最難;稀有蠕蟲(taenia/tricocefalo 等 val 僅 1–2 框)mAP 雖高但統計不可信。"},
+    {"key": "bbbc041_stage", "kind": "det",
+     "label": "🦟 瘧原蟲生活史分期偵測 BBBC041 (P. vivax, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "bbbc041" / "weights" / "best.pt",
+     "blurb": "寄生蟲分期(新切角,別於既有瘧種 MP-IDB / 感染細胞 NIH track):間日瘧原蟲 P. vivax 薄血膜 Giemsa 全視野,偵測生活史 4 期 ring 環狀體 / trophozoite 滋養體 / schizont 裂殖體 / gametocyte 配子體 + leukocyte 白血球(5 類,RBC 紅血球背景未標為目標)。官方 train/test split(1208/120)。YOLOv8s val mAP50 0.395 / mAP50-95 0.306 —— 誠實的中等結果:trophozoite(mAP50 0.59)、ring(0.43)可偵測,期別形態重疊 + 蟲體於全視野偏小使整體偏低。⚠️ schizont/gametocyte val 僅 11/12 框、leukocyte val=0 無法驗證,稀有期不可信;單一蟲種、非商用授權。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
