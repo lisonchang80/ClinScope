@@ -175,6 +175,10 @@ REGISTRY = [
      "label": "🧬 染色體核型分類 — G-band 24 類 (CIR-Net)",
      "path": ROOT / "models" / "chromosome_resnet50.pt",
      "blurb": "細胞遺傳學(本平台首條 cytogenetics track):G-band(Giemsa 帶型、灰階)單條染色體 24 類 — 第 1–22 號體染色體 + X + Y(類別碼 00–23 對應 CIR-Net 原始標註,22=X、23=Y)。val_acc 0.886、macro-F1 0.889,24 類全部 F1≥0.75。⚠️ 無官方 split、檔名無法還原 karyotype/病人 id → 隨機 split;同一 metaphase 影像批次外觀可能略微灌高 val(惟染色體 cls 的批次洩漏遠輕於同片 tile-leak)。class 23(Y)僅 6 val,F1 1.0 不可盡信。"},
+    {"key": "her2_ihc", "kind": "cls",
+     "label": "🟤 HER2 免疫組化評分 — IHC (0/1+/2+/3+)",
+     "path": ROOT / "models" / "her2ihc_resnet50.pt",
+     "blurb": "免疫組化 IHC(本平台首條 IHC track、DAB 棕色顯色,別於所有 H&E 組織 track):乳腺癌 HER2 細胞膜染色強度 4 級評分 0 / 1+ / 2+ / 3+(對應 HER2 標靶治療資格判讀)。官方 patch 級切分(split-before-extract,WSI/case 不跨 train/val → 低洩漏)val_acc 0.985、macro-F1 0.982,4 類 F1≥0.97(含最少的 2+,150 val)。HER2 分數本質是膜染色強度梯度、視覺可分性高,故高準確率屬合理而非洩漏。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]

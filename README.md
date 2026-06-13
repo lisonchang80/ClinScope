@@ -52,6 +52,7 @@
 | 組織病理（腦膠質瘤） | IPD-Brain | H&E WSI tile | ResNet-50 | 5,901 tile / 3 類 | val 0.529 ⚠️ 病人級但近多數類基線 |
 | 寄生蟲（血液原蟲） | Blood protozoa | Giemsa 顯微 | ResNet-50 | 1,049 張 / 3 類 | val 1.0 ⚠️ 形態差異大+val 小 |
 | 細胞遺傳學（染色體） | Chromosome | G-band 灰階單條染色體 | ResNet-50 | 2,986 張 / 24 類 | val 0.886 ✅ macro-F1 0.889（⚠️ 隨機 split、無 karyotype 分組） |
+| 免疫組化（HER2 評分） | HER2-IHC | IHC/DAB 棕染 patch | ResNet-50 | 9,940 patch / 4 級 | val 0.985 ✅ macro-F1 0.982、官方 patch 級切分 |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -144,6 +145,7 @@ pip install -r requirements.txt
 | IPD-Brain | figshare `27186087`（腦膠質瘤 3 亞型大圖 + IPD_Brain.csv;自寫 `src/ipdbrain_tile_split.py` tile + 病人級切分） |
 | Blood protozoa | Hugging Face `eliplutchok/microscopy-parasites`（Babesia/Toxoplasma/Trypanosoma 3 類 ClassLabel parquet） |
 | Chromosome | GitHub `CloudDataLab/CIR-Net`（G-band 單條染色體 24 類 `origin.tar.gz`,類別編在檔名;隨機 split，無 karyotype 分組可還原） |
+| HER2-IHC | Zenodo `15179608`（HER2 乳腺 IHC 40× patch 0/1+/2+/3+;官方 train/test split-before-patch,低洩漏） |
 
 ## 免責
 
