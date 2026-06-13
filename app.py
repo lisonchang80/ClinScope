@@ -170,6 +170,11 @@ REGISTRY = [
      "label": "🦠 血液原蟲 3 類 (Babesia/Toxoplasma/Trypanosoma)",
      "path": ROOT / "models" / "blood_protozoa_resnet50.pt",
      "blurb": "血液/組織原蟲分類 3 類:焦蟲 Babesia(紅血球內環狀)/ 弓形蟲 Toxoplasma(新月形速殖子)/ 錐蟲 Trypanosoma(鞭毛蟲體)。Giemsa 顯微。val 1.0 —— ⚠️ 三種形態差異極大、本就易;val 僅 158 張、隨機 split 可能同源洩漏,1.0 偏樂觀。Babesia/Toxoplasma 為新增蟲種;對照 Tryp 偵測 track,本 track 是多蟲種分類。"},
+    # --- batch 5 新增 (新科別/新模態: 細胞遺傳 / IHC / 腸道原蟲 / 瘧分期 / 革蘭氏痰 / 菌落 / 細胞學) ---
+    {"key": "chromosome", "kind": "cls",
+     "label": "🧬 染色體核型分類 — G-band 24 類 (CIR-Net)",
+     "path": ROOT / "models" / "chromosome_resnet50.pt",
+     "blurb": "細胞遺傳學(本平台首條 cytogenetics track):G-band(Giemsa 帶型、灰階)單條染色體 24 類 — 第 1–22 號體染色體 + X + Y(類別碼 00–23 對應 CIR-Net 原始標註,22=X、23=Y)。val_acc 0.886、macro-F1 0.889,24 類全部 F1≥0.75。⚠️ 無官方 split、檔名無法還原 karyotype/病人 id → 隨機 split;同一 metaphase 影像批次外觀可能略微灌高 val(惟染色體 cls 的批次洩漏遠輕於同片 tile-leak)。class 23(Y)僅 6 val,F1 1.0 不可盡信。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
