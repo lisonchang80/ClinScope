@@ -187,6 +187,10 @@ REGISTRY = [
      "label": "🦟 瘧原蟲生活史分期偵測 BBBC041 (P. vivax, YOLO)",
      "path": ROOT / "reports" / "yolo" / "bbbc041" / "weights" / "best.pt",
      "blurb": "寄生蟲分期(新切角,別於既有瘧種 MP-IDB / 感染細胞 NIH track):間日瘧原蟲 P. vivax 薄血膜 Giemsa 全視野,偵測生活史 4 期 ring 環狀體 / trophozoite 滋養體 / schizont 裂殖體 / gametocyte 配子體 + leukocyte 白血球(5 類,RBC 紅血球背景未標為目標)。官方 train/test split(1208/120)。YOLOv8s val mAP50 0.395 / mAP50-95 0.306 —— 誠實的中等結果:trophozoite(mAP50 0.59)、ring(0.43)可偵測,期別形態重疊 + 蟲體於全視野偏小使整體偏低。⚠️ schizont/gametocyte val 僅 11/12 框、leukocyte val=0 無法驗證,稀有期不可信;單一蟲種、非商用授權。"},
+    {"key": "mrose_gram", "kind": "det",
+     "label": "🦠 革蘭氏染色痰抹片偵測 M-ROSE (G+/G-, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "mrose" / "weights" / "best.pt",
+     "blurb": "微生物快速現場評估 M-ROSE(本平台首條革蘭氏染色抹片 track,別於 DIBaS 菌落 cls):下呼吸道痰抹片 Gram 染色,偵測菌體並依染色反應分 2 類 — 革蘭氏陽性 G+(紫)/ 革蘭氏陰性 G-(紅)。源圖切 640 tile、source-disjoint 切分(1798/449 源圖,同源 tile 不跨 train/val、無洩漏)。YOLOv8s val mAP50 0.908 / mAP50-95 0.667(G- 0.937、G+ 0.879)。Gram 反應是臨床微生物的第一線判讀。⚠️ 資料集另有 4 類(染色×菌形)變體,但無類名檔故本 track 採語意明確的 2 類 Gram 反應;G+ 為少數類(train 2045 vs G- 6989)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
