@@ -150,6 +150,10 @@ REGISTRY = [
      "label": "🩸 紅血球串錢狀 Rouleaux (正常 vs rouleaux)",
      "path": ROOT / "models" / "rouleaux_resnet50.pt",
      "blurb": "血液抹片紅血球排列 二元:正常分散 vs 串錢狀聚集 rouleaux(RBC 像錢幣堆疊,見於高球蛋白血症/發炎/多發性骨髓瘤)。用全視野影像(rouleaux 是排列現象、需看整片,非單細胞)。val 1.0 —— ⚠️ 此任務視覺差異極大、本就易;val 僅 232 張、檔名受試者編碼不一致無法保證 subject-disjoint,1.0 偏樂觀,需 subject-level split 才可信(同 DIBaS/LC25000 型)。對照鐮刀/異形單細胞 track,本 track 看 RBC 整體排列。"},
+    {"key": "mk11", "kind": "cls",
+     "label": "🦴 骨髓巨核細胞 MK-11 (11 亞型)",
+     "path": ROOT / "models" / "mk11_resnet50.pt",
+     "blurb": "骨髓巨核細胞 megakaryocyte 形態 11 亞型(MK-blast 芽細胞、各成熟階段 Pro/N/PP/MMK、低分葉 HL-MK、微小巨核 MN-MK、裸核 NN-MK、細胞質異常 CA-MK 等)。Wright-Giemsa 單細胞。**官方 5-fold 病人級切分(無洩漏誠實 val)**:val_acc 0.810、macro-F1 0.758(MK-blast 0.98 等診斷關鍵類佳;稀有 Pro-MK/MN-MK 較弱)。新增巨核細胞譜系(對照 Matek 骨髓全細胞、PBC/MLL23 周邊血)。⚠️ 長尾,數個稀有亞型 val<20。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
