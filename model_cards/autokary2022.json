@@ -1,0 +1,29 @@
+{
+  "key": "autokary2022",
+  "abbr": "autokary2022",
+  "name": {
+    "display": "染色體核型偵測 24 類 AutoKary2022 (中期分裂全圖, YOLO)",
+    "zh": "染色體核型偵測24類2022",
+    "en": "AutoKary2022"
+  },
+  "discipline": "細胞遺傳學",
+  "task": "detection",
+  "model_type": "YOLOv8s",
+  "metrics": {
+    "mAP50": 0.8507,
+    "mAP50_95": 0.6625,
+    "precision": 0.8606,
+    "recall": 0.7566,
+    "epochs": 100
+  },
+  "experiment_summary": "細胞遺傳學(全新任務,補既有 chromosome「單條 24 類分類」之不足):中期分裂染色體**全展開圖**偵測+分類 24 類(編號 1–22 + X/Y)，即核型分析的「找出並分類每一條染色體」。YOLOv8s val mAP50 0.851 / mAP50-95 0.663(P 0.86 / R 0.76)—— 表現優異。polygon instance seg 標註轉 bbox 訓練。",
+  "caveats": [
+    "⚠️ val 僅 30 張全圖(框數多但圖少),數字宜參考。來源 Roboflow karyotypezhongxin/autokary2022(AutoKary2022, ICME2023)。"
+  ],
+  "source": "Roboflow karyotypezhongxin/autokary2022 (AutoKary2022, ICME2023)",
+  "license": null,
+  "split_method": null,
+  "weights": "reports/yolo/autokary2022/weights/best.pt",
+  "status": "registered",
+  "batch": "batch-7 (2026-06-14)"
+}

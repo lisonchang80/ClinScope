@@ -1,6 +1,6 @@
 # ClinScope
 
-臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：73 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：76 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
 自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
 
 ## 現實定位（先讀這段）
@@ -89,6 +89,9 @@
 | 組織病理（乳腺 IDC 分級） | Breast IDC grade | H&E 40× | ResNet-50 | 454 圖 / 3 類 | val 0.691、macro-F1 0.695 ⚠️ 小資料、隨機 split |
 | 男科（精子 DNA 碎片化） | Sperm SCD halo | SCD 染色質擴散 | ResNet-50 | 403 圖 / 4 類 | val 0.983、macro-F1 0.983 |
 | 組織病理（大腸分化 6 階段） | EBHI-SEG | H&E 組織 | ResNet-50 | 2,228 圖 / 6 類 | val 0.949、macro-F1 0.923 |
+| 細胞遺傳學（核型偵測） | AutoKary2022 | 中期分裂全圖 | YOLOv8 | 1,257 圖 / 24 類 | mAP50 0.851、mAP50-95 0.663 |
+| 寄生蟲（克氏錐蟲 Chagas） | T. cruzi | Giemsa 血抹片 | YOLOv8 | 726 圖 / 1 類 | mAP50 0.257 ⚠️ val 蟲體稀疏、case-disjoint |
+| 組織病理（卵巢癌 5 亞型） | UBC-OCEAN | H&E 縮圖 | ResNet-50 | 538 圖 / 5 類 | val 0.543、macro-F1 0.436 ⚠️ 縮圖、LGSC 失敗 |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -218,6 +221,9 @@ pip install -r requirements.txt
 | Breast IDC grade | Mendeley `w7jjcx7gj6`（浸潤性乳管癌 Nottingham 分級 1/2/3;40× tile;隨機 split） |
 | Sperm SCD halo | Figshare `30120811`（精子染色質擴散 SCD;halo 大小 4 類=DNA 碎片化程度） |
 | EBHI-SEG | Figshare `21540159`（大腸 H&E 6 分化階段;正常→息肉→低/高度 IN→腺癌→鋸齒狀;取代 UniToPatho） |
+| AutoKary2022 | Roboflow `karyotypezhongxin/autokary2022`（中期分裂染色體全圖 24 類偵測;polygon→bbox;ICME2023） |
+| T. cruzi | Zenodo `15007339`（克氏錐蟲 Chagas Giemsa 血抹片 det;case-disjoint;CC-BY-NC） |
+| UBC-OCEAN | Kaggle 競賽 `UBC-OCEAN` 標籤 + 縮圖鏡像 `utm529fg/ubc-reduced-png-2964x2964`（卵巢癌 5 亞型;降採 2964px） |
 
 ## 免責
 

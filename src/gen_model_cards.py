@@ -19,7 +19,7 @@ BATCH6 = {"kupbc13", "mdsbm27", "sicap", "sbsd", "evisan", "bcg", "puma",
           "msi", "orchid", "kidney", "mihic", "tvmi3k", "tcga",
           "tanzania", "riva", "placenta", "koh", "csf", "ivcm"}
 BATCH7 = {"cryonuseg", "blastocyst", "thalassemia", "osteosarcoma", "breast_idc", "sperm_dfi",
-          "ebhi_seg"}
+          "ebhi_seg", "autokary2022", "tcruzi_chagas", "ubc_ocean"}
 
 # 來源(blurb 未必含, 這裡 curated; 找不到再退回 blurb 解析)
 SOURCE = {
@@ -41,6 +41,9 @@ SOURCE = {
     "breast_idc": "Mendeley w7jjcx7gj6 (BreastCancer IDC Grade)",
     "sperm_dfi": "Figshare 30120811 (sperm SCD DNA-fragmentation)",
     "ebhi_seg": "Figshare 21540159 (EBHI-SEG colorectal)",
+    "autokary2022": "Roboflow karyotypezhongxin/autokary2022 (AutoKary2022, ICME2023)",
+    "tcruzi_chagas": "Zenodo 15007339 (T. cruzi detection, PLOS NTD 2026)",
+    "ubc_ocean": "Kaggle UBC-OCEAN comp + mirror utm529fg/ubc-reduced-png-2964x2964",
 }
 
 DISCIPLINE_KW = ["微生物", "黴菌", "寄生蟲", "血液/骨髓", "血液腫瘤", "血液", "組織病理", "細胞學",

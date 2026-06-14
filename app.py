@@ -326,6 +326,18 @@ REGISTRY = [
      "label": "🔬 大腸組織分化 6 階段 EBHI-SEG (H&E, ResNet)",
      "path": ROOT / "models" / "ebhi_seg_resnet50.pt",
      "blurb": "組織病理(延伸既有大腸 NCT-CRC/MHIST,新增完整分化譜分級):大腸 H&E 組織分化 6 階段 — 正常 Normal / 息肉 Polyp / 低度上皮內瘤變 Low-grade IN / 高度上皮內瘤變 High-grade IN / 腺癌 Adenocarcinoma / 鋸齒狀腺瘤 Serrated adenoma。ResNet-50 val_acc 0.949 / macro-F1 0.923。涵蓋正常→癌前→癌的完整大腸病變光譜(含 EBHI-SEG 官方 mask,本 track 取 cls)。⚠️ Normal(65)/Serrated(49) 類偏少。來源 Figshare 21540159(EBHI-SEG)。"},
+    {"key": "autokary2022", "kind": "det",
+     "label": "🧬 染色體核型偵測 24 類 AutoKary2022 (中期分裂全圖, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "autokary2022" / "weights" / "best.pt",
+     "blurb": "細胞遺傳學(全新任務,補既有 chromosome「單條 24 類分類」之不足):中期分裂染色體**全展開圖**偵測+分類 24 類(編號 1–22 + X/Y)，即核型分析的「找出並分類每一條染色體」。YOLOv8s val mAP50 0.851 / mAP50-95 0.663(P 0.86 / R 0.76)—— 表現優異。polygon instance seg 標註轉 bbox 訓練。⚠️ val 僅 30 張全圖(框數多但圖少),數字宜參考。來源 Roboflow karyotypezhongxin/autokary2022(AutoKary2022, ICME2023)。"},
+    {"key": "tcruzi_chagas", "kind": "det",
+     "label": "🦟 克氏錐蟲 T. cruzi (Chagas) 偵測 (Giemsa 血抹片, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "tcruzi_chagas" / "weights" / "best.pt",
+     "blurb": "寄生蟲(全新病原,vs 既有 tryp=布氏錐蟲 T. brucei 為不同蟲種):克氏錐蟲 Trypanosoma cruzi 偵測 1 類(美洲錐蟲病 Chagas 病原),Giemsa 血抹片 + CSF。YOLOv8s val mAP50 0.257 / mAP50-95 0.101(P 0.26 / R 0.37)。**case-disjoint 切分(依 caseId 分組,無洩漏)**,但 val 蟲體稀疏(69 圖僅 59 框、多為陰性背景)使 mAP 偏低、數字不穩。⚠️ 成績僅參考;CC-BY-NC(非商用)。來源 Zenodo 15007339(PLOS NTD 2026)。"},
+    {"key": "ubc_ocean", "kind": "cls",
+     "label": "♀️ 卵巢癌組織亞型 5 類 UBC-OCEAN (H&E, ResNet)",
+     "path": ROOT / "models" / "ubc_ocean_resnet50.pt",
+     "blurb": "組織病理／婦科腫瘤(本平台首條卵巢癌 track):卵巢癌組織亞型 5 類 — 高度漿液性 HGSC / 子宮內膜樣 EC / 亮細胞 CC / 低度漿液性 LGSC / 黏液性 MC。ResNet-50 val_acc 0.543 / macro-F1 0.436。⚠️ 用 2964px **降採縮圖**(非全解析 WSI)、資料小(538 例)、隨機切分;LGSC(7 val)F1 0、MC/EC 偏弱 —— 卵巢亞型分類本就難,成績偏低、僅展示。來源 Kaggle 競賽 UBC-OCEAN(標籤)+ 社群縮圖鏡像 utm529fg/ubc-reduced-png-2964x2964。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
