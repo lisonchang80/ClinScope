@@ -1,6 +1,6 @@
 # ClinScope
 
-臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：72 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：73 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
 自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
 
 ## 現實定位（先讀這段）
@@ -88,6 +88,7 @@
 | 組織病理（骨肉瘤存活度） | Osteosarcoma | H&E tile | ResNet-50 | 2,387 圖 / 3 類 | val 0.991、macro-F1 0.991 ✅ 官方 split |
 | 組織病理（乳腺 IDC 分級） | Breast IDC grade | H&E 40× | ResNet-50 | 454 圖 / 3 類 | val 0.691、macro-F1 0.695 ⚠️ 小資料、隨機 split |
 | 男科（精子 DNA 碎片化） | Sperm SCD halo | SCD 染色質擴散 | ResNet-50 | 403 圖 / 4 類 | val 0.983、macro-F1 0.983 |
+| 組織病理（大腸分化 6 階段） | EBHI-SEG | H&E 組織 | ResNet-50 | 2,228 圖 / 6 類 | val 0.949、macro-F1 0.923 |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -216,6 +217,7 @@ pip install -r requirements.txt
 | Osteosarcoma | Kaggle `tatsuyaryu/osteosarcoma-histopathology-classification`（TCIA UT Southwestern;非腫瘤/壞死/存活 3 類;官方 split） |
 | Breast IDC grade | Mendeley `w7jjcx7gj6`（浸潤性乳管癌 Nottingham 分級 1/2/3;40× tile;隨機 split） |
 | Sperm SCD halo | Figshare `30120811`（精子染色質擴散 SCD;halo 大小 4 類=DNA 碎片化程度） |
+| EBHI-SEG | Figshare `21540159`（大腸 H&E 6 分化階段;正常→息肉→低/高度 IN→腺癌→鋸齒狀;取代 UniToPatho） |
 
 ## 免責
 

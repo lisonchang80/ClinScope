@@ -18,7 +18,8 @@ BATCH6 = {"kupbc13", "mdsbm27", "sicap", "sbsd", "evisan", "bcg", "puma",
           "tb_det", "tb_cls", "nuinsseg", "effusion",
           "msi", "orchid", "kidney", "mihic", "tvmi3k", "tcga",
           "tanzania", "riva", "placenta", "koh", "csf", "ivcm"}
-BATCH7 = {"cryonuseg", "blastocyst", "thalassemia", "osteosarcoma", "breast_idc", "sperm_dfi"}
+BATCH7 = {"cryonuseg", "blastocyst", "thalassemia", "osteosarcoma", "breast_idc", "sperm_dfi",
+          "ebhi_seg"}
 
 # 來源(blurb 未必含, 這裡 curated; 找不到再退回 blurb 解析)
 SOURCE = {
@@ -39,6 +40,7 @@ SOURCE = {
     "osteosarcoma": "Kaggle tatsuyaryu/osteosarcoma-histopathology-classification (TCIA UT Southwestern)",
     "breast_idc": "Mendeley w7jjcx7gj6 (BreastCancer IDC Grade)",
     "sperm_dfi": "Figshare 30120811 (sperm SCD DNA-fragmentation)",
+    "ebhi_seg": "Figshare 21540159 (EBHI-SEG colorectal)",
 }
 
 DISCIPLINE_KW = ["微生物", "黴菌", "寄生蟲", "血液/骨髓", "血液腫瘤", "血液", "組織病理", "細胞學",

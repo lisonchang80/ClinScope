@@ -322,6 +322,10 @@ REGISTRY = [
      "label": "🧬 精子 DNA 碎片化 SCD halo 分級 4 類 (男科, ResNet)",
      "path": ROOT / "models" / "sperm_dfi_resnet50.pt",
      "blurb": "男科／生殖(延伸既有精子形態 SMIDS/HuSHeM,新增 DNA 完整性軸):精子染色質擴散試驗 SCD halo 大小 4 類 — 大暈 Large / 中暈 Medium / 小暈 Small / 無暈 Without halo。ResNet-50 val_acc 0.983 / macro-F1 0.983(類別均衡)。halo 大小反映 DNA 碎片化程度(無暈/小暈=高碎片化),與男性不孕、受精失敗相關。來源 Figshare 30120811(expert-annotated sperm SCD)。"},
+    {"key": "ebhi_seg", "kind": "cls",
+     "label": "🔬 大腸組織分化 6 階段 EBHI-SEG (H&E, ResNet)",
+     "path": ROOT / "models" / "ebhi_seg_resnet50.pt",
+     "blurb": "組織病理(延伸既有大腸 NCT-CRC/MHIST,新增完整分化譜分級):大腸 H&E 組織分化 6 階段 — 正常 Normal / 息肉 Polyp / 低度上皮內瘤變 Low-grade IN / 高度上皮內瘤變 High-grade IN / 腺癌 Adenocarcinoma / 鋸齒狀腺瘤 Serrated adenoma。ResNet-50 val_acc 0.949 / macro-F1 0.923。涵蓋正常→癌前→癌的完整大腸病變光譜(含 EBHI-SEG 官方 mask,本 track 取 cls)。⚠️ Normal(65)/Serrated(49) 類偏少。來源 Figshare 21540159(EBHI-SEG)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]

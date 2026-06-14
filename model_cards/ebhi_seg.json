@@ -1,0 +1,38 @@
+{
+  "key": "ebhi_seg",
+  "abbr": "ebhi_seg",
+  "name": {
+    "display": "大腸組織分化 6 階段 EBHI-SEG (H&E, ResNet)",
+    "zh": "大腸組織分化6階段",
+    "en": "EBHI-SEG"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9491,
+    "n_train": 1894,
+    "n_val": 334,
+    "macro_f1": 0.9231,
+    "weighted_f1": 0.9472
+  },
+  "experiment_summary": "組織病理(延伸既有大腸 NCT-CRC/MHIST,新增完整分化譜分級):大腸 H&E 組織分化 6 階段 — 正常 Normal / 息肉 Polyp / 低度上皮內瘤變 Low-grade IN / 高度上皮內瘤變 High-grade IN / 腺癌 Adenocarcinoma / 鋸齒狀腺瘤 Serrated adenoma。ResNet-50 val_acc 0.949 / macro-F1 0.923。涵蓋正常→癌前→癌的完整大腸病變光譜(含 EBHI-SEG 官方 mask,本 track 取 cls)。",
+  "caveats": [
+    "⚠️ Normal(65)/Serrated(49) 類偏少。來源 Figshare 21540159(EBHI-SEG)。"
+  ],
+  "source": "Figshare 21540159 (EBHI-SEG colorectal)",
+  "license": null,
+  "split_method": "official split",
+  "weights": "models/ebhi_seg_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-7 (2026-06-14)",
+  "num_classes": 6,
+  "classes": [
+    "Adenocarcinoma",
+    "High-grade_IN",
+    "Low-grade_IN",
+    "Normal",
+    "Polyp",
+    "Serrated_adenoma"
+  ]
+}

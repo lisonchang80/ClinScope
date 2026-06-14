@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 72,
+  "n_models": 73,
   "cards": [
     {
       "key": "fungi",
@@ -1067,6 +1067,21 @@
         "n_val": 60,
         "macro_f1": 0.9827,
         "weighted_f1": 0.9833
+      },
+      "status": "registered"
+    },
+    {
+      "key": "ebhi_seg",
+      "name_zh": "大腸組織分化6階段",
+      "name_en": "EBHI-SEG",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.9491,
+        "n_train": 1894,
+        "n_val": 334,
+        "macro_f1": 0.9231,
+        "weighted_f1": 0.9472
       },
       "status": "registered"
     }
