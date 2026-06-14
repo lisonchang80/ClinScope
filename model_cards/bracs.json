@@ -1,0 +1,39 @@
+{
+  "key": "bracs",
+  "abbr": "bracs",
+  "name": {
+    "display": "乳腺病變 7 類細分 BRACS (H&E, ResNet)",
+    "zh": "乳腺病變7類細分",
+    "en": "BRACS"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.6592,
+    "n_train": 3655,
+    "n_val": 311,
+    "macro_f1": 0.6414,
+    "weighted_f1": 0.6461
+  },
+  "experiment_summary": "組織病理(延伸既有乳腺 BreakHis/BACH/IDC,最細分 7 類病變光譜):乳腺 H&E 7 類 — 正常 Normal / 良性 PB / 一般型增生 UDH / 平坦上皮非典型 FEA / 非典型導管增生 ADH / 原位癌 DCIS / 侵襲癌 IC(官方 train/val/test 切分)。ResNet-50 val_acc 0.659 / macro-F1 0.641。涵蓋良性→非典型→原位→侵襲完整光譜,是乳腺最細粒度公開分型。",
+  "caveats": [
+    "⚠️ 7 類細粒度分類本就難(相鄰類如 UDH/FEA/ADH 易混)、用 299px 縮圖版。來源 Kaggle 鏡像 assismathias/bracs-original-299(BRACS, bracs.icar.cnr.it)。"
+  ],
+  "source": "Kaggle assismathias/bracs-original-299 (BRACS 7-class)",
+  "license": null,
+  "split_method": "official split",
+  "weights": "models/bracs_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-7 (2026-06-14)",
+  "num_classes": 7,
+  "classes": [
+    "0_N",
+    "1_PB",
+    "2_UDH",
+    "3_FEA",
+    "4_ADH",
+    "5_DCIS",
+    "6_IC"
+  ]
+}

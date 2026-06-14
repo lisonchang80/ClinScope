@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 76,
+  "n_models": 77,
   "cards": [
     {
       "key": "fungi",
@@ -1127,6 +1127,21 @@
         "n_val": 81,
         "macro_f1": 0.4355,
         "weighted_f1": 0.5199
+      },
+      "status": "registered"
+    },
+    {
+      "key": "bracs",
+      "name_zh": "乳腺病變7類細分",
+      "name_en": "BRACS",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.6592,
+        "n_train": 3655,
+        "n_val": 311,
+        "macro_f1": 0.6414,
+        "weighted_f1": 0.6461
       },
       "status": "registered"
     }

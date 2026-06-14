@@ -338,6 +338,10 @@ REGISTRY = [
      "label": "♀️ 卵巢癌組織亞型 5 類 UBC-OCEAN (H&E, ResNet)",
      "path": ROOT / "models" / "ubc_ocean_resnet50.pt",
      "blurb": "組織病理／婦科腫瘤(本平台首條卵巢癌 track):卵巢癌組織亞型 5 類 — 高度漿液性 HGSC / 子宮內膜樣 EC / 亮細胞 CC / 低度漿液性 LGSC / 黏液性 MC。ResNet-50 val_acc 0.543 / macro-F1 0.436。⚠️ 用 2964px **降採縮圖**(非全解析 WSI)、資料小(538 例)、隨機切分;LGSC(7 val)F1 0、MC/EC 偏弱 —— 卵巢亞型分類本就難,成績偏低、僅展示。來源 Kaggle 競賽 UBC-OCEAN(標籤)+ 社群縮圖鏡像 utm529fg/ubc-reduced-png-2964x2964。"},
+    {"key": "bracs", "kind": "cls",
+     "label": "🎀 乳腺病變 7 類細分 BRACS (H&E, ResNet)",
+     "path": ROOT / "models" / "bracs_resnet50.pt",
+     "blurb": "組織病理(延伸既有乳腺 BreakHis/BACH/IDC,最細分 7 類病變光譜):乳腺 H&E 7 類 — 正常 Normal / 良性 PB / 一般型增生 UDH / 平坦上皮非典型 FEA / 非典型導管增生 ADH / 原位癌 DCIS / 侵襲癌 IC(官方 train/val/test 切分)。ResNet-50 val_acc 0.659 / macro-F1 0.641。涵蓋良性→非典型→原位→侵襲完整光譜,是乳腺最細粒度公開分型。⚠️ 7 類細粒度分類本就難(相鄰類如 UDH/FEA/ADH 易混)、用 299px 縮圖版。來源 Kaggle 鏡像 assismathias/bracs-original-299(BRACS, bracs.icar.cnr.it)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
