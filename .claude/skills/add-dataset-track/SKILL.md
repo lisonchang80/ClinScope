@@ -85,6 +85,13 @@ $aria = (Resolve-Path "C:\Users\hao80\AppData\Local\Microsoft\WinGet\Packages\ar
 app 只列「權重檔存在」的模型。**改完要重啟 server 才生效**：先 `TaskStop` 舊的（或 port 7860 沒在聽就直接起），再 `python app.py`（背景），`curl http://127.0.0.1:7860/config` 驗 HTTP 200。
 **注意**：別在某模型「訓練中」就重啟前端 —— 會去載被覆寫到一半的權重。
 
+### batch6(2026-06-14)收錄/工具補充
+- **收錄後一定重跑識別卡**:改完 REGISTRY → `python src/gen_model_cards.py` 自動從 REGISTRY+reports/ 重生 `model_cards/<key>.json`+`index.json`(成績自動帶入,可進版控一起 commit)。報表夾名≠key 的別名(wbc→pbc/bacteria→dibas/ana→hep2/fungi_koh→defungi/sperm→smids/her2_ihc→her2ihc/bbbc041_stage→bbbc041/mrose_gram→mrose/dataset19_colony→dataset19/giardia_crypto→giardia)在該檔 CLS_DIR/DET_DIR 維護;source 不在 blurb 的用其 SOURCE curated 表補。
+- **YOLO 路徑根因已修**:`train_yolo.py` 已 `args.project.resolve()`(絕對路徑)→ 輸出**直接落 `reports/yolo/<name>`,不再進 `runs/detect/`,不必再 mv**(舊 batch5 的 mv workaround 作廢;train_driver.py 仍留一個搬移保險)。
+- **Kaggle/HF 可直抓**:`~/.kaggle/kaggle.json`(KGAT_ 新格式 OK)→ `python -m kaggle datasets download -d <slug> -p <dir>`(python 路徑含空格要整串引號,勿塞變數);HF 已 `huggingface_hub.login`。Zenodo/Figshare/Dryad/Rodare/Dataverse/OSF 免登入直抓;Mendeley「Download All」/grand-challenge/IEEE/TCIA 仍需人工。
+- **batch6 新 prep 轉換樣式(寫小腳本到 data/_pipeline/)**:VOC 類名可能在 `<label>` 非 `<name>` 且無 `<size>`→從圖讀 W,H(TB det);mask→bbox 用 `scipy.ndimage.label+find_objects`(instance/灰階閾值/顏色分類:nuinsseg/tvmi3k/kidney);GeoJSON polygon→bbox 遞迴取 min/max(puma);連續影片幀**別隨機切**改 video-block-disjoint(evisan);超大 cls(mihic 195k/msi 93k)每類抽樣+epochs 降 12–15;官方 split 在 .xlsx 需 `openpyxl`+pandas、one-hot 多標 argmax(sicap);只有 images/ 沒標註的(puma/blood_culture_gram/ignite)標註在同 record 另一檔要另抓;下載斷網整段秒掛→寫 retry 腳本,Figshare 簽章 URL 10s 過期用 `curl -L` 別用 aria2c。
+- **train_driver.py**(data/_pipeline/,gitignored)= 訓練佇列驅動器:逐 job marker 跳過已完成、det 用絕對 project、可續跑;一批訓完讀 reports 成績→改 app.py+README→重跑識別卡→逐批 commit。
+
 ## 環境與坑（血淚）
 
 - venv `.venv\`（Py 3.11）、torch 2.6.0+**cu124**、ultralytics、sklearn、gradio 6.x、datasets+pyarrow（HF parquet 用）。
