@@ -19,7 +19,8 @@ BATCH6 = {"kupbc13", "mdsbm27", "sicap", "sbsd", "evisan", "bcg", "puma",
           "msi", "orchid", "kidney", "mihic", "tvmi3k", "tcga",
           "tanzania", "riva", "placenta", "koh", "csf", "ivcm"}
 BATCH7 = {"cryonuseg", "blastocyst", "thalassemia", "osteosarcoma", "breast_idc", "sperm_dfi",
-          "ebhi_seg", "autokary2022", "tcruzi_chagas", "ubc_ocean", "bracs", "segpc"}
+          "ebhi_seg", "autokary2022", "tcruzi_chagas", "ubc_ocean", "bracs", "segpc",
+          "hmu_gc", "glomeruli_char", "vet_egg"}
 
 # 來源(blurb 未必含, 這裡 curated; 找不到再退回 blurb 解析)
 SOURCE = {
@@ -46,11 +47,14 @@ SOURCE = {
     "ubc_ocean": "Kaggle UBC-OCEAN comp + mirror utm529fg/ubc-reduced-png-2964x2964",
     "bracs": "Kaggle assismathias/bracs-original-299 (BRACS 7-class)",
     "segpc": "Kaggle sbilab/segpc2021dataset (SegPC-2021, SBILab/TCIA)",
+    "hmu_gc": "Figshare 25954813 (HMU-GC-HE-30K)",
+    "glomeruli_char": "Mendeley k7nvtgn2x6 (glomeruli DATASET_B)",
+    "vet_egg": "Mendeley wbvb4whbks (livestock fecal egg)",
 }
 
 DISCIPLINE_KW = ["微生物", "黴菌", "寄生蟲", "血液/骨髓", "血液腫瘤", "血液", "組織病理", "細胞學",
                  "免疫組化", "免疫病理", "免疫", "男科", "眼科", "細胞遺傳學", "尿液分析", "尿液",
-                 "生殖醫學", "生殖", "胚胎學"]
+                 "生殖醫學", "生殖", "胚胎學", "獸醫"]
 
 
 def parse_registry(src):

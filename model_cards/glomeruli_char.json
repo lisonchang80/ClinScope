@@ -1,0 +1,34 @@
+{
+  "key": "glomeruli_char",
+  "abbr": "glomeruli_char",
+  "name": {
+    "display": "腎絲球 正常/硬化 分類 (PAS, ResNet)",
+    "zh": "腎絲球正常/硬化分類",
+    "en": ""
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9972,
+    "n_train": 1988,
+    "n_val": 352,
+    "macro_f1": 0.9972,
+    "weighted_f1": 0.9972
+  },
+  "experiment_summary": "組織病理／腎臟(延伸既有 kidney「腎絲球偵測」,新增分類任務):腎絲球 patch 二分類 — 正常 normal / 硬化 sclerosed。ResNet-50 val_acc 0.997 / macro-F1 0.997。硬化腎絲球比例是慢性腎病進展與預後指標。",
+  "caveats": [
+    "⚠️ 成績極高需保留:patch 級隨機切分(無 WSI 分組)+ 正常 vs 硬化形態差異極大,高分含洩漏成分、非臨床對齊。來源 Mendeley k7nvtgn2x6(DATASET_B)。"
+  ],
+  "source": "Mendeley k7nvtgn2x6 (glomeruli DATASET_B)",
+  "license": null,
+  "split_method": "random (⚠️可能洩漏)",
+  "weights": "models/glomeruli_char_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-7 (2026-06-14)",
+  "num_classes": 2,
+  "classes": [
+    "normal",
+    "sclerosed"
+  ]
+}

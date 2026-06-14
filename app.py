@@ -346,6 +346,18 @@ REGISTRY = [
      "label": "🩸 多發性骨髓瘤漿細胞偵測 SegPC-2021 (骨髓抹片, YOLO)",
      "path": ROOT / "reports" / "yolo" / "segpc" / "weights" / "best.pt",
      "blurb": "血液腫瘤(本平台首條漿細胞偵測 track):多發性骨髓瘤骨髓抹片漿細胞 plasma cell 偵測 1 類(SegPC-2021 challenge,每細胞含細胞質+細胞核 instance mask→整 cell bbox)。YOLOv8s val mAP50 0.833 / mAP50-95 0.735(P 0.83 / R 0.83)—— 表現優異。骨髓漿細胞比例是多發性骨髓瘤診斷與分期關鍵。官方 train(298)/validation(200) 切分。來源 Kaggle sbilab/segpc2021dataset(作者 SBILab, TCIA SegPC-2021)。"},
+    {"key": "hmu_gc", "kind": "cls",
+     "label": "🔬 胃癌腫瘤微環境 8 組織類 HMU-GC (H&E, ResNet)",
+     "path": ROOT / "models" / "hmu_gc_resnet50.pt",
+     "blurb": "組織病理(延伸既有胃 PatchGastric「分化分級」,新增組織成分分型,類比 NCT-CRC 於胃):胃癌 H&E patch 腫瘤微環境 8 類 — 脂肪 ADI / 碎屑 DEB / 淋巴球 LYM / 黏液 MUC / 肌肉 MUS / 正常黏膜 NOR / 基質 STR / 腫瘤上皮 TUM。ResNet-50 val_acc 0.746 / macro-F1 0.747(8 類均衡各 ~3300)。可作胃癌 WSI 的組織成分量化基石。⚠️ patch 級隨機切分(無 WSI/病人分組,可能洩漏,數字偏樂觀)。來源 Figshare 25954813(HMU-GC-HE-30K)。"},
+    {"key": "glomeruli_char", "kind": "cls",
+     "label": "🔬 腎絲球 正常/硬化 分類 (PAS, ResNet)",
+     "path": ROOT / "models" / "glomeruli_char_resnet50.pt",
+     "blurb": "組織病理／腎臟(延伸既有 kidney「腎絲球偵測」,新增分類任務):腎絲球 patch 二分類 — 正常 normal / 硬化 sclerosed。ResNet-50 val_acc 0.997 / macro-F1 0.997。硬化腎絲球比例是慢性腎病進展與預後指標。⚠️ 成績極高需保留:patch 級隨機切分(無 WSI 分組)+ 正常 vs 硬化形態差異極大,高分含洩漏成分、非臨床對齊。來源 Mendeley k7nvtgn2x6(DATASET_B)。"},
+    {"key": "vet_egg", "kind": "cls",
+     "label": "🐄 獸醫家畜糞檢蟲卵 6 類 (光學顯微, ResNet)",
+     "path": ROOT / "models" / "vet_egg_resnet50.pt",
+     "blurb": "獸醫寄生蟲學(本平台首條獸醫 track,與既有人類糞便蟲卵不同物種):反芻家畜糞檢蟲卵/囊體 6 類 — 蛔蟲 Ascaris / 結腸小袋纖毛蟲 Balantidium coli / 肝吸蟲 Fasciola / 同盤吸蟲 Paramphistomum / 胃線蟲 Stomach worm / 陰性對照。ResNet-50 val_acc 0.893 / macro-F1 0.785。展示跨物種(獸醫)泛化。⚠️ 資料小(546 圖、稀有類 val 7-8 張)、Negative 類佔多;隨機切分。來源 Mendeley wbvb4whbks。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]

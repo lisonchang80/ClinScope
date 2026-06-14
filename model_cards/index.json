@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 78,
+  "n_models": 81,
   "cards": [
     {
       "key": "fungi",
@@ -1157,6 +1157,51 @@
         "precision": 0.8293,
         "recall": 0.8343,
         "epochs": 71
+      },
+      "status": "registered"
+    },
+    {
+      "key": "hmu_gc",
+      "name_zh": "胃癌腫瘤微環境8組織類",
+      "name_en": "HMU-GC",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.7464,
+        "n_train": 26432,
+        "n_val": 4664,
+        "macro_f1": 0.747,
+        "weighted_f1": 0.747
+      },
+      "status": "registered"
+    },
+    {
+      "key": "glomeruli_char",
+      "name_zh": "腎絲球正常/硬化分類",
+      "name_en": "",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.9972,
+        "n_train": 1988,
+        "n_val": 352,
+        "macro_f1": 0.9972,
+        "weighted_f1": 0.9972
+      },
+      "status": "registered"
+    },
+    {
+      "key": "vet_egg",
+      "name_zh": "獸醫家畜糞檢蟲卵6類",
+      "name_en": "",
+      "task": "classification",
+      "discipline": "寄生蟲",
+      "metrics": {
+        "val_acc": 0.8929,
+        "n_train": 462,
+        "n_val": 84,
+        "macro_f1": 0.7851,
+        "weighted_f1": 0.8787
       },
       "status": "registered"
     }

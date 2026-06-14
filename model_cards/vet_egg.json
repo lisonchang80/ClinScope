@@ -1,0 +1,38 @@
+{
+  "key": "vet_egg",
+  "abbr": "vet_egg",
+  "name": {
+    "display": "獸醫家畜糞檢蟲卵 6 類 (光學顯微, ResNet)",
+    "zh": "獸醫家畜糞檢蟲卵6類",
+    "en": ""
+  },
+  "discipline": "寄生蟲",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.8929,
+    "n_train": 462,
+    "n_val": 84,
+    "macro_f1": 0.7851,
+    "weighted_f1": 0.8787
+  },
+  "experiment_summary": "獸醫寄生蟲學(本平台首條獸醫 track,與既有人類糞便蟲卵不同物種):反芻家畜糞檢蟲卵/囊體 6 類 — 蛔蟲 Ascaris / 結腸小袋纖毛蟲 Balantidium coli / 肝吸蟲 Fasciola / 同盤吸蟲 Paramphistomum / 胃線蟲 Stomach worm / 陰性對照。ResNet-50 val_acc 0.893 / macro-F1 0.785。展示跨物種(獸醫)泛化。",
+  "caveats": [
+    "⚠️ 資料小(546 圖、稀有類 val 7-8 張)、Negative 類佔多;隨機切分。來源 Mendeley wbvb4whbks。"
+  ],
+  "source": "Mendeley wbvb4whbks (livestock fecal egg)",
+  "license": null,
+  "split_method": "random (⚠️可能洩漏)",
+  "weights": "models/vet_egg_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-7 (2026-06-14)",
+  "num_classes": 6,
+  "classes": [
+    "Ascaris_spp",
+    "Balantidium_coli",
+    "Fasciola_spp",
+    "Negative_Control",
+    "Paramphistomum_spp",
+    "Stomach_worm"
+  ]
+}

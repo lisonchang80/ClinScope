@@ -1,0 +1,40 @@
+{
+  "key": "hmu_gc",
+  "abbr": "hmu_gc",
+  "name": {
+    "display": "胃癌腫瘤微環境 8 組織類 HMU-GC (H&E, ResNet)",
+    "zh": "胃癌腫瘤微環境8組織類",
+    "en": "HMU-GC"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.7464,
+    "n_train": 26432,
+    "n_val": 4664,
+    "macro_f1": 0.747,
+    "weighted_f1": 0.747
+  },
+  "experiment_summary": "組織病理(延伸既有胃 PatchGastric「分化分級」,新增組織成分分型,類比 NCT-CRC 於胃):胃癌 H&E patch 腫瘤微環境 8 類 — 脂肪 ADI / 碎屑 DEB / 淋巴球 LYM / 黏液 MUC / 肌肉 MUS / 正常黏膜 NOR / 基質 STR / 腫瘤上皮 TUM。ResNet-50 val_acc 0.746 / macro-F1 0.747(8 類均衡各 ~3300)。可作胃癌 WSI 的組織成分量化基石。",
+  "caveats": [
+    "⚠️ patch 級隨機切分(無 WSI/病人分組,可能洩漏,數字偏樂觀)。來源 Figshare 25954813(HMU-GC-HE-30K)。"
+  ],
+  "source": "Figshare 25954813 (HMU-GC-HE-30K)",
+  "license": null,
+  "split_method": "random (⚠️可能洩漏)",
+  "weights": "models/hmu_gc_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-7 (2026-06-14)",
+  "num_classes": 8,
+  "classes": [
+    "ADI",
+    "DEB",
+    "LYM",
+    "MUC",
+    "MUS",
+    "NOR",
+    "STR",
+    "TUM"
+  ]
+}
