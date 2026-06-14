@@ -19,7 +19,7 @@ BATCH6 = {"kupbc13", "mdsbm27", "sicap", "sbsd", "evisan", "bcg", "puma",
           "msi", "orchid", "kidney", "mihic", "tvmi3k", "tcga",
           "tanzania", "riva", "placenta", "koh", "csf", "ivcm"}
 BATCH7 = {"cryonuseg", "blastocyst", "thalassemia", "osteosarcoma", "breast_idc", "sperm_dfi",
-          "ebhi_seg", "autokary2022", "tcruzi_chagas", "ubc_ocean", "bracs"}
+          "ebhi_seg", "autokary2022", "tcruzi_chagas", "ubc_ocean", "bracs", "segpc"}
 
 # 來源(blurb 未必含, 這裡 curated; 找不到再退回 blurb 解析)
 SOURCE = {
@@ -45,6 +45,7 @@ SOURCE = {
     "tcruzi_chagas": "Zenodo 15007339 (T. cruzi detection, PLOS NTD 2026)",
     "ubc_ocean": "Kaggle UBC-OCEAN comp + mirror utm529fg/ubc-reduced-png-2964x2964",
     "bracs": "Kaggle assismathias/bracs-original-299 (BRACS 7-class)",
+    "segpc": "Kaggle sbilab/segpc2021dataset (SegPC-2021, SBILab/TCIA)",
 }
 
 DISCIPLINE_KW = ["微生物", "黴菌", "寄生蟲", "血液/骨髓", "血液腫瘤", "血液", "組織病理", "細胞學",

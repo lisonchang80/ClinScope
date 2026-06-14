@@ -342,6 +342,10 @@ REGISTRY = [
      "label": "🎀 乳腺病變 7 類細分 BRACS (H&E, ResNet)",
      "path": ROOT / "models" / "bracs_resnet50.pt",
      "blurb": "組織病理(延伸既有乳腺 BreakHis/BACH/IDC,最細分 7 類病變光譜):乳腺 H&E 7 類 — 正常 Normal / 良性 PB / 一般型增生 UDH / 平坦上皮非典型 FEA / 非典型導管增生 ADH / 原位癌 DCIS / 侵襲癌 IC(官方 train/val/test 切分)。ResNet-50 val_acc 0.659 / macro-F1 0.641。涵蓋良性→非典型→原位→侵襲完整光譜,是乳腺最細粒度公開分型。⚠️ 7 類細粒度分類本就難(相鄰類如 UDH/FEA/ADH 易混)、用 299px 縮圖版。來源 Kaggle 鏡像 assismathias/bracs-original-299(BRACS, bracs.icar.cnr.it)。"},
+    {"key": "segpc", "kind": "det",
+     "label": "🩸 多發性骨髓瘤漿細胞偵測 SegPC-2021 (骨髓抹片, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "segpc" / "weights" / "best.pt",
+     "blurb": "血液腫瘤(本平台首條漿細胞偵測 track):多發性骨髓瘤骨髓抹片漿細胞 plasma cell 偵測 1 類(SegPC-2021 challenge,每細胞含細胞質+細胞核 instance mask→整 cell bbox)。YOLOv8s val mAP50 0.833 / mAP50-95 0.735(P 0.83 / R 0.83)—— 表現優異。骨髓漿細胞比例是多發性骨髓瘤診斷與分期關鍵。官方 train(298)/validation(200) 切分。來源 Kaggle sbilab/segpc2021dataset(作者 SBILab, TCIA SegPC-2021)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]

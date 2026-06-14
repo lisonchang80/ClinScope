@@ -1,6 +1,6 @@
 # ClinScope
 
-臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：77 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：78 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
 自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
 
 ## 現實定位（先讀這段）
@@ -93,6 +93,7 @@
 | 寄生蟲（克氏錐蟲 Chagas） | T. cruzi | Giemsa 血抹片 | YOLOv8 | 726 圖 / 1 類 | mAP50 0.257 ⚠️ val 蟲體稀疏、case-disjoint |
 | 組織病理（卵巢癌 5 亞型） | UBC-OCEAN | H&E 縮圖 | ResNet-50 | 538 圖 / 5 類 | val 0.543、macro-F1 0.436 ⚠️ 縮圖、LGSC 失敗 |
 | 組織病理（乳腺 7 類細分） | BRACS | H&E 299px | ResNet-50 | 4,391 圖 / 7 類 | val 0.659、macro-F1 0.641 ⚠️ 細粒度、相鄰類易混 |
+| 血液腫瘤（漿細胞偵測） | SegPC-2021 | 骨髓抹片 | YOLOv8 | 498 圖 / 1 類 | mAP50 0.833、mAP50-95 0.735 ✅ 官方 split |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -226,6 +227,7 @@ pip install -r requirements.txt
 | T. cruzi | Zenodo `15007339`（克氏錐蟲 Chagas Giemsa 血抹片 det;case-disjoint;CC-BY-NC） |
 | UBC-OCEAN | Kaggle 競賽 `UBC-OCEAN` 標籤 + 縮圖鏡像 `utm529fg/ubc-reduced-png-2964x2964`（卵巢癌 5 亞型;降採 2964px） |
 | BRACS | Kaggle `assismathias/bracs-original-299`（乳腺 7 類 N/PB/UDH/FEA/ADH/DCIS/IC;官方 train/val/test;299px） |
+| SegPC-2021 | Kaggle `sbilab/segpc2021dataset`（多發性骨髓瘤漿細胞 instance→bbox det;官方 train/val） |
 
 ## 免責
 
