@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 69,
+  "n_models": 72,
   "cards": [
     {
       "key": "fungi",
@@ -1022,6 +1022,51 @@
         "n_val": 1066,
         "macro_f1": 0.8709,
         "weighted_f1": 0.955
+      },
+      "status": "registered"
+    },
+    {
+      "key": "osteosarcoma",
+      "name_zh": "骨肉瘤組織存活度分型3類",
+      "name_en": "Osteosarcoma",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.9913,
+        "n_train": 2156,
+        "n_val": 231,
+        "macro_f1": 0.9912,
+        "weighted_f1": 0.9913
+      },
+      "status": "registered"
+    },
+    {
+      "key": "breast_idc",
+      "name_zh": "乳腺組織分級1/2/3",
+      "name_en": "IDC",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.6912,
+        "n_train": 386,
+        "n_val": 68,
+        "macro_f1": 0.6946,
+        "weighted_f1": 0.6934
+      },
+      "status": "registered"
+    },
+    {
+      "key": "sperm_dfi",
+      "name_zh": "精子碎片化分級4類",
+      "name_en": "DNA SCD halo",
+      "task": "classification",
+      "discipline": "男科",
+      "metrics": {
+        "val_acc": 0.9833,
+        "n_train": 343,
+        "n_val": 60,
+        "macro_f1": 0.9827,
+        "weighted_f1": 0.9833
       },
       "status": "registered"
     }

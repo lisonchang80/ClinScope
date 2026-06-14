@@ -18,7 +18,7 @@ BATCH6 = {"kupbc13", "mdsbm27", "sicap", "sbsd", "evisan", "bcg", "puma",
           "tb_det", "tb_cls", "nuinsseg", "effusion",
           "msi", "orchid", "kidney", "mihic", "tvmi3k", "tcga",
           "tanzania", "riva", "placenta", "koh", "csf", "ivcm"}
-BATCH7 = {"cryonuseg", "blastocyst", "thalassemia"}
+BATCH7 = {"cryonuseg", "blastocyst", "thalassemia", "osteosarcoma", "breast_idc", "sperm_dfi"}
 
 # 來源(blurb 未必含, 這裡 curated; 找不到再退回 blurb 解析)
 SOURCE = {
@@ -36,6 +36,9 @@ SOURCE = {
     "cryonuseg": "Kaggle ipateam/segmentation-of-nuclei-in-cryosectioned-he-images (CryoNuSeg)",
     "blastocyst": "Figshare 20123153 (human blastocyst IVF benchmark)",
     "thalassemia": "Mendeley rfdz6wfzn4 (RBCdataset 9-class)",
+    "osteosarcoma": "Kaggle tatsuyaryu/osteosarcoma-histopathology-classification (TCIA UT Southwestern)",
+    "breast_idc": "Mendeley w7jjcx7gj6 (BreastCancer IDC Grade)",
+    "sperm_dfi": "Figshare 30120811 (sperm SCD DNA-fragmentation)",
 }
 
 DISCIPLINE_KW = ["微生物", "黴菌", "寄生蟲", "血液/骨髓", "血液腫瘤", "血液", "組織病理", "細胞學",

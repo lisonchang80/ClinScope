@@ -310,6 +310,18 @@ REGISTRY = [
      "label": "🩸 紅血球形態 9 類 (地中海貧血/貧血篩檢, ResNet)",
      "path": ROOT / "models" / "thalassemia_resnet50.pt",
      "blurb": "血液(延伸既有 RBC 形態 track,聚焦地中海貧血/貧血篩檢形態):周邊血單顆紅血球形態 9 類 — 正常 / 標靶細胞 target / 淚滴 teardrop / 橢圓 elliptocyte / 鉛筆 pencil / 棘狀 acanthocyte / 低色素 hypochromic / 球形 spherocyte / 口形 stomatocyte。ResNet-50 val_acc 0.952 / macro-F1 0.871 / weighted-F1 0.955。標靶/淚滴/低色素是地中海貧血與缺鐵性貧血抹片的關鍵形態。⚠️ pencil 類僅 4 張 val(F1 0.33、不可信);隨機切分(無病人分組,可能輕微洩漏);與既有 rbc_morphology/erythrocytes_idb 形態軸部分重疊。來源 Mendeley rfdz6wfzn4(RBCdataset)。"},
+    {"key": "osteosarcoma", "kind": "cls",
+     "label": "🦴 骨肉瘤組織存活度分型 3 類 Osteosarcoma (H&E, ResNet)",
+     "path": ROOT / "models" / "osteosarcoma_resnet50.pt",
+     "blurb": "組織病理／骨與軟組織肉瘤(本平台首條肌肉骨骼腫瘤 track):骨肉瘤 H&E tile 3 類 — 非腫瘤 Non-Tumor / 壞死腫瘤 Non-Viable-Tumor / 存活腫瘤 Viable。ResNet-50 val_acc 0.991 / macro-F1 0.991(官方 train/validate 切分)。腫瘤壞死率(化療後存活腫瘤比例)是骨肉瘤化療反應評估與預後的關鍵指標。來源 Kaggle(TCIA Osteosarcoma-Tumor-Assessment, UT Southwestern/UT Dallas)。"},
+    {"key": "breast_idc", "kind": "cls",
+     "label": "🎀 乳腺 IDC 組織分級 1/2/3 (H&E 40×, ResNet)",
+     "path": ROOT / "models" / "breast_idc_resnet50.pt",
+     "blurb": "組織病理(延伸既有乳腺 BreakHis/BACH,新增 Nottingham 組織分級任務):浸潤性乳管癌 IDC 組織分級 3 類 Grade 1/2/3(40× 高倍)。ResNet-50 val_acc 0.691 / macro-F1 0.695。腫瘤分級(腺管形成/核多形性/有絲分裂)決定預後與治療強度。⚠️ 資料小(40× 僅 454 張)、隨機切分(無病人分組可能洩漏);分級本就主觀且難,成績僅中等、相鄰級易混。來源 Mendeley w7jjcx7gj6(BreastCancer IDC Grade)。"},
+    {"key": "sperm_dfi", "kind": "cls",
+     "label": "🧬 精子 DNA 碎片化 SCD halo 分級 4 類 (男科, ResNet)",
+     "path": ROOT / "models" / "sperm_dfi_resnet50.pt",
+     "blurb": "男科／生殖(延伸既有精子形態 SMIDS/HuSHeM,新增 DNA 完整性軸):精子染色質擴散試驗 SCD halo 大小 4 類 — 大暈 Large / 中暈 Medium / 小暈 Small / 無暈 Without halo。ResNet-50 val_acc 0.983 / macro-F1 0.983(類別均衡)。halo 大小反映 DNA 碎片化程度(無暈/小暈=高碎片化),與男性不孕、受精失敗相關。來源 Figshare 30120811(expert-annotated sperm SCD)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]

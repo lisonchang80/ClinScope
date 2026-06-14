@@ -1,0 +1,33 @@
+{
+  "key": "osteosarcoma",
+  "abbr": "osteosarcoma",
+  "name": {
+    "display": "骨肉瘤組織存活度分型 3 類 Osteosarcoma (H&E, ResNet)",
+    "zh": "骨肉瘤組織存活度分型3類",
+    "en": "Osteosarcoma"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9913,
+    "n_train": 2156,
+    "n_val": 231,
+    "macro_f1": 0.9912,
+    "weighted_f1": 0.9913
+  },
+  "experiment_summary": "組織病理／骨與軟組織肉瘤(本平台首條肌肉骨骼腫瘤 track):骨肉瘤 H&E tile 3 類 — 非腫瘤 Non-Tumor / 壞死腫瘤 Non-Viable-Tumor / 存活腫瘤 Viable。ResNet-50 val_acc 0.991 / macro-F1 0.991(官方 train/validate 切分)。腫瘤壞死率(化療後存活腫瘤比例)是骨肉瘤化療反應評估與預後的關鍵指標。來源 Kaggle(TCIA Osteosarcoma-Tumor-Assessment, UT Southwestern/UT Dallas)。",
+  "caveats": [],
+  "source": "Kaggle tatsuyaryu/osteosarcoma-histopathology-classification (TCIA UT Southwestern)",
+  "license": null,
+  "split_method": "official split",
+  "weights": "models/osteosarcoma_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-7 (2026-06-14)",
+  "num_classes": 3,
+  "classes": [
+    "Non-Tumor",
+    "Non-Viable-Tumor",
+    "Viable"
+  ]
+}

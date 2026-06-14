@@ -1,0 +1,34 @@
+{
+  "key": "sperm_dfi",
+  "abbr": "sperm_dfi",
+  "name": {
+    "display": "精子 DNA 碎片化 SCD halo 分級 4 類 (男科, ResNet)",
+    "zh": "精子碎片化分級4類",
+    "en": "DNA SCD halo"
+  },
+  "discipline": "男科",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9833,
+    "n_train": 343,
+    "n_val": 60,
+    "macro_f1": 0.9827,
+    "weighted_f1": 0.9833
+  },
+  "experiment_summary": "男科／生殖(延伸既有精子形態 SMIDS/HuSHeM,新增 DNA 完整性軸):精子染色質擴散試驗 SCD halo 大小 4 類 — 大暈 Large / 中暈 Medium / 小暈 Small / 無暈 Without halo。ResNet-50 val_acc 0.983 / macro-F1 0.983(類別均衡)。halo 大小反映 DNA 碎片化程度(無暈/小暈=高碎片化),與男性不孕、受精失敗相關。來源 Figshare 30120811(expert-annotated sperm SCD)。",
+  "caveats": [],
+  "source": "Figshare 30120811 (sperm SCD DNA-fragmentation)",
+  "license": null,
+  "split_method": null,
+  "weights": "models/sperm_dfi_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-7 (2026-06-14)",
+  "num_classes": 4,
+  "classes": [
+    "Large_halo",
+    "Medium_halo",
+    "Small_halo",
+    "Without_halo"
+  ]
+}
