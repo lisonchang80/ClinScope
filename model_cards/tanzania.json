@@ -1,0 +1,36 @@
+{
+  "key": "tanzania",
+  "abbr": "tanzania",
+  "name": {
+    "display": "瘧疾厚/薄抹片 4 類 (Giemsa 血膜, ResNet)",
+    "zh": "瘧疾厚/薄抹片4類",
+    "en": ""
+  },
+  "discipline": "寄生蟲",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9982,
+    "n_train": 2997,
+    "n_val": 547,
+    "macro_f1": 0.9966,
+    "weighted_f1": 0.9982
+  },
+  "experiment_summary": "寄生蟲(瘧疾厚抹片新模態,補既有薄抹片細胞級 malaria/MP-IDB/BBBC041):坦尚尼亞瘧疾血膜 4 類 — 厚抹片感染/未感染、薄抹片感染/未感染。厚抹片(thick smear)為 WHO 瘧疾鏡檢初篩標準,本平台首條納入。ResNet-50 val_acc 0.998 / macro-F1 0.997。",
+  "caveats": [
+    "⚠️ **影像級隨機切分:同一抹片連續視野形態近似、可能分散到 train/val 造成洩漏,0.998 疑高估**,需病人/抹片級切分才可信,僅示流程。"
+  ],
+  "source": "Harvard Dataverse (Tanzania malaria thick/thin)",
+  "license": null,
+  "split_method": "slide-level (片級)",
+  "weights": "models/tanzania_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)",
+  "num_classes": 4,
+  "classes": [
+    "thick_infected",
+    "thick_uninfected",
+    "thin_infected",
+    "thin_uninfected"
+  ]
+}

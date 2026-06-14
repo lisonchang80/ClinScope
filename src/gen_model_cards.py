@@ -17,7 +17,7 @@ DET_DIR = {"bloodcells": "bccd", "bbbc041_stage": "bbbc041", "mrose_gram": "mros
 BATCH6 = {"kupbc13", "mdsbm27", "sicap", "sbsd", "evisan", "bcg", "puma",
           "tb_det", "tb_cls", "nuinsseg", "effusion",
           "msi", "orchid", "kidney", "mihic", "tvmi3k", "tcga",
-          "tanzania", "riva", "placenta"}
+          "tanzania", "riva", "placenta", "koh"}
 
 # 來源(blurb 未必含, 這裡 curated; 找不到再退回 blurb 解析)
 SOURCE = {
@@ -30,7 +30,7 @@ SOURCE = {
     "mihic": "Zenodo 10065510 (MIHIC)", "tvmi3k": "Zenodo 6534086 (TVMI3K)",
     "tcga": "Zenodo 6604094 (TCGA-TILs)", "kidney": "Zenodo 4299694 (glomeruli)",
     "tanzania": "Harvard Dataverse (Tanzania malaria thick/thin)", "riva": "Zenodo 17288879 (RIVA)",
-    "placenta": "Zenodo 10535022 (HAPPY)",
+    "placenta": "Zenodo 10535022 (HAPPY)", "koh": "Figshare 14678514 (hyphae KOH)",
 }
 
 DISCIPLINE_KW = ["微生物", "寄生蟲", "血液/骨髓", "血液腫瘤", "血液", "組織病理", "細胞學",

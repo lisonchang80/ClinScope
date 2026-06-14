@@ -75,6 +75,11 @@
 | 組織病理（腎絲球） | 腎絲球 正常/硬化 | H&E/PAS | YOLOv8 | 78 圖 / 2 類 | mAP50 0.465 ⚠️ 極小資料、recall 0.40 |
 | 免疫組化（肺多重 IHC） | MIHIC | multiplex-IHC | ResNet-50 | 7 組織類 | val 0.838、macro-F1 0.836（每類抽樣）|
 | 寄生蟲（陰道滴蟲） | TVMI3K | 濕抹片 | YOLOv8 | 3,158 圖 / 1 類 | mAP50 0.417、mAP50-95 0.240 |
+| 黴菌（皮癬菌絲 KOH） | KOH hyphae | 皮屑/指甲 KOH | YOLOv8 | 2,721 圖 / 1 類 | mAP50 0.865、mAP50-95 0.513 🎯 填 KOH 缺口 |
+| 免疫腫瘤（TIL） | TCGA-TILs | 多癌種 H&E | ResNet-50 | 4k val / 2 類 | val 0.896、macro-F1 0.896 ✅ patient-disjoint |
+| 組織病理（胎盤） | HAPPY 絨毛細胞 | H&E | ResNet-50 | 6,951 圖 / 9 類 | val 0.886、macro-F1 0.839 |
+| 寄生蟲（瘧疾厚/薄抹片） | Tanzania malaria | Giemsa 血膜 | ResNet-50 | 3,544 圖 / 4 類 | val 0.998 ⚠️ 影像級切分疑洩漏 |
+| 細胞學（子宮頸 Bethesda） | RIVA | 子宮頸抹片 | YOLOv8 | 959 圖 / 8 類 | mAP50 0.146 ⚠️ 點標註合成框、類別不平衡 |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -190,6 +195,11 @@ pip install -r requirements.txt
 | 腎絲球 | Zenodo `4299694`（腎切片腎絲球 normal/sclerosed;mask 顏色→bbox,slide-disjoint,78 圖） |
 | MIHIC | Zenodo `10065510`（肺癌多重 IHC 組織 7 類;原始 19.5 萬張,每類抽樣訓練） |
 | TVMI3K | Zenodo `6534086`（陰道滴蟲濕抹片偵測;官方 Train/Test,mask 連通標記→bbox） |
+| KOH hyphae | Figshare `14678514`（皮屑/指甲 KOH 菌絲;40×+100× YOLO 格式,含背景負樣本,1 類 hyphae） |
+| TCGA-TILs | Zenodo `6604094`（多癌種 H&E TIL ±;依 TCGA barcode patient-disjoint 抽樣、去重 hardlink） |
+| HAPPY 胎盤 | Zenodo `10535022`（胎盤絨毛細胞 9 類;官方 cell_class CSV split,跨 3 機構 pool） |
+| Tanzania malaria | Harvard Dataverse（瘧疾厚/薄抹片 × 感染/未感染 4 類;⚠️ 影像級切分） |
+| RIVA | Zenodo `17288879`（子宮頸 Bethesda 8 類;關鍵點→固定框近似,case-disjoint） |
 
 ## 免責
 

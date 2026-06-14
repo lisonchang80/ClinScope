@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 59,
+  "n_models": 64,
   "cards": [
     {
       "key": "fungi",
@@ -872,6 +872,81 @@
         "precision": 0.4482,
         "recall": 0.4518,
         "epochs": 39
+      },
+      "status": "registered"
+    },
+    {
+      "key": "koh",
+      "name_zh": "皮癬菌絲鏡檢偵測",
+      "name_en": "KOH",
+      "task": "detection",
+      "discipline": "微生物",
+      "metrics": {
+        "mAP50": 0.8651,
+        "mAP50_95": 0.5127,
+        "precision": 0.842,
+        "recall": 0.7971,
+        "epochs": 80
+      },
+      "status": "registered"
+    },
+    {
+      "key": "tcga",
+      "name_zh": "腫瘤浸潤淋巴球",
+      "name_en": "TIL",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.8962,
+        "n_train": 20000,
+        "n_val": 4000,
+        "macro_f1": 0.8961,
+        "weighted_f1": 0.8961
+      },
+      "status": "registered"
+    },
+    {
+      "key": "placenta",
+      "name_zh": "胎盤絨毛細胞分型",
+      "name_en": "HAPPY",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.8863,
+        "n_train": 5860,
+        "n_val": 1091,
+        "macro_f1": 0.8389,
+        "weighted_f1": 0.8853
+      },
+      "status": "registered"
+    },
+    {
+      "key": "tanzania",
+      "name_zh": "瘧疾厚/薄抹片4類",
+      "name_en": "",
+      "task": "classification",
+      "discipline": "寄生蟲",
+      "metrics": {
+        "val_acc": 0.9982,
+        "n_train": 2997,
+        "n_val": 547,
+        "macro_f1": 0.9966,
+        "weighted_f1": 0.9982
+      },
+      "status": "registered"
+    },
+    {
+      "key": "riva",
+      "name_zh": "子宮頸細胞偵測",
+      "name_en": "Bethesda RIVA",
+      "task": "detection",
+      "discipline": "細胞學",
+      "metrics": {
+        "mAP50": 0.1462,
+        "mAP50_95": 0.0672,
+        "precision": 0.2766,
+        "recall": 0.2865,
+        "epochs": 55
       },
       "status": "registered"
     }

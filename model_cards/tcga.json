@@ -1,0 +1,32 @@
+{
+  "key": "tcga",
+  "abbr": "tcga",
+  "name": {
+    "display": "腫瘤浸潤淋巴球 TIL ± (多癌種 H&E, 免疫腫瘤, ResNet)",
+    "zh": "腫瘤浸潤淋巴球",
+    "en": "TIL"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.8962,
+    "n_train": 20000,
+    "n_val": 4000,
+    "macro_f1": 0.8961,
+    "weighted_f1": 0.8961
+  },
+  "experiment_summary": "組織病理／免疫腫瘤(本平台首條腫瘤浸潤淋巴球 TIL track):多癌種 H&E patch 預測腫瘤浸潤淋巴球密度 til-positive / til-negative 二分類(TCGA-TILs,pool 多種癌別)。ResNet-50 val_acc 0.896 / macro-F1 0.896(類別均衡)。**patient-disjoint 切分(依檔名 TCGA barcode 分組、去重 hardlink,無洩漏,數字可信)**。TIL 密度為免疫檢查點治療反應與預後的重要生物標記。",
+  "caveats": [],
+  "source": "Zenodo 6604094 (TCGA-TILs)",
+  "license": null,
+  "split_method": null,
+  "weights": "models/tcga_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)",
+  "num_classes": 2,
+  "classes": [
+    "til-negative",
+    "til-positive"
+  ]
+}

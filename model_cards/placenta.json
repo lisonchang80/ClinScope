@@ -1,0 +1,41 @@
+{
+  "key": "placenta",
+  "abbr": "placenta",
+  "name": {
+    "display": "胎盤絨毛細胞分型 HAPPY (H&E, 9 類)",
+    "zh": "胎盤絨毛細胞分型",
+    "en": "HAPPY"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.8863,
+    "n_train": 5860,
+    "n_val": 1091,
+    "macro_f1": 0.8389,
+    "weighted_f1": 0.8853
+  },
+  "experiment_summary": "組織病理(本平台首條胎盤病理 track):胎盤絨毛組織細胞分型 9 類 — 纖維母 FIB / 融合滋養層 SYN / 血管內皮 VEN / 血管肌 VMY / 白血球 WBC / 融合結 KNT / 絨毛外滋養層 EVT / 間質 MES / 細胞滋養層 CYT。ResNet-50 val_acc 0.886 / macro-F1 0.839(官方 split,HAPPY 資料集)。",
+  "caveats": [
+    "⚠️ CYT(val 僅 20 張)等稀有類較弱,macro<weighted 反映類別不平衡。"
+  ],
+  "source": "Zenodo 10535022 (HAPPY)",
+  "license": null,
+  "split_method": "official split",
+  "weights": "models/placenta_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)",
+  "num_classes": 9,
+  "classes": [
+    "CYT",
+    "EVT",
+    "FIB",
+    "KNT",
+    "MES",
+    "SYN",
+    "VEN",
+    "VMY",
+    "WBC"
+  ]
+}

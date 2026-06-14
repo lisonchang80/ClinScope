@@ -1,0 +1,27 @@
+{
+  "key": "riva",
+  "abbr": "riva",
+  "name": {
+    "display": "子宮頸 Bethesda 細胞偵測 RIVA (8 類, YOLO)",
+    "zh": "子宮頸細胞偵測",
+    "en": "Bethesda RIVA"
+  },
+  "discipline": "細胞學",
+  "task": "detection",
+  "model_type": "YOLOv8s",
+  "metrics": {
+    "mAP50": 0.1462,
+    "mAP50_95": 0.0672,
+    "precision": 0.2766,
+    "recall": 0.2865,
+    "epochs": 55
+  },
+  "experiment_summary": "細胞學(子宮頸抹片病變細胞偵測,補既有 SIPaKMeD 分類所無的「定位+分級」任務):子宮頸抹片 Bethesda 系統 8 類細胞偵測 — NILM 正常 / INFL 發炎 / ASCUS / ASCH / LSIL / HSIL / SCC / ENDO。YOLOv8s val mAP50 0.146 / mAP50-95 0.067 —— **誠實偏低**:原始為關鍵點標註,本 track 以固定框(影像邊長 7%)近似合成 bbox、8 類重度不平衡(NILM/INFL 佔多數、稀有病變類近乎學不起來),僅示流程;case-disjoint 切分,來源 RIVA。",
+  "caveats": [],
+  "source": "Zenodo 17288879 (RIVA)",
+  "license": null,
+  "split_method": null,
+  "weights": "reports/yolo/riva/weights/best.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)"
+}

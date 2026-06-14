@@ -1,0 +1,27 @@
+{
+  "key": "koh",
+  "abbr": "koh",
+  "name": {
+    "display": "皮癬菌絲 KOH 鏡檢偵測 (皮屑/指甲, YOLO)",
+    "zh": "皮癬菌絲鏡檢偵測",
+    "en": "KOH"
+  },
+  "discipline": "微生物",
+  "task": "detection",
+  "model_type": "YOLOv8s",
+  "metrics": {
+    "mAP50": 0.8651,
+    "mAP50_95": 0.5127,
+    "precision": 0.842,
+    "recall": 0.7971,
+    "epochs": 80
+  },
+  "experiment_summary": "微生物／黴菌(本平台首條皮癬菌絲「直接鏡檢偵測」track,填 ★★ KOH 缺口,補既有培養型態 OpenFungi/DeFungi):皮屑/指甲 10% KOH 製片菌絲 hyphae 偵測 1 類(40×+100× 兩倍率合併,含背景負樣本降假陽)。YOLOv8s val mAP50 0.865 / mAP50-95 0.513(P 0.84 / R 0.80)—— 表現優異。對應皮癬菌病 tinea 第一線 KOH 鏡檢。影像級切分;來源 Figshare。",
+  "caveats": [],
+  "source": "Figshare 14678514 (hyphae KOH)",
+  "license": null,
+  "split_method": null,
+  "weights": "reports/yolo/koh/weights/best.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)"
+}
