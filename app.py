@@ -306,6 +306,10 @@ REGISTRY = [
      "label": "🫧 IVF 囊胚 Gardner 擴張度分級 5 類 Blastocyst (ResNet)",
      "path": ROOT / "models" / "blastocyst_resnet50.pt",
      "blurb": "生殖醫學/胚胎學(本平台首條 IVF 試管嬰兒胚胎 track):人類囊胚明場影像 Gardner 擴張度(expansion)分級 5 類 EXP0–EXP4(早期囊胚腔→完全擴張/孵化)。ResNet-50 val_acc 0.775 / macro-F1 0.686 / weighted-F1 0.793(官方 train(silver)/test(gold) embryo-disjoint 切分)。囊胚擴張度是 IVF 植入潛能與胚胎品質評分的關鍵軸(另有 ICM/TE 兩軸,因含 ND 不可判類與稀有類未取)。⚠️ train 為 silver-standard(半自動標),EXP4 完全擴張僅 5 張 val(F1 0.30、數字不穩)。來源 Figshare 20123153(Gomez et al. human blastocyst benchmark)。"},
+    {"key": "thalassemia", "kind": "cls",
+     "label": "🩸 紅血球形態 9 類 (地中海貧血/貧血篩檢, ResNet)",
+     "path": ROOT / "models" / "thalassemia_resnet50.pt",
+     "blurb": "血液(延伸既有 RBC 形態 track,聚焦地中海貧血/貧血篩檢形態):周邊血單顆紅血球形態 9 類 — 正常 / 標靶細胞 target / 淚滴 teardrop / 橢圓 elliptocyte / 鉛筆 pencil / 棘狀 acanthocyte / 低色素 hypochromic / 球形 spherocyte / 口形 stomatocyte。ResNet-50 val_acc 0.952 / macro-F1 0.871 / weighted-F1 0.955。標靶/淚滴/低色素是地中海貧血與缺鐵性貧血抹片的關鍵形態。⚠️ pencil 類僅 4 張 val(F1 0.33、不可信);隨機切分(無病人分組,可能輕微洩漏);與既有 rbc_morphology/erythrocytes_idb 形態軸部分重疊。來源 Mendeley rfdz6wfzn4(RBCdataset)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]

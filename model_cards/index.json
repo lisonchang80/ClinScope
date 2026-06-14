@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 68,
+  "n_models": 69,
   "cards": [
     {
       "key": "fungi",
@@ -1007,6 +1007,21 @@
         "n_val": 298,
         "macro_f1": 0.6855,
         "weighted_f1": 0.7928
+      },
+      "status": "registered"
+    },
+    {
+      "key": "thalassemia",
+      "name_zh": "紅血球形態9類",
+      "name_en": "",
+      "task": "classification",
+      "discipline": "血液",
+      "metrics": {
+        "val_acc": 0.9522,
+        "n_train": 6042,
+        "n_val": 1066,
+        "macro_f1": 0.8709,
+        "weighted_f1": 0.955
       },
       "status": "registered"
     }

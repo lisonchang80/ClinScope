@@ -1,0 +1,41 @@
+{
+  "key": "thalassemia",
+  "abbr": "thalassemia",
+  "name": {
+    "display": "紅血球形態 9 類 (地中海貧血/貧血篩檢, ResNet)",
+    "zh": "紅血球形態9類",
+    "en": ""
+  },
+  "discipline": "血液",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9522,
+    "n_train": 6042,
+    "n_val": 1066,
+    "macro_f1": 0.8709,
+    "weighted_f1": 0.955
+  },
+  "experiment_summary": "血液(延伸既有 RBC 形態 track,聚焦地中海貧血/貧血篩檢形態):周邊血單顆紅血球形態 9 類 — 正常 / 標靶細胞 target / 淚滴 teardrop / 橢圓 elliptocyte / 鉛筆 pencil / 棘狀 acanthocyte / 低色素 hypochromic / 球形 spherocyte / 口形 stomatocyte。ResNet-50 val_acc 0.952 / macro-F1 0.871 / weighted-F1 0.955。標靶/淚滴/低色素是地中海貧血與缺鐵性貧血抹片的關鍵形態。",
+  "caveats": [
+    "⚠️ pencil 類僅 4 張 val(F1 0.33、不可信);隨機切分(無病人分組,可能輕微洩漏);與既有 rbc_morphology/erythrocytes_idb 形態軸部分重疊。來源 Mendeley rfdz6wfzn4(RBCdataset)。"
+  ],
+  "source": "Mendeley rfdz6wfzn4 (RBCdataset 9-class)",
+  "license": null,
+  "split_method": "random (⚠️可能洩漏)",
+  "weights": "models/thalassemia_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-7 (2026-06-14)",
+  "num_classes": 9,
+  "classes": [
+    "Elliptocyte",
+    "SPERO_bulat",
+    "TARGETSEL",
+    "acantocyte",
+    "hypochromic",
+    "normal",
+    "pencil",
+    "stomatocyte",
+    "teardrop"
+  ]
+}
