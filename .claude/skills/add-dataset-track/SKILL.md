@@ -145,3 +145,17 @@ app 只列「權重檔存在」的模型。**改完要重啟 server 才生效**�
 
 - 小驗證集（DIBaS 每類 4–5 張、HuSHeM 每類 8 張）數字噪音極大、且採集層級可能洩漏 → 別信單一 split，要 group-aware split / k-fold 才有意義。
 - **組織病理/細胞學的洩漏特別常見**:同一 WSI / 同片抹片切出多 tile-crop,隨機 split 會把同源 tile 分到 train/val → val 偏高(LC25000 增強擴增是極端案例 val=1.0)。誠實作法是 patient/slide-level split;沒做就在 blurb 掛 caveat。
+
+## 下載源排錯速查（batch-7 / round-3-4-5, 2026-06-15)
+
+逐一踩過、已驗證的坑,跨專案通用:
+
+- **🔑 login-gated 先找 mirror,別急著叫使用者登入**:本輪 6 個「需登入」資料集(UniToPatho/autokary/tcruzi/UBC-OCEAN/SegPC/BRACS),**5 個都有開放/鏡像路徑**——先搜 `kaggle datasets list -s <名>`(作者常自己 re-upload,如 SegPC `sbilab/segpc2021dataset`、BRACS `assismathias/bracs-original-299`)、HF、社群縮圖版(UBC-OCEAN `utm529fg/ubc-reduced-png-2964x2964` 4.3G 取代 100G+ WSI),再考慮登入。Zenodo「embargo/需登入」可能已過期變開放(tcruzi),先打 API 確認 `access_right`。
+- **Figshare ndownloader = S3 簽章、`X-Amz-Expires=10`(10 秒過期)**:aria2c `-x16` 多 segment 各自重發請求,過期 segment 收 403 XML 寫進預配置檔 → **位元組數對但 zip 壞(BadZipFile)**。改 **單連線 `curl -sL`**(一條流 10 秒內開始、S3 串完整檔)。大檔截斷(central directory not found)用 `aria2c -c` 續傳。
+- **Zenodo API 擋 urllib**:Zenodo WAF 擋 urllib 的 TLS 指紋(即使帶瀏覽器 UA 也 403),但**放行 curl** → API JSON 與檔案下載**全走 curl**(見 `dl_zenodo_retry.py`)。且 **多 prefetcher 並行打同源(Zenodo)會觸發 IP 403 封鎖** → 同源序列化 + `time.sleep` 間隔,別並行。
+- **Kaggle CLI 2.2.x**:`competitions` 子指令**不吃 `kaggle.json`**(只 `datasets` 吃),要 `export KAGGLE_API_TOKEN=<key>`(env 變數)才認證過;競賽下載先 `kaggle competitions download -c X -f train.csv`(標籤)再配開放鏡像影像。
+- **巨檔別盲抓**:單一 monolithic 包(UniToPatho 275G IEEE 單 zip / cobra 660G / endometrial 3.6TB iSyntax)CP 值差,先驗大小,改取輕量子集/縮圖鏡像/直接換等價開放集(UniToPatho→EBHI-SEG)。
+- **RAR 解壓(本機 Windows 無 unrar/7z 在 PATH,但有 WinRAR)**:`"C:\Program Files\WinRAR\UnRAR.exe" x -o+ -idq file.rar destdir\`。py7zr 只解 7z 不解 rar。
+- **mklink /J junction 要用 Python subprocess**:bash 反斜線會把 `cmd //c mklink` 路徑弄壞;改 `subprocess.run(['cmd','/c','mklink','/J',link,target])`(list args 不經 shell)。官方已切 train/val 的資料集用 junction 免複製(osteosarcoma/bracs)。
+- **Roboflow 匯出 instance-seg 資料集 = polygon 標註**:`YOLOv8` 格式給的是多邊形(class+多點)非 bbox。det pipeline 要 **polygon→bbox**(取點集 min/max,見 `prep_autokary.py`)。
+- **train_driver.py 啟動時讀 QUEUE**:啟動後才加的 job 當前 run 看不到 → 加完要 **relaunch**(跳過有 marker 的、只訓新的)。新工具:`dl_round{3,4,5}.py`(序列前置下載器)、`dl_zenodo_retry.py`(curl 版)、`prep_imagefolder_split.py`(通用 class-子夾→train/val 切分器)。
