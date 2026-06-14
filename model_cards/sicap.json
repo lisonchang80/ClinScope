@@ -1,0 +1,36 @@
+{
+  "key": "sicap",
+  "abbr": "sicap",
+  "name": {
+    "display": "攝護腺 Gleason 分級 — SICAPv2 (H&E, NC/G3/G4/G5)",
+    "zh": "攝護腺分級",
+    "en": "Gleason"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.7209,
+    "n_train": 7472,
+    "n_val": 2487,
+    "macro_f1": 0.6299,
+    "weighted_f1": 0.7081
+  },
+  "experiment_summary": "組織病理(本平台首條攝護腺 track):攝護腺切片 H&E patch,Gleason 分級 4 類 — 非癌 NC / Gleason pattern 3 / 4 / 5(SICAPv2 正規化子集,G4 cribriform 併入 G4)。官方 slide-disjoint split(train 7472 / val 2487,同片不跨、無洩漏)。ResNet-50 val_acc 0.721 / macro-F1 0.630。Gleason 分級本就困難、形態連續。",
+  "caveats": [
+    "⚠️ G5(高惡性度、較稀)F1 0.28 偏弱;NC 最佳 0.84。"
+  ],
+  "source": "Zenodo 14178894 (SICAPv2)",
+  "license": null,
+  "split_method": "slide-disjoint (片級)",
+  "weights": "models/sicap_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)",
+  "num_classes": 4,
+  "classes": [
+    "G3",
+    "G4",
+    "G5",
+    "NC"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "key": "nct_crc",
+  "abbr": "nct_crc",
+  "name": {
+    "display": "結直腸組織 9 類 NCT-CRC-HE-100K (H&E)",
+    "zh": "結直腸組織9類100",
+    "en": "NCT-CRC-HE-100K"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9701,
+    "n_train": 100000,
+    "n_val": 7180,
+    "macro_f1": 0.9578,
+    "weighted_f1": 0.9695
+  },
+  "experiment_summary": "組織病理 H&E 結直腸組織 9 類:腫瘤上皮 TUM、基質 STR、淋巴球 LYM、平滑肌 MUS、黏液 MUC、正常黏膜 NORM、脂肪 ADI、碎屑 DEB、背景 BACK。在官方獨立 cohort(CRC-VAL-HE-7K)驗證 val 0.970 —— 跨 cohort、較誠實;STR 基質↔MUS 肌肉最易混。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": "official split",
+  "weights": "models/nct_crc_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 9,
+  "classes": [
+    "ADI",
+    "BACK",
+    "DEB",
+    "LYM",
+    "MUC",
+    "MUS",
+    "NORM",
+    "STR",
+    "TUM"
+  ]
+}

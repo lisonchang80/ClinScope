@@ -1,0 +1,35 @@
+{
+  "key": "ipdbrain",
+  "abbr": "ipdbrain",
+  "name": {
+    "display": "腦膠質瘤亞型 IPD-Brain (H&E, 3 類)",
+    "zh": "腦膠質瘤亞型",
+    "en": "IPD-Brain"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.5289,
+    "n_train": 5001,
+    "n_val": 900,
+    "macro_f1": 0.3319,
+    "weighted_f1": 0.4475
+  },
+  "experiment_summary": "組織病理 H&E 腦膠質瘤亞型 3 類:膠質母細胞瘤 Glioblastoma / 星形細胞瘤 Astrocytoma / 寡突膠質瘤 Oligodendroglioma(IPD-Brain,大圖切 512 tile)。**病人級(Case Number disjoint)切分、無洩漏**。val_acc 0.529、macro-F1 0.332 ——",
+  "caveats": [
+    "⚠️ **誠實的弱結果**:模型幾乎只猜多數類 GBM(F1 0.71),星形/寡突召回極低(0.15/0.06),0.529 ≈ GBM 佔比基線;膠質瘤亞型需 H&E 形態 + 分子標記(IDH/1p19q),低倍 tile 已失判別訊號 → 非臨床可用,示範 WSI 降採樣的極限。新增腦組織器官。"
+  ],
+  "source": null,
+  "license": null,
+  "split_method": "patient-level (病人級)",
+  "weights": "models/ipdbrain_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 3,
+  "classes": [
+    "ASTROCYTOMA",
+    "GLIOBLASTOMA",
+    "OLIGODENDROGLIOMA"
+  ]
+}

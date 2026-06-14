@@ -1,0 +1,35 @@
+{
+  "key": "blood_protozoa",
+  "abbr": "blood_protozoa",
+  "name": {
+    "display": "血液原蟲 3 類 (Babesia/Toxoplasma/Trypanosoma)",
+    "zh": "血液原蟲3類",
+    "en": ""
+  },
+  "discipline": "血液",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 1.0,
+    "n_train": 891,
+    "n_val": 158,
+    "macro_f1": 1.0,
+    "weighted_f1": 1.0
+  },
+  "experiment_summary": "血液/組織原蟲分類 3 類:焦蟲 Babesia(紅血球內環狀)/ 弓形蟲 Toxoplasma(新月形速殖子)/ 錐蟲 Trypanosoma(鞭毛蟲體)。Giemsa 顯微。val 1.0 ——",
+  "caveats": [
+    "⚠️ 三種形態差異極大、本就易;val 僅 158 張、隨機 split 可能同源洩漏,1.0 偏樂觀。Babesia/Toxoplasma 為新增蟲種;對照 Tryp 偵測 track,本 track 是多蟲種分類。"
+  ],
+  "source": null,
+  "license": null,
+  "split_method": "random (⚠️可能洩漏)",
+  "weights": "models/blood_protozoa_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 3,
+  "classes": [
+    "Babesia",
+    "Toxoplasma",
+    "Trypanosoma"
+  ]
+}

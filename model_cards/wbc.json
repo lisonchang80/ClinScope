@@ -1,0 +1,38 @@
+{
+  "key": "wbc",
+  "abbr": "wbc",
+  "name": {
+    "display": "白血球分類 WBC differential — PBC (Wright/Giemsa)",
+    "zh": "白血球分類",
+    "en": "WBC differential"
+  },
+  "discipline": "血液",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9918,
+    "n_train": 14528,
+    "n_val": 2564,
+    "macro_f1": 0.9913,
+    "weighted_f1": 0.9918
+  },
+  "experiment_summary": "周邊血液白血球 8 類:嗜中性/嗜酸/嗜鹼性球、淋巴球、單核球、未成熟顆粒球(IG)、紅血球母細胞、血小板。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": null,
+  "weights": "models/pbc_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 8,
+  "classes": [
+    "basophil",
+    "eosinophil",
+    "erythroblast",
+    "ig",
+    "lymphocyte",
+    "monocyte",
+    "neutrophil",
+    "platelet"
+  ]
+}

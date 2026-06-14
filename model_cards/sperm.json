@@ -1,0 +1,33 @@
+{
+  "key": "sperm",
+  "abbr": "sperm",
+  "name": {
+    "display": "精液形態 Sperm morphology — SMIDS (精液抹片)",
+    "zh": "精液形態",
+    "en": "Sperm morphology"
+  },
+  "discipline": "男科",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9022,
+    "n_train": 2550,
+    "n_val": 450,
+    "macro_f1": 0.9019,
+    "weighted_f1": 0.9016
+  },
+  "experiment_summary": "男科/精液分析:精子形態 3 類 — 正常精子 Normal、異常精子 Abnormal、非精子物質 Non-sperm。亮場精液抹片,對應 WHO 精液分析的形態判讀。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": null,
+  "weights": "models/smids_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 3,
+  "classes": [
+    "Abnormal_Sperm",
+    "Non-Sperm",
+    "Normal_Sperm"
+  ]
+}

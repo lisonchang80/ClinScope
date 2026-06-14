@@ -1,0 +1,34 @@
+{
+  "key": "rouleaux",
+  "abbr": "rouleaux",
+  "name": {
+    "display": "紅血球串錢狀 Rouleaux (正常 vs rouleaux)",
+    "zh": "紅血球串錢狀",
+    "en": "Rouleaux"
+  },
+  "discipline": "血液",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 1.0,
+    "n_train": 1312,
+    "n_val": 232,
+    "macro_f1": 1.0,
+    "weighted_f1": 1.0
+  },
+  "experiment_summary": "血液抹片紅血球排列 二元:正常分散 vs 串錢狀聚集 rouleaux(RBC 像錢幣堆疊,見於高球蛋白血症/發炎/多發性骨髓瘤)。用全視野影像(rouleaux 是排列現象、需看整片,非單細胞)。val 1.0 ——",
+  "caveats": [
+    "⚠️ 此任務視覺差異極大、本就易;val 僅 232 張、檔名受試者編碼不一致無法保證 subject-disjoint,1.0 偏樂觀,需 subject-level split 才可信(同 DIBaS/LC25000 型)。對照鐮刀/異形單細胞 track,本 track 看 RBC 整體排列。"
+  ],
+  "source": null,
+  "license": null,
+  "split_method": null,
+  "weights": "models/rouleaux_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 2,
+  "classes": [
+    "Normal",
+    "Rouleaux"
+  ]
+}

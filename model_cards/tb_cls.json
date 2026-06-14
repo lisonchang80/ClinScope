@@ -1,0 +1,34 @@
+{
+  "key": "tb_cls",
+  "abbr": "tb_cls",
+  "name": {
+    "display": "結核塗片陽/陰性 TB-ZN (Ziehl-Neelsen, ResNet)",
+    "zh": "結核塗片陽/陰性",
+    "en": "TB-ZN"
+  },
+  "discipline": "微生物",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.99,
+    "n_train": 800,
+    "n_val": 200,
+    "macro_f1": 0.9722,
+    "weighted_f1": 0.99
+  },
+  "experiment_summary": "微生物(結核塗片判讀,搭配 tb_det 偵測):ZN 痰抹片整張陽性(含抗酸桿菌)/陰性二分類。ResNet-50 val_acc 0.99 / macro-F1 0.972(Negative 0.994、Positive 0.95)。",
+  "caveats": [
+    "⚠️ Positive val 僅 20 張、影像級隨機切分(同片視野可能輕微洩漏);ZN 陽陰視覺可分性高,高分屬合理但仍需片級切分驗證。Mendeley 來源(培養確診)。"
+  ],
+  "source": "Mendeley yhybmfrmgs",
+  "license": null,
+  "split_method": "slide-level (片級)",
+  "weights": "models/tb_cls_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)",
+  "num_classes": 2,
+  "classes": [
+    "Negative",
+    "Positive"
+  ]
+}

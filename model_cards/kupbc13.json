@@ -1,0 +1,45 @@
+{
+  "key": "kupbc13",
+  "abbr": "kupbc13",
+  "name": {
+    "display": "白血球+血小板 13 類 KU-optofil (May-Grünwald-Giemsa)",
+    "zh": "白血球+血小板13類",
+    "en": "KU-optofil"
+  },
+  "discipline": "血液",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9605,
+    "n_train": 22036,
+    "n_val": 3142,
+    "macro_f1": 0.8449,
+    "weighted_f1": 0.9599
+  },
+  "experiment_summary": "血液(13 類單顆細胞,新增血小板形態):Sysmex DI-60 自動數位顯微、May-Grünwald-Giemsa 周邊血。11 種白血球(節狀/桿狀嗜中性球、嗜酸/嗜鹼球、淋巴球、反應性淋巴球、單核球、後髓/髓/晚幼粒細胞、芽細胞、紅血球母細胞)+ 2 種血小板形態(巨大血小板 Giant Platelet / 血小板聚集 Platelet Cluster)。官方 patient-level split(無洩漏)。ResNet-50 val_acc 0.961 / macro-F1 0.845。血小板形態 2 類為既有 WBC track(PBC/UNIVALI/MLL23)所無;其餘細胞與之重疊。",
+  "caveats": [
+    "⚠️ 類別不平衡:Segmented Neutrophil 佔多數;Myelocyte(val 僅 9 張)F1 0.36、Band Neutrophil/Reactive Lymphocyte 偏弱,macro(0.84) vs weighted(0.96) 落差反映稀有類較弱。"
+  ],
+  "source": "Zenodo 17333317",
+  "license": null,
+  "split_method": "patient-level (病人級)",
+  "weights": "models/kupbc13_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)",
+  "num_classes": 13,
+  "classes": [
+    "Band Neutrophil",
+    "Basophil",
+    "Blast",
+    "Eosinophil",
+    "Erythroblast",
+    "Giant Platelet",
+    "Lymphocyte",
+    "Metamyelocyte",
+    "Monocyte",
+    "Myelocyte",
+    "Platelet Cluster",
+    "Reactive Lymphocyte",
+    "Segmented Neutrophil"
+  ]
+}

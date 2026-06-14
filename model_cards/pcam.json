@@ -1,0 +1,32 @@
+{
+  "key": "pcam",
+  "abbr": "pcam",
+  "name": {
+    "display": "淋巴結轉移 PatchCamelyon (H&E, binary)",
+    "zh": "淋巴結轉移",
+    "en": "PatchCamelyon"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9125,
+    "n_train": 262144,
+    "n_val": 32768,
+    "macro_f1": 0.9123,
+    "weighted_f1": 0.9123
+  },
+  "experiment_summary": "組織病理 H&E 淋巴結 96×96 patch 二元分類:有無轉移腫瘤 metastasis(no_tumor / tumor)。知名 PatchCamelyon benchmark;在官方 32,768 張驗證集 val 0.913、兩類 F1 ~0.91。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": "official split",
+  "weights": "models/pcam_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 2,
+  "classes": [
+    "no_tumor",
+    "tumor"
+  ]
+}

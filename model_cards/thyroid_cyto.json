@@ -1,0 +1,38 @@
+{
+  "key": "thyroid_cyto",
+  "abbr": "thyroid_cyto",
+  "name": {
+    "display": "甲狀腺細胞學 Thyroid FNA (6 級)",
+    "zh": "甲狀腺細胞學",
+    "en": "Thyroid FNA"
+  },
+  "discipline": "細胞學",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.5049,
+    "n_train": 21812,
+    "n_val": 5684,
+    "macro_f1": 0.5178,
+    "weighted_f1": 0.5068
+  },
+  "experiment_summary": "細胞學:甲狀腺細針穿刺 FNA 6 類(原始標註 1–6,疑對應 Bethesda I–VI,資料卡未明確定義)。**slide(片)級切分**(118 片,每類留 3–6 片 disjoint、同片不跨 train/val)誠實 val 0.505、macro-F1 0.518。",
+  "caveats": [
+    "⚠️ 對比舊隨機 split 的 0.947 暴跌約 44pt —— 三條修正中洩漏最嚴重,0.947 幾乎全是在背同一抹片的外觀(每片數百 tile)。slide-disjoint 下:形態明確的 class 1(F1 0.79)、class 6(0.89)能學,中間級 class 2–5(0.16–0.50)很難——與臨床上 Bethesda 中間類判讀者間變異大一致。對照子宮頸 Pap,屬不同部位細胞學。"
+  ],
+  "source": null,
+  "license": null,
+  "split_method": "slide-disjoint (片級)",
+  "weights": "models/thyroid_cyto_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 6,
+  "classes": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+  ]
+}

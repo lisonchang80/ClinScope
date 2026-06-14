@@ -1,0 +1,36 @@
+{
+  "key": "ana",
+  "abbr": "ana",
+  "name": {
+    "display": "ANA 抗核抗體型態 — HEp-2 (免疫螢光 IIF)",
+    "zh": "抗核抗體型態",
+    "en": "ANA"
+  },
+  "discipline": "免疫",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9799,
+    "n_train": 11556,
+    "n_val": 2040,
+    "macro_f1": 0.9812,
+    "weighted_f1": 0.9799
+  },
+  "experiment_summary": "自體免疫篩檢:HEp-2 細胞 6 種螢光型態(均質/斑點/核仁/著絲點/核膜/高基氏體)。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": null,
+  "weights": "models/hep2_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 6,
+  "classes": [
+    "Centromere",
+    "Golgi",
+    "Homogeneous",
+    "NuMem",
+    "Nucleolar",
+    "Speckled"
+  ]
+}

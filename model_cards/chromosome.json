@@ -1,0 +1,56 @@
+{
+  "key": "chromosome",
+  "abbr": "chromosome",
+  "name": {
+    "display": "染色體核型分類 — G-band 24 類 (CIR-Net)",
+    "zh": "染色體核型分類",
+    "en": ""
+  },
+  "discipline": "細胞遺傳學",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.8863,
+    "n_train": 2388,
+    "n_val": 598,
+    "macro_f1": 0.8893,
+    "weighted_f1": 0.8859
+  },
+  "experiment_summary": "細胞遺傳學(本平台首條 cytogenetics track):G-band(Giemsa 帶型、灰階)單條染色體 24 類 — 第 1–22 號體染色體 + X + Y(類別碼 00–23 對應 CIR-Net 原始標註,22=X、23=Y)。val_acc 0.886、macro-F1 0.889,24 類全部 F1≥0.75。",
+  "caveats": [
+    "⚠️ 無官方 split、檔名無法還原 karyotype/病人 id → 隨機 split;同一 metaphase 影像批次外觀可能略微灌高 val(惟染色體 cls 的批次洩漏遠輕於同片 tile-leak)。class 23(Y)僅 6 val,F1 1.0 不可盡信。"
+  ],
+  "source": null,
+  "license": null,
+  "split_method": "official split",
+  "weights": "models/chromosome_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 24,
+  "classes": [
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23"
+  ]
+}

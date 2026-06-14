@@ -1,0 +1,34 @@
+{
+  "key": "bach",
+  "abbr": "bach",
+  "name": {
+    "display": "乳腺組織 4 級 BACH (H&E, 嚴重度梯度)",
+    "zh": "乳腺組織4級",
+    "en": "BACH"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.8729,
+    "n_train": 3840,
+    "n_val": 960,
+    "macro_f1": 0.8732,
+    "weighted_f1": 0.8732
+  },
+  "experiment_summary": "組織病理 H&E 乳腺顯微 4 級嚴重度分類:正常 Normal / 良性 Benign / 原位癌 InSitu / 浸潤癌 Invasive(ICIAR 2018 BACH)。400 張大圖(2048×1536)切成 512 tile;**影像級切分**(同一張圖的 tile 不跨 train/val,無 tile 洩漏)。val(tile 級、來自 80 張獨立來源圖)acc 0.873、macro-F1 0.873;Invasive 最佳 0.93,Benign↔Normal 較易混(臨床合理)。別於 BreakHis 良惡二元,本 track 是 4 級嚴重度梯度。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": null,
+  "weights": "models/bach_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 4,
+  "classes": [
+    "Benign",
+    "InSitu",
+    "Invasive",
+    "Normal"
+  ]
+}

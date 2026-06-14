@@ -1,0 +1,35 @@
+{
+  "key": "fungi_koh",
+  "abbr": "fungi_koh",
+  "name": {
+    "display": "真菌(KOH 直接鏡檢)— DeFungi",
+    "zh": "真菌",
+    "en": ""
+  },
+  "discipline": null,
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.905,
+    "n_train": 7746,
+    "n_val": 1368,
+    "macro_f1": 0.9206,
+    "weighted_f1": 0.9047
+  },
+  "experiment_summary": "KOH 直接鏡檢真菌 5 類(原始標註 H1–H6 編碼,含皮癬菌屬);對照 OpenFungi 的 LPCB 培養模態。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": null,
+  "weights": "models/defungi_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 5,
+  "classes": [
+    "H1",
+    "H2",
+    "H3",
+    "H5",
+    "H6"
+  ]
+}

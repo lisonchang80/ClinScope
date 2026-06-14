@@ -1,0 +1,27 @@
+{
+  "key": "evisan",
+  "abbr": "evisan",
+  "name": {
+    "display": "精子偵測 EVISAN (多精子偵測, YOLO)",
+    "zh": "精子偵測",
+    "en": "EVISAN"
+  },
+  "discipline": "男科",
+  "task": "detection",
+  "model_type": "YOLOv8s",
+  "metrics": {
+    "mAP50": 0.4356,
+    "mAP50_95": 0.2527,
+    "precision": 0.4304,
+    "recall": 0.4128,
+    "epochs": 37
+  },
+  "experiment_summary": "男科(精子偵測,新任務 — 別於既有精子形態分類 SMIDS/HuSHeM):顯微多精子偵測,2 類依精子頭外觀 black/white(沿用資料集原始標註碼)。源為連續影片幀(200X+600X),採 video-block-disjoint 切分(整段不跨 train/val、避免相鄰幀洩漏)。YOLOv8s val mAP50 0.436 / mAP50-95 0.253 —— 誠實中等:video-disjoint + 200X/600X 倍率分布差異使 val 偏難(比隨機幀切誠實)。對應電腦輔助精液分析 CASA 的精子定位/計數。",
+  "caveats": [],
+  "source": "Zenodo 4303768",
+  "license": null,
+  "split_method": "video-block-disjoint",
+  "weights": "reports/yolo/evisan/weights/best.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)"
+}

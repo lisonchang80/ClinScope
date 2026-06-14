@@ -1,0 +1,36 @@
+{
+  "key": "husem",
+  "abbr": "husem",
+  "name": {
+    "display": "精子頭形態 HuSHeM (4 類)",
+    "zh": "精子頭形態",
+    "en": "HuSHeM"
+  },
+  "discipline": "男科",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9394,
+    "n_train": 183,
+    "n_val": 33,
+    "macro_f1": 0.9408,
+    "weighted_f1": 0.9409
+  },
+  "experiment_summary": "男科:人類精子頭部形態 4 類 — 正常 Normal / 漸細 Tapered / 梨形 Pyriform / 無定形 Amorphous(Diff-Quik 染色頭部裁切)。對照 SMIDS 全細胞 3 類,本 track 聚焦頭部。",
+  "caveats": [
+    "⚠️ 極小資料(216 張、val 每類僅 8 張),val 0.94 噪音極大、不可信。"
+  ],
+  "source": null,
+  "license": null,
+  "split_method": null,
+  "weights": "models/husem_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 4,
+  "classes": [
+    "01_Normal",
+    "02_Tapered",
+    "03_Pyriform",
+    "04_Amorphous"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "key": "urine",
+  "abbr": "urine",
+  "name": {
+    "display": "尿沉渣顆粒 Urine sediment (7 類, YOLO)",
+    "zh": "尿沉渣顆粒",
+    "en": "Urine sediment"
+  },
+  "discipline": "尿液分析",
+  "task": "detection",
+  "model_type": "YOLOv8s",
+  "metrics": {
+    "mAP50": 0.8998,
+    "mAP50_95": 0.5389,
+    "precision": 0.8313,
+    "recall": 0.8608,
+    "epochs": 60
+  },
+  "experiment_summary": "尿液分析:明場尿沉渣顆粒偵測 + 分類 7 類 —— 管型 cast、結晶 cryst、上皮細胞 epith/epithn、紅血球 eryth、白血球 leuko、黴菌/酵母 mycete。YOLOv8s,官方 train/valid split。val mAP50 0.896 / mAP50-95 0.545(紅血球 eryth 0.957、白血球 leuko 0.942 最佳;管型 cast 0.753 稀少較弱)。第 4 條偵測 track,新增尿液分析 site。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": "official split",
+  "weights": "reports/yolo/urine/weights/best.pt",
+  "status": "registered",
+  "batch": "batch 1-5"
+}

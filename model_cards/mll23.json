@@ -1,0 +1,50 @@
+{
+  "key": "mll23",
+  "abbr": "mll23",
+  "name": {
+    "display": "周邊血 18 類 MLL23 (含毛細胞白血病/芽細胞)",
+    "zh": "周邊血18類23",
+    "en": "MLL23"
+  },
+  "discipline": null,
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9483,
+    "n_train": 35378,
+    "n_val": 6243,
+    "macro_f1": 0.861,
+    "weighted_f1": 0.9483
+  },
+  "experiment_summary": "周邊血單細胞 18 類 —— 比 PBC-8/UNIVALI-14 更細的診斷導向分類:含毛細胞白血病 hairy cell、芽細胞 myeloblast、非典型前髓細胞 promyelocyte atypical、抹片細胞 smudge cell、漿細胞 plasma cell、反應性/腫瘤性淋巴球、紅血球母細胞 normoblast 及各階段顆粒球。MLL 大型血液病理庫。val_acc 0.948、weighted-F1 0.948、macro-F1 0.861(hairy cell 0.99、myeloblast 0.98 等診斷關鍵類佳;過渡型 band/metamyelocyte 較弱)。",
+  "caveats": [
+    "⚠️ 長尾,lymphocyte_reactive val 僅 5 張(F1 0.33 不可信)。"
+  ],
+  "source": null,
+  "license": null,
+  "split_method": null,
+  "weights": "models/mll23_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 18,
+  "classes": [
+    "basophil",
+    "eosinophil",
+    "hairy_cell",
+    "lymphocyte",
+    "lymphocyte_large_granular",
+    "lymphocyte_neoplastic",
+    "lymphocyte_reactive",
+    "metamyelocyte",
+    "monocyte",
+    "myeloblast",
+    "myelocyte",
+    "neutrophil_band",
+    "neutrophil_segmented",
+    "normoblast",
+    "plasma_cell",
+    "promyelocyte",
+    "promyelocyte_atypical",
+    "smudge_cell"
+  ]
+}

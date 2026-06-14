@@ -1,0 +1,35 @@
+{
+  "key": "erythrocytes_idb",
+  "abbr": "erythrocytes_idb",
+  "name": {
+    "display": "鐮刀型紅血球 erythrocytesIDB (3 類)",
+    "zh": "鐮刀型紅血球",
+    "en": "erythrocytesIDB"
+  },
+  "discipline": "血液",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.984,
+    "n_train": 501,
+    "n_val": 125,
+    "macro_f1": 0.9843,
+    "weighted_f1": 0.984
+  },
+  "experiment_summary": "血液抹片紅血球形狀 3 類:正常圓形 circular / 鐮刀變形 elongated(鐮刀型貧血 sickle cell)/ 其他 other。單顆紅血球裁切。val 0.984、macro-F1 0.984(三類均衡)。對照 RBC morphology 的 11 類異形,本 track 聚焦鐮刀型鑑別。",
+  "caveats": [
+    "⚠️ val 僅 125 張偏小、單細胞裁自 196 source 圖,隨機 split 可能同源跨組 → 嚴格需 group-aware split。"
+  ],
+  "source": null,
+  "license": null,
+  "split_method": "random (⚠️可能洩漏)",
+  "weights": "models/erythrocytes_idb_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 3,
+  "classes": [
+    "circular",
+    "elongated",
+    "other"
+  ]
+}

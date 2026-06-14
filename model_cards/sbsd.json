@@ -1,0 +1,29 @@
+{
+  "key": "sbsd",
+  "abbr": "sbsd",
+  "name": {
+    "display": "血抹片細胞偵測 SBSD (含裂紅細胞 Schistocyte, 6 類, YOLO)",
+    "zh": "血抹片細胞偵測",
+    "en": "SBSD"
+  },
+  "discipline": "血液",
+  "task": "detection",
+  "model_type": "YOLOv8s",
+  "metrics": {
+    "mAP50": 0.8951,
+    "mAP50_95": 0.7125,
+    "precision": 0.8089,
+    "recall": 0.8568,
+    "epochs": 80
+  },
+  "experiment_summary": "血液(本平台首條含裂紅細胞 schistocyte 的偵測 track):周邊血抹片 Giemsa,偵測 6 類 — RBC / 裂紅細胞 Schistocyte(微血管病性溶血、TTP/HUS 標誌)/ 血小板 PLT / 顆粒球 GRAN / 單核球 MONO / 淋巴球 LYM。YOLOv8s val mAP50 0.895 / mAP50-95 0.713。裂紅細胞為既有血液 track 所無的關鍵形態。",
+  "caveats": [
+    "⚠️ 影像級隨機 split(檔名僅流水號、無 slide id 可分組,可能輕微洩漏)。"
+  ],
+  "source": "Zenodo 15676241",
+  "license": null,
+  "split_method": "image-level random (⚠️可能洩漏)",
+  "weights": "reports/yolo/sbsd/weights/best.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)"
+}

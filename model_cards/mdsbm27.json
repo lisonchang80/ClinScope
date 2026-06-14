@@ -1,0 +1,61 @@
+{
+  "key": "mdsbm27",
+  "abbr": "mdsbm27",
+  "name": {
+    "display": "骨髓 MDS 細胞 29 類 (May-Grünwald-Giemsa)",
+    "zh": "骨髓細胞29類",
+    "en": "MDS"
+  },
+  "discipline": "血液/骨髓",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.7726,
+    "n_train": 20002,
+    "n_val": 4999,
+    "macro_f1": 0.5904,
+    "weighted_f1": 0.7745
+  },
+  "experiment_summary": "血液/骨髓(本平台首條 MDS 骨髓異常增生 track,別於既有健康/AML 骨髓 Matek/MK-11):骨髓抹片 May-Grünwald-Giemsa,29 類含 MDS 特徵性發育不良細胞(發育不良紅血球母細胞/顆粒球、假 Pelger 等)與正常各階段。125 名 MDS 病人,合併 main+add 子集。ResNet-50 val_acc 0.773 / macro-F1 0.590。",
+  "caveats": [
+    "⚠️ 隨機 split(資料集無病人 id 可分組,同片細胞可能輕微洩漏);類別重度不平衡,稀有發育不良類偏弱;已剔除 <10 張無法切分的 3 類(原 32→29)。"
+  ],
+  "source": "Figshare 28737170",
+  "license": null,
+  "split_method": "random (⚠️可能洩漏)",
+  "weights": "models/mdsbm27_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)",
+  "num_classes": 29,
+  "classes": [
+    "Band eosinophil",
+    "Band neutrophil",
+    "Blast NOC",
+    "Dysplastic erythroblast",
+    "Dysplastic granulocyte",
+    "Early erythroblast",
+    "Eosinophilic metamyelocyte",
+    "Eosinophilic myelocyte",
+    "Intermediate erythroblast",
+    "Late erythroblast",
+    "Mature lymphocyte",
+    "Megakaryocyte",
+    "Micromegakaryocyte",
+    "Mitosis",
+    "Monoblast",
+    "Monocyte",
+    "Myeloblast",
+    "Neutrophilic metamyelocyte",
+    "Neutrophilic myelocyte",
+    "Plasma cell",
+    "Proerythroblast",
+    "Promonocyte",
+    "Promyelocyte",
+    "Segmented basophil",
+    "Segmented eosinophil",
+    "Segmented neutrophil",
+    "Small megakaryocyte",
+    "Smudge cell",
+    "Unclassified cell"
+  ]
+}

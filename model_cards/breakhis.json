@@ -1,0 +1,32 @@
+{
+  "key": "breakhis",
+  "abbr": "breakhis",
+  "name": {
+    "display": "乳腺腫瘤組織病理 BreakHis (H&E, 良性/惡性)",
+    "zh": "乳腺腫瘤組織病理",
+    "en": "BreakHis"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.8391,
+    "n_train": 5373,
+    "n_val": 2536,
+    "macro_f1": 0.8285,
+    "weighted_f1": 0.8348
+  },
+  "experiment_summary": "組織病理 H&E 乳腺腫瘤二元分類:良性 benign vs 惡性 malignant(40–400× 放大倍率混訓,magnification-independent)。**病人級切分**(70 病人,val 18 人 disjoint、同病人不跨 train/val)val 0.839、macro-F1 0.829。對比舊隨機 split 的 0.978 掉約 14pt —— 那是同病人不同倍率洩漏灌出的假象,0.839 才是誠實泛化;benign recall 偏低 0.69(模型偏判 malignant)。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": "patient-level (病人級)",
+  "weights": "models/breakhis_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 2,
+  "classes": [
+    "benign",
+    "malignant"
+  ]
+}

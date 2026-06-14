@@ -1,0 +1,36 @@
+{
+  "key": "mpidb_species",
+  "abbr": "mpidb_species",
+  "name": {
+    "display": "瘧原蟲蟲種 MP-IDB (4 種)",
+    "zh": "瘧原蟲蟲種",
+    "en": "MP-IDB"
+  },
+  "discipline": "寄生蟲",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.5085,
+    "n_train": 151,
+    "n_val": 59,
+    "macro_f1": 0.3481,
+    "weighted_f1": 0.3992
+  },
+  "experiment_summary": "寄生蟲種級:瘧原蟲 4 蟲種分類 — 惡性瘧 Falciparum / 三日瘧 Malariae / 卵形瘧 Ovale / 間日瘧 Vivax(薄血膜 Giemsa,**全視野影像**、非單一寄生蟲裁切)。**slide(血片)級切分**(17 片,5 片 disjoint 留 val、同片不跨 train/val)誠實 val 0.509、macro-F1 0.348 —— 對比舊隨機 split 的 0.997 崩落,正是 img/crops 同視野洩漏灌出的假象。",
+  "caveats": [
+    "⚠️ 但資料集結構性受限:Falciparum 10 片、其餘僅 2–3 片 → Malariae 完全失敗(F1 0.00、僅 1 片可訓)、Ovale 0.18,只有 Falciparum(0.53)/Vivax(0.68)有意義;且全視野於 224px 下寄生蟲過小,模型多依染片外觀而非蟲體形態。"
+  ],
+  "source": null,
+  "license": null,
+  "split_method": "random (⚠️可能洩漏)",
+  "weights": "models/mpidb_species_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 4,
+  "classes": [
+    "Falciparum",
+    "Malariae",
+    "Ovale",
+    "Vivax"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "key": "rbc_morphology",
+  "abbr": "rbc_morphology",
+  "name": {
+    "display": "紅血球形態 RBC morphology (11 類)",
+    "zh": "紅血球形態",
+    "en": "RBC morphology"
+  },
+  "discipline": "血液",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9775,
+    "n_train": 5305,
+    "n_val": 935,
+    "macro_f1": 0.9719,
+    "weighted_f1": 0.9776
+  },
+  "experiment_summary": "血液抹片紅血球形態 11 類:正常 normal、標靶 Target cell、淚滴 teardrop、口形 Stomatocyte、球形 Spherocyte、橢圓 Ovalocyte、雪茄/鉛筆 cigar、棘 Acanthocyte、刺 Burr、裂片 Schistocyte、低色素 Hypochromia。poikilocytosis 異形紅血球形態學。val 0.978、macro-F1 0.972(sqrt 類別權重平衡不平衡)。",
+  "caveats": [
+    "⚠️ Schistocyte val 僅 12 張(<15)、單細胞裁切隨機 split 同抹片細胞可能跨 train/val,嚴格需 smear-level split。"
+  ],
+  "source": null,
+  "license": null,
+  "split_method": "random (⚠️可能洩漏)",
+  "weights": "models/rbc_morphology_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 11,
+  "classes": [
+    "Acanthocyte",
+    "Burr cell",
+    "Hypochromia",
+    "Ovalocyte",
+    "Schistocyte",
+    "Spherocyte",
+    "Stomatocyte",
+    "Target Cell",
+    "cigar cell",
+    "normal",
+    "teardrop"
+  ]
+}

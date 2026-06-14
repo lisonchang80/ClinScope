@@ -1,0 +1,804 @@
+{
+  "platform": "ClinScope",
+  "n_models": 54,
+  "cards": [
+    {
+      "key": "fungi",
+      "name_zh": "真菌",
+      "name_en": "Fungi",
+      "task": "classification",
+      "discipline": null,
+      "metrics": null,
+      "status": "registered"
+    },
+    {
+      "key": "fungi_koh",
+      "name_zh": "真菌",
+      "name_en": "",
+      "task": "classification",
+      "discipline": null,
+      "metrics": {
+        "val_acc": 0.905,
+        "n_train": 7746,
+        "n_val": 1368,
+        "macro_f1": 0.9206,
+        "weighted_f1": 0.9047
+      },
+      "status": "registered"
+    },
+    {
+      "key": "malaria",
+      "name_zh": "瘧原蟲",
+      "name_en": "Malaria",
+      "task": "classification",
+      "discipline": null,
+      "metrics": {
+        "val_acc": 0.9731,
+        "n_train": 23424,
+        "n_val": 4134,
+        "macro_f1": 0.9731,
+        "weighted_f1": 0.9731
+      },
+      "status": "registered"
+    },
+    {
+      "key": "parasite_egg",
+      "name_zh": "腸道蟲卵",
+      "name_en": "Parasite eggs",
+      "task": "classification",
+      "discipline": "寄生蟲",
+      "metrics": {
+        "val_acc": 0.9952,
+        "n_train": 9350,
+        "n_val": 1650,
+        "macro_f1": 0.9951,
+        "weighted_f1": 0.9951
+      },
+      "status": "registered"
+    },
+    {
+      "key": "wbc",
+      "name_zh": "白血球分類",
+      "name_en": "WBC differential",
+      "task": "classification",
+      "discipline": "血液",
+      "metrics": {
+        "val_acc": 0.9918,
+        "n_train": 14528,
+        "n_val": 2564,
+        "macro_f1": 0.9913,
+        "weighted_f1": 0.9918
+      },
+      "status": "registered"
+    },
+    {
+      "key": "bonemarrow",
+      "name_zh": "骨髓細胞",
+      "name_en": "Bone marrow",
+      "task": "classification",
+      "discipline": null,
+      "metrics": {
+        "val_acc": 0.8652,
+        "n_train": 137093,
+        "n_val": 17146,
+        "macro_f1": 0.7091,
+        "weighted_f1": 0.8654
+      },
+      "status": "registered"
+    },
+    {
+      "key": "bacteria",
+      "name_zh": "細菌",
+      "name_en": "Bacteria",
+      "task": "classification",
+      "discipline": null,
+      "metrics": {
+        "val_acc": 1.0,
+        "n_train": 549,
+        "n_val": 140,
+        "macro_f1": 1.0,
+        "weighted_f1": 1.0
+      },
+      "status": "registered"
+    },
+    {
+      "key": "ana",
+      "name_zh": "抗核抗體型態",
+      "name_en": "ANA",
+      "task": "classification",
+      "discipline": "免疫",
+      "metrics": {
+        "val_acc": 0.9799,
+        "n_train": 11556,
+        "n_val": 2040,
+        "macro_f1": 0.9812,
+        "weighted_f1": 0.9799
+      },
+      "status": "registered"
+    },
+    {
+      "key": "pap",
+      "name_zh": "子宮頸抹片",
+      "name_en": "Pap",
+      "task": "classification",
+      "discipline": "細胞學",
+      "metrics": null,
+      "status": "registered"
+    },
+    {
+      "key": "sperm",
+      "name_zh": "精液形態",
+      "name_en": "Sperm morphology",
+      "task": "classification",
+      "discipline": "男科",
+      "metrics": {
+        "val_acc": 0.9022,
+        "n_train": 2550,
+        "n_val": 450,
+        "macro_f1": 0.9019,
+        "weighted_f1": 0.9016
+      },
+      "status": "registered"
+    },
+    {
+      "key": "bloodcells",
+      "name_zh": "血球偵測",
+      "name_en": "Blood cells",
+      "task": "detection",
+      "discipline": null,
+      "metrics": {
+        "mAP50": 0.8905,
+        "mAP50_95": 0.6004,
+        "precision": 0.837,
+        "recall": 0.8827,
+        "epochs": 46
+      },
+      "status": "registered"
+    },
+    {
+      "key": "lc25000",
+      "name_zh": "肺/結腸組織病理25000",
+      "name_en": "LC25000",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 1.0,
+        "n_train": 21250,
+        "n_val": 3750,
+        "macro_f1": 1.0,
+        "weighted_f1": 1.0
+      },
+      "status": "registered"
+    },
+    {
+      "key": "breakhis",
+      "name_zh": "乳腺腫瘤組織病理",
+      "name_en": "BreakHis",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.8391,
+        "n_train": 5373,
+        "n_val": 2536,
+        "macro_f1": 0.8285,
+        "weighted_f1": 0.8348
+      },
+      "status": "registered"
+    },
+    {
+      "key": "nct_crc",
+      "name_zh": "結直腸組織9類100",
+      "name_en": "NCT-CRC-HE-100K",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.9701,
+        "n_train": 100000,
+        "n_val": 7180,
+        "macro_f1": 0.9578,
+        "weighted_f1": 0.9695
+      },
+      "status": "registered"
+    },
+    {
+      "key": "pcam",
+      "name_zh": "淋巴結轉移",
+      "name_en": "PatchCamelyon",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.9125,
+        "n_train": 262144,
+        "n_val": 32768,
+        "macro_f1": 0.9123,
+        "weighted_f1": 0.9123
+      },
+      "status": "registered"
+    },
+    {
+      "key": "mhist",
+      "name_zh": "大腸息肉",
+      "name_en": "MHIST",
+      "task": "classification",
+      "discipline": null,
+      "metrics": {
+        "val_acc": 0.9216,
+        "n_train": 2680,
+        "n_val": 472,
+        "macro_f1": 0.9084,
+        "weighted_f1": 0.9214
+      },
+      "status": "registered"
+    },
+    {
+      "key": "thyroid_cyto",
+      "name_zh": "甲狀腺細胞學",
+      "name_en": "Thyroid FNA",
+      "task": "classification",
+      "discipline": "細胞學",
+      "metrics": {
+        "val_acc": 0.5049,
+        "n_train": 21812,
+        "n_val": 5684,
+        "macro_f1": 0.5178,
+        "weighted_f1": 0.5068
+      },
+      "status": "registered"
+    },
+    {
+      "key": "mitosis",
+      "name_zh": "有絲分裂偵測",
+      "name_en": "Mitosis",
+      "task": "detection",
+      "discipline": "組織病理",
+      "metrics": {
+        "mAP50": 0.9285,
+        "mAP50_95": 0.6484,
+        "precision": 0.875,
+        "recall": 0.9227,
+        "epochs": 80
+      },
+      "status": "registered"
+    },
+    {
+      "key": "husem",
+      "name_zh": "精子頭形態",
+      "name_en": "HuSHeM",
+      "task": "classification",
+      "discipline": "男科",
+      "metrics": {
+        "val_acc": 0.9394,
+        "n_train": 183,
+        "n_val": 33,
+        "macro_f1": 0.9408,
+        "weighted_f1": 0.9409
+      },
+      "status": "registered"
+    },
+    {
+      "key": "rbc_morphology",
+      "name_zh": "紅血球形態",
+      "name_en": "RBC morphology",
+      "task": "classification",
+      "discipline": "血液",
+      "metrics": {
+        "val_acc": 0.9775,
+        "n_train": 5305,
+        "n_val": 935,
+        "macro_f1": 0.9719,
+        "weighted_f1": 0.9776
+      },
+      "status": "registered"
+    },
+    {
+      "key": "cnmc_leukemia",
+      "name_zh": "急性淋巴芽細胞白血病",
+      "name_en": "C-NMC",
+      "task": "classification",
+      "discipline": "血液腫瘤",
+      "metrics": {
+        "val_acc": 0.8526,
+        "n_train": 9042,
+        "n_val": 1269,
+        "macro_f1": 0.824,
+        "weighted_f1": 0.8507
+      },
+      "status": "registered"
+    },
+    {
+      "key": "mpidb_species",
+      "name_zh": "瘧原蟲蟲種",
+      "name_en": "MP-IDB",
+      "task": "classification",
+      "discipline": "寄生蟲",
+      "metrics": {
+        "val_acc": 0.5085,
+        "n_train": 151,
+        "n_val": 59,
+        "macro_f1": 0.3481,
+        "weighted_f1": 0.3992
+      },
+      "status": "registered"
+    },
+    {
+      "key": "erythrocytes_idb",
+      "name_zh": "鐮刀型紅血球",
+      "name_en": "erythrocytesIDB",
+      "task": "classification",
+      "discipline": "血液",
+      "metrics": {
+        "val_acc": 0.984,
+        "n_train": 501,
+        "n_val": 125,
+        "macro_f1": 0.9843,
+        "weighted_f1": 0.984
+      },
+      "status": "registered"
+    },
+    {
+      "key": "pannuke",
+      "name_zh": "細胞核偵測",
+      "name_en": "PanNuke",
+      "task": "detection",
+      "discipline": "組織病理",
+      "metrics": {
+        "mAP50": 0.6543,
+        "mAP50_95": 0.4046,
+        "precision": 0.6416,
+        "recall": 0.6448,
+        "epochs": 50
+      },
+      "status": "registered"
+    },
+    {
+      "key": "univali_leukocyte",
+      "name_zh": "白血球14類",
+      "name_en": "UNIVALI",
+      "task": "classification",
+      "discipline": null,
+      "metrics": {
+        "val_acc": 0.9051,
+        "n_train": 10265,
+        "n_val": 432,
+        "macro_f1": 0.8163,
+        "weighted_f1": 0.9
+      },
+      "status": "registered"
+    },
+    {
+      "key": "bach",
+      "name_zh": "乳腺組織4級",
+      "name_en": "BACH",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.8729,
+        "n_train": 3840,
+        "n_val": 960,
+        "macro_f1": 0.8732,
+        "weighted_f1": 0.8732
+      },
+      "status": "registered"
+    },
+    {
+      "key": "pathotiroid",
+      "name_zh": "甲狀腺乳突癌組織",
+      "name_en": "PathoTiroid",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.9942,
+        "n_train": 834,
+        "n_val": 172,
+        "macro_f1": 0.9918,
+        "weighted_f1": 0.9942
+      },
+      "status": "registered"
+    },
+    {
+      "key": "urine",
+      "name_zh": "尿沉渣顆粒",
+      "name_en": "Urine sediment",
+      "task": "detection",
+      "discipline": "尿液分析",
+      "metrics": {
+        "mAP50": 0.8998,
+        "mAP50_95": 0.5389,
+        "precision": 0.8313,
+        "recall": 0.8608,
+        "epochs": 60
+      },
+      "status": "registered"
+    },
+    {
+      "key": "mll23",
+      "name_zh": "周邊血18類23",
+      "name_en": "MLL23",
+      "task": "classification",
+      "discipline": null,
+      "metrics": {
+        "val_acc": 0.9483,
+        "n_train": 35378,
+        "n_val": 6243,
+        "macro_f1": 0.861,
+        "weighted_f1": 0.9483
+      },
+      "status": "registered"
+    },
+    {
+      "key": "rouleaux",
+      "name_zh": "紅血球串錢狀",
+      "name_en": "Rouleaux",
+      "task": "classification",
+      "discipline": "血液",
+      "metrics": {
+        "val_acc": 1.0,
+        "n_train": 1312,
+        "n_val": 232,
+        "macro_f1": 1.0,
+        "weighted_f1": 1.0
+      },
+      "status": "registered"
+    },
+    {
+      "key": "mk11",
+      "name_zh": "骨髓巨核細胞11",
+      "name_en": "MK-11",
+      "task": "classification",
+      "discipline": null,
+      "metrics": {
+        "val_acc": 0.8098,
+        "n_train": 5413,
+        "n_val": 594,
+        "macro_f1": 0.7583,
+        "weighted_f1": 0.8093
+      },
+      "status": "registered"
+    },
+    {
+      "key": "tryp",
+      "name_zh": "錐蟲偵測",
+      "name_en": "Trypanosome",
+      "task": "detection",
+      "discipline": "寄生蟲",
+      "metrics": {
+        "mAP50": 0.8064,
+        "mAP50_95": 0.4374,
+        "precision": 0.8232,
+        "recall": 0.7504,
+        "epochs": 60
+      },
+      "status": "registered"
+    },
+    {
+      "key": "patchgastric",
+      "name_zh": "胃腺癌分化分級",
+      "name_en": "PatchGastric",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.4888,
+        "n_train": 32253,
+        "n_val": 5677,
+        "macro_f1": 0.4766,
+        "weighted_f1": 0.4942
+      },
+      "status": "registered"
+    },
+    {
+      "key": "ipdbrain",
+      "name_zh": "腦膠質瘤亞型",
+      "name_en": "IPD-Brain",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.5289,
+        "n_train": 5001,
+        "n_val": 900,
+        "macro_f1": 0.3319,
+        "weighted_f1": 0.4475
+      },
+      "status": "registered"
+    },
+    {
+      "key": "blood_protozoa",
+      "name_zh": "血液原蟲3類",
+      "name_en": "",
+      "task": "classification",
+      "discipline": "血液",
+      "metrics": {
+        "val_acc": 1.0,
+        "n_train": 891,
+        "n_val": 158,
+        "macro_f1": 1.0,
+        "weighted_f1": 1.0
+      },
+      "status": "registered"
+    },
+    {
+      "key": "chromosome",
+      "name_zh": "染色體核型分類",
+      "name_en": "",
+      "task": "classification",
+      "discipline": "細胞遺傳學",
+      "metrics": {
+        "val_acc": 0.8863,
+        "n_train": 2388,
+        "n_val": 598,
+        "macro_f1": 0.8893,
+        "weighted_f1": 0.8859
+      },
+      "status": "registered"
+    },
+    {
+      "key": "her2_ihc",
+      "name_zh": "2免疫組化評分",
+      "name_en": "HER2",
+      "task": "classification",
+      "discipline": "免疫組化",
+      "metrics": {
+        "val_acc": 0.9845,
+        "n_train": 8797,
+        "n_val": 2200,
+        "macro_f1": 0.9817,
+        "weighted_f1": 0.9845
+      },
+      "status": "registered"
+    },
+    {
+      "key": "parasitobank",
+      "name_zh": "腸道寄生蟲偵測",
+      "name_en": "ParasitoBank",
+      "task": "detection",
+      "discipline": "寄生蟲",
+      "metrics": {
+        "mAP50": 0.6759,
+        "mAP50_95": 0.4137,
+        "precision": 0.7337,
+        "recall": 0.6115,
+        "epochs": 68
+      },
+      "status": "registered"
+    },
+    {
+      "key": "bbbc041_stage",
+      "name_zh": "瘧原蟲生活史分期偵測041",
+      "name_en": "BBBC041",
+      "task": "detection",
+      "discipline": "寄生蟲",
+      "metrics": {
+        "mAP50": 0.307,
+        "mAP50_95": 0.2463,
+        "precision": 0.3926,
+        "recall": 0.3161,
+        "epochs": 28
+      },
+      "status": "registered"
+    },
+    {
+      "key": "mrose_gram",
+      "name_zh": "革蘭氏染色痰抹片偵測",
+      "name_en": "M-ROSE",
+      "task": "detection",
+      "discipline": "微生物",
+      "metrics": {
+        "mAP50": 0.902,
+        "mAP50_95": 0.6573,
+        "precision": 0.8595,
+        "recall": 0.8174,
+        "epochs": 80
+      },
+      "status": "registered"
+    },
+    {
+      "key": "dataset19_colony",
+      "name_zh": "培養盤菌落偵測19",
+      "name_en": "Dataset19",
+      "task": "detection",
+      "discipline": "微生物",
+      "metrics": {
+        "mAP50": 0.9692,
+        "mAP50_95": 0.7519,
+        "precision": 0.9692,
+        "recall": 0.9468,
+        "epochs": 80
+      },
+      "status": "registered"
+    },
+    {
+      "key": "leishmania",
+      "name_zh": "皮膚利什曼原蟲偵測",
+      "name_en": "Leishmania",
+      "task": "detection",
+      "discipline": "寄生蟲",
+      "metrics": {
+        "mAP50": 0.5862,
+        "mAP50_95": 0.2268,
+        "precision": 0.6508,
+        "recall": 0.5635,
+        "epochs": 42
+      },
+      "status": "registered"
+    },
+    {
+      "key": "giardia_crypto",
+      "name_zh": "囊體偵測",
+      "name_en": "Giardia/Cryptosporidium",
+      "task": "detection",
+      "discipline": "寄生蟲",
+      "metrics": {
+        "mAP50": 0.8682,
+        "mAP50_95": 0.4499,
+        "precision": 0.8667,
+        "recall": 0.8505,
+        "epochs": 80
+      },
+      "status": "registered"
+    },
+    {
+      "key": "kupbc13",
+      "name_zh": "白血球+血小板13類",
+      "name_en": "KU-optofil",
+      "task": "classification",
+      "discipline": "血液",
+      "metrics": {
+        "val_acc": 0.9605,
+        "n_train": 22036,
+        "n_val": 3142,
+        "macro_f1": 0.8449,
+        "weighted_f1": 0.9599
+      },
+      "status": "registered"
+    },
+    {
+      "key": "mdsbm27",
+      "name_zh": "骨髓細胞29類",
+      "name_en": "MDS",
+      "task": "classification",
+      "discipline": "血液/骨髓",
+      "metrics": {
+        "val_acc": 0.7726,
+        "n_train": 20002,
+        "n_val": 4999,
+        "macro_f1": 0.5904,
+        "weighted_f1": 0.7745
+      },
+      "status": "registered"
+    },
+    {
+      "key": "sicap",
+      "name_zh": "攝護腺分級",
+      "name_en": "Gleason",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.7209,
+        "n_train": 7472,
+        "n_val": 2487,
+        "macro_f1": 0.6299,
+        "weighted_f1": 0.7081
+      },
+      "status": "registered"
+    },
+    {
+      "key": "sbsd",
+      "name_zh": "血抹片細胞偵測",
+      "name_en": "SBSD",
+      "task": "detection",
+      "discipline": "血液",
+      "metrics": {
+        "mAP50": 0.8951,
+        "mAP50_95": 0.7125,
+        "precision": 0.8089,
+        "recall": 0.8568,
+        "epochs": 80
+      },
+      "status": "registered"
+    },
+    {
+      "key": "evisan",
+      "name_zh": "精子偵測",
+      "name_en": "EVISAN",
+      "task": "detection",
+      "discipline": "男科",
+      "metrics": {
+        "mAP50": 0.4356,
+        "mAP50_95": 0.2527,
+        "precision": 0.4304,
+        "recall": 0.4128,
+        "epochs": 37
+      },
+      "status": "registered"
+    },
+    {
+      "key": "bcg",
+      "name_zh": "血培養革蘭氏微生物偵測",
+      "name_en": "",
+      "task": "detection",
+      "discipline": "微生物",
+      "metrics": {
+        "mAP50": 0.737,
+        "mAP50_95": 0.4196,
+        "precision": 0.7953,
+        "recall": 0.7032,
+        "epochs": 80
+      },
+      "status": "registered"
+    },
+    {
+      "key": "puma",
+      "name_zh": "黑色素瘤組織核偵測",
+      "name_en": "PUMA",
+      "task": "detection",
+      "discipline": "組織病理",
+      "metrics": {
+        "mAP50": 0.1934,
+        "mAP50_95": 0.1316,
+        "precision": 0.6375,
+        "recall": 0.2259,
+        "epochs": 100
+      },
+      "status": "registered"
+    },
+    {
+      "key": "tb_det",
+      "name_zh": "結核抗酸桿菌偵測",
+      "name_en": "TB-ZN",
+      "task": "detection",
+      "discipline": "微生物",
+      "metrics": {
+        "mAP50": 0.8401,
+        "mAP50_95": 0.4144,
+        "precision": 0.7745,
+        "recall": 0.7731,
+        "epochs": 52
+      },
+      "status": "registered"
+    },
+    {
+      "key": "tb_cls",
+      "name_zh": "結核塗片陽/陰性",
+      "name_en": "TB-ZN",
+      "task": "classification",
+      "discipline": "微生物",
+      "metrics": {
+        "val_acc": 0.99,
+        "n_train": 800,
+        "n_val": 200,
+        "macro_f1": 0.9722,
+        "weighted_f1": 0.99
+      },
+      "status": "registered"
+    },
+    {
+      "key": "nuinsseg",
+      "name_zh": "多器官細胞核偵測",
+      "name_en": "NuInsSeg",
+      "task": "detection",
+      "discipline": "組織病理",
+      "metrics": {
+        "mAP50": 0.6184,
+        "mAP50_95": 0.3344,
+        "precision": 0.7088,
+        "recall": 0.6319,
+        "epochs": 77
+      },
+      "status": "registered"
+    },
+    {
+      "key": "effusion",
+      "name_zh": "積液細胞學良性/惡性",
+      "name_en": "",
+      "task": "classification",
+      "discipline": "細胞學",
+      "metrics": {
+        "val_acc": 1.0,
+        "n_train": 554,
+        "n_val": 139,
+        "macro_f1": 1.0,
+        "weighted_f1": 1.0
+      },
+      "status": "registered"
+    }
+  ]
+}

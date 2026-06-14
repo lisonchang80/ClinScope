@@ -1,0 +1,34 @@
+{
+  "key": "her2_ihc",
+  "abbr": "her2_ihc",
+  "name": {
+    "display": "HER2 免疫組化評分 — IHC (0/1+/2+/3+)",
+    "zh": "2免疫組化評分",
+    "en": "HER2"
+  },
+  "discipline": "免疫組化",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9845,
+    "n_train": 8797,
+    "n_val": 2200,
+    "macro_f1": 0.9817,
+    "weighted_f1": 0.9845
+  },
+  "experiment_summary": "免疫組化 IHC(本平台首條 IHC track、DAB 棕色顯色,別於所有 H&E 組織 track):乳腺癌 HER2 細胞膜染色強度 4 級評分 0 / 1+ / 2+ / 3+(對應 HER2 標靶治療資格判讀)。官方 patch 級切分(split-before-extract,WSI/case 不跨 train/val → 低洩漏)val_acc 0.985、macro-F1 0.982,4 類 F1≥0.97(含最少的 2+,150 val)。HER2 分數本質是膜染色強度梯度、視覺可分性高,故高準確率屬合理而非洩漏。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": "official split",
+  "weights": "models/her2ihc_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 4,
+  "classes": [
+    "0",
+    "1plus",
+    "2plus",
+    "3plus"
+  ]
+}

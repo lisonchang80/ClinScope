@@ -1,0 +1,29 @@
+{
+  "key": "tb_det",
+  "abbr": "tb_det",
+  "name": {
+    "display": "結核抗酸桿菌偵測 TB-ZN (Ziehl-Neelsen 痰抹片, YOLO)",
+    "zh": "結核抗酸桿菌偵測",
+    "en": "TB-ZN"
+  },
+  "discipline": "微生物",
+  "task": "detection",
+  "model_type": "YOLOv8s",
+  "metrics": {
+    "mAP50": 0.8401,
+    "mAP50_95": 0.4144,
+    "precision": 0.7745,
+    "recall": 0.7731,
+    "epochs": 52
+  },
+  "experiment_summary": "微生物(本平台首條結核 track,填補全球結核負擔的關鍵 ★ 缺口):ZN 抗酸染色痰抹片(手機接顯微鏡,Makerere/Mulago 烏干達臨床)偵測抗酸桿菌 1 類 TBbacillus。YOLOv8s val mAP50 0.840 / mAP50-95 0.414(P 0.78 / R 0.77),抗酸桿菌偵測表現良好。ZN 鏡檢是高負擔地區結核診斷第一線。",
+  "caveats": [
+    "⚠️ 影像級隨機切分(phonecamera 連號視野、無 slide id,相鄰視野可能輕微洩漏)。"
+  ],
+  "source": "Kaggle saife245/tuberculosis-image-datasets",
+  "license": null,
+  "split_method": "image-level random (⚠️可能洩漏)",
+  "weights": "reports/yolo/tb_det/weights/best.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)"
+}

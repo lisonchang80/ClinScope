@@ -1,0 +1,29 @@
+{
+  "key": "dataset19_colony",
+  "abbr": "dataset19_colony",
+  "name": {
+    "display": "培養盤菌落偵測 Dataset19 (19 菌種, YOLO)",
+    "zh": "培養盤菌落偵測19",
+    "en": "Dataset19"
+  },
+  "discipline": "微生物",
+  "task": "detection",
+  "model_type": "YOLOv8s",
+  "metrics": {
+    "mAP50": 0.9692,
+    "mAP50_95": 0.7519,
+    "precision": 0.9692,
+    "recall": 0.9468,
+    "epochs": 80
+  },
+  "experiment_summary": "臨床微生物培養(本平台首條巨觀培養盤 track、全新模態 — 白光巨觀攝影而非顯微):瓊脂培養盤上 19 種臨床細菌的菌落偵測 + 菌種辨識。類別沿用資料集原始 3-字母代碼(aba/eco/kpn/sau/ses/sma/sep/efa/stm/eca/enc/cst/mmo/bce/spy/sag/ppu/spn/bcp;涵蓋 Acinetobacter / E. coli / Klebsiella / S. aureus / Enterococcus / Streptococcus 等)。YOLOv8s val mAP50 0.970 / mAP50-95 0.764,19 種 mAP50 0.93–0.99 均勻優異。菌落判讀是臨床微生物鑑定的核心。",
+  "caveats": [
+    "⚠️ stratified-by-species 切分(每種 40 train/10 val 圖);若同株多影像為同盤裁切可能輕微洩漏。對照 DIBaS(顯微 Gram 菌落 cls),本 track 是整盤巨觀偵測。"
+  ],
+  "source": null,
+  "license": null,
+  "split_method": null,
+  "weights": "reports/yolo/dataset19/weights/best.pt",
+  "status": "registered",
+  "batch": "batch 1-5"
+}

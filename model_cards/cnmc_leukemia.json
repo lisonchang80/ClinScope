@@ -1,0 +1,32 @@
+{
+  "key": "cnmc_leukemia",
+  "abbr": "cnmc_leukemia",
+  "name": {
+    "display": "急性淋巴芽細胞白血病 C-NMC (blast vs 正常)",
+    "zh": "急性淋巴芽細胞白血病",
+    "en": "C-NMC"
+  },
+  "discipline": "血液腫瘤",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.8526,
+    "n_train": 9042,
+    "n_val": 1269,
+    "macro_f1": 0.824,
+    "weighted_f1": 0.8507
+  },
+  "experiment_summary": "血液腫瘤:單細胞顯微下急性淋巴芽細胞白血病 B-ALL 芽細胞 cancer (blast) vs 正常 B 淋巴系 healthy (HEM) 二元分類(C-NMC 2019 ISBI challenge)。**病人級(subject_id disjoint)切分的誠實 val**:val_acc 0.853、macro-F1 0.824、weighted-F1 0.851 —— 同一病人不跨 train/val,無洩漏(對照本專案多數隨機 split track 的樂觀數字)。blast 與正常淋巴細胞形態高度相似為本任務難點。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": "patient-level (病人級)",
+  "weights": "models/cnmc_leukemia_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 2,
+  "classes": [
+    "cancer",
+    "healthy"
+  ]
+}

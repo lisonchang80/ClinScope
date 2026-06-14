@@ -1,0 +1,21 @@
+{
+  "key": "fungi",
+  "abbr": "fungi",
+  "name": {
+    "display": "真菌 Fungi — OpenFungi (LPCB 培養)",
+    "zh": "真菌",
+    "en": "Fungi"
+  },
+  "discipline": null,
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": null,
+  "experiment_summary": "環境/食品黴菌屬級分類(Aspergillus、Penicillium…)。LPCB 染色、培養後影像。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": null,
+  "weights": "models/resnet50_fungi.pt",
+  "status": "registered",
+  "batch": "batch 1-5"
+}

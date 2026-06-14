@@ -1,0 +1,32 @@
+{
+  "key": "malaria",
+  "abbr": "malaria",
+  "name": {
+    "display": "瘧原蟲 Malaria — NIH (Giemsa 血抹片)",
+    "zh": "瘧原蟲",
+    "en": "Malaria"
+  },
+  "discipline": null,
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9731,
+    "n_train": 23424,
+    "n_val": 4134,
+    "macro_f1": 0.9731,
+    "weighted_f1": 0.9731
+  },
+  "experiment_summary": "已切好的單一血球:受感染 Parasitized vs 未感染 Uninfected。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": null,
+  "weights": "models/malaria_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 2,
+  "classes": [
+    "Parasitized",
+    "Uninfected"
+  ]
+}

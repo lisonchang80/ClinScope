@@ -1,0 +1,29 @@
+{
+  "key": "bcg",
+  "abbr": "bcg",
+  "name": {
+    "display": "血培養革蘭氏微生物偵測 (Gram 染色, YOLO)",
+    "zh": "血培養革蘭氏微生物偵測",
+    "en": ""
+  },
+  "discipline": "微生物",
+  "task": "detection",
+  "model_type": "YOLOv8s",
+  "metrics": {
+    "mAP50": 0.737,
+    "mAP50_95": 0.4196,
+    "precision": 0.7953,
+    "recall": 0.7032,
+    "epochs": 80
+  },
+  "experiment_summary": "微生物(本平台首條陽性血培養 track,菌血症/敗血症關鍵):陽性血培養抹片 Gram 染色(×100 油鏡)偵測微生物 1 類 microorganism(涵蓋革蘭氏陽/陰球菌、桿菌、酵母菌等多種形態,57 菌種來源)。YOLOv8s val mAP50 0.737 / mAP50-95 0.420。血培養陽性的快速形態判讀直接影響經驗性抗生素選擇。官方 DoubleCheck 共識標註。",
+  "caveats": [
+    "⚠️ 影像級隨機 split(505 圖各為一名病人陽性血培養,image-level≈patient-level、洩漏低);僅偵測「有無微生物」不分菌種(菌種仍需培養/質譜)。"
+  ],
+  "source": "Figshare 26004610",
+  "license": null,
+  "split_method": "patient-level (病人級)",
+  "weights": "reports/yolo/bcg/weights/best.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)"
+}

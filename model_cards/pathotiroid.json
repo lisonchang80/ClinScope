@@ -1,0 +1,34 @@
+{
+  "key": "pathotiroid",
+  "abbr": "pathotiroid",
+  "name": {
+    "display": "甲狀腺乳突癌組織 PathoTiroid (H&E, PTC vs 非PTC)",
+    "zh": "甲狀腺乳突癌組織",
+    "en": "PathoTiroid"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9942,
+    "n_train": 834,
+    "n_val": 172,
+    "macro_f1": 0.9918,
+    "weighted_f1": 0.9942
+  },
+  "experiment_summary": "組織病理 H&E 甲狀腺二元:乳突癌樣 PTC-like vs 非乳突癌 Non-PTC(PTIC 資料集)。**病人級(patient-disjoint)切分** —— 24 病人留 5 人當 val,同一病人不跨 train/val,無洩漏。val_acc 0.994、macro-F1 0.992(PTC 核特徵 Orphan-Annie 核/核溝辨識度高)。對照甲狀腺 FNA 細胞學 track(細胞抹片),本 track 是組織切片。",
+  "caveats": [
+    "⚠️ val 僅 5 病人 → 小 cohort、高變異,0.994 換新中心/掃描儀未必維持。"
+  ],
+  "source": null,
+  "license": null,
+  "split_method": "patient-level (病人級)",
+  "weights": "models/pathotiroid_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 2,
+  "classes": [
+    "Non_PTC",
+    "PTC"
+  ]
+}

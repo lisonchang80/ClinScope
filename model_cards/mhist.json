@@ -1,0 +1,34 @@
+{
+  "key": "mhist",
+  "abbr": "mhist",
+  "name": {
+    "display": "大腸息肉 MHIST (H&E, HP vs SSA)",
+    "zh": "大腸息肉",
+    "en": "MHIST"
+  },
+  "discipline": null,
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9216,
+    "n_train": 2680,
+    "n_val": 472,
+    "macro_f1": 0.9084,
+    "weighted_f1": 0.9214
+  },
+  "experiment_summary": "消化道病理 H&E 大腸息肉二元『診斷』:增生性息肉 Hyperplastic vs 無柄鋸齒狀腺瘤 Sessile-serrated adenoma(臨床上易混、判讀者間一致性低)。val 0.922。與其他 H&E track 不同 —— 這是診斷鑑別、非組織分型。",
+  "caveats": [
+    "⚠️ 隨機 split 可能同片洩漏(同一 WSI 多 tile)。"
+  ],
+  "source": null,
+  "license": null,
+  "split_method": "random (⚠️可能洩漏)",
+  "weights": "models/mhist_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 2,
+  "classes": [
+    "Hyperplastic",
+    "Sessile_adenoma"
+  ]
+}

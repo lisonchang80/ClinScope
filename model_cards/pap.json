@@ -1,0 +1,21 @@
+{
+  "key": "pap",
+  "abbr": "pap",
+  "name": {
+    "display": "子宮頸抹片 Pap — SIPaKMeD (5 類細胞)",
+    "zh": "子宮頸抹片",
+    "en": "Pap"
+  },
+  "discipline": "細胞學",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": null,
+  "experiment_summary": "細胞學:子宮頸抹片單顆細胞 5 類 — 正常(表層-中層/旁基底)、異常(挖空細胞 koilocyte/角化不良)、化生 metaplastic。Pap 染色明場。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": null,
+  "weights": "models/sipakmed_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5"
+}

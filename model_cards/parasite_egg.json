@@ -1,0 +1,41 @@
+{
+  "key": "parasite_egg",
+  "abbr": "parasite_egg",
+  "name": {
+    "display": "腸道蟲卵 Parasite eggs — Chula-ParasiteEgg-11 (糞便鏡檢)",
+    "zh": "腸道蟲卵",
+    "en": "Parasite eggs"
+  },
+  "discipline": "寄生蟲",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9952,
+    "n_train": 9350,
+    "n_val": 1650,
+    "macro_f1": 0.9951,
+    "weighted_f1": 0.9951
+  },
+  "experiment_summary": "糞便寄生蟲卵 11 類:蛔蟲、鞭蟲、鉤蟲、蟯蟲、薑片蟲、肝吸蟲、肺吸蟲、絛蟲、縮小/微小膜殼絛蟲、毛細線蟲。對照瘧疾的 Giemsa 血抹片,屬糞便濕抹片模態。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": null,
+  "weights": "models/parasite_egg_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 11,
+  "classes": [
+    "Ascaris lumbricoides",
+    "Capillaria philippinensis",
+    "Enterobius vermicularis",
+    "Fasciolopsis buski",
+    "Hookworm egg",
+    "Hymenolepis diminuta",
+    "Hymenolepis nana",
+    "Opisthorchis viverrine",
+    "Paragonimus spp",
+    "Taenia spp. egg",
+    "Trichuris trichiura"
+  ]
+}

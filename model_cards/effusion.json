@@ -1,0 +1,34 @@
+{
+  "key": "effusion",
+  "abbr": "effusion",
+  "name": {
+    "display": "積液細胞學 良性/惡性 (體腔積液, ResNet)",
+    "zh": "積液細胞學良性/惡性",
+    "en": ""
+  },
+  "discipline": "細胞學",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 1.0,
+    "n_train": 554,
+    "n_val": 139,
+    "macro_f1": 1.0,
+    "weighted_f1": 1.0
+  },
+  "experiment_summary": "細胞學(本平台首條體腔積液 track):肋膜/腹腔/心包積液離心抹片,良性 vs 惡性細胞團二分類。ResNet-50 在小驗證集達 val 1.0。",
+  "caveats": [
+    "⚠️ **影像級隨機切分、693 圖疑似同案例多團塊分散到 train/val 造成洩漏,1.0 不代表真實表現**,僅供流程 demo;臨床判積液良惡性很常見,但此數字需病例級切分才可信。授權 © 原作者(Parikshit Sanyal),僅研究/作品集用。"
+  ],
+  "source": "Kaggle cmacus/body-cavity-fluid-cytology-images",
+  "license": "© 原作者",
+  "split_method": "image-level random (⚠️可能洩漏)",
+  "weights": "models/effusion_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)",
+  "num_classes": 2,
+  "classes": [
+    "benign",
+    "malignant"
+  ]
+}

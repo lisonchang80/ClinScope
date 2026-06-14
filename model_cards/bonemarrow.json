@@ -1,0 +1,51 @@
+{
+  "key": "bonemarrow",
+  "abbr": "bonemarrow",
+  "name": {
+    "display": "骨髓細胞 Bone marrow — Matek BM (21 類)",
+    "zh": "骨髓細胞",
+    "en": "Bone marrow"
+  },
+  "discipline": null,
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.8652,
+    "n_train": 137093,
+    "n_val": 17146,
+    "macro_f1": 0.7091,
+    "weighted_f1": 0.8654
+  },
+  "experiment_summary": "骨髓抹片細胞形態 21 類(Matek):芽細胞 BLA、前驅紅血球 PEB/EBO、各階段顆粒球(PMO/MYB/MMZ/NGB/NGS)、嗜酸/嗜鹼球、淋巴球 LYT/LYI、漿細胞 PLM、單核球 MON 等。May-Grünwald-Giemsa 染色,對照 PBC 周邊血;類別重度不平衡,稀有類成績較低。",
+  "caveats": [],
+  "source": null,
+  "license": null,
+  "split_method": null,
+  "weights": "models/bonemarrow_resnet50.pt",
+  "status": "registered",
+  "batch": "batch 1-5",
+  "num_classes": 21,
+  "classes": [
+    "ABE",
+    "ART",
+    "BAS",
+    "BLA",
+    "EBO",
+    "EOS",
+    "FGC",
+    "HAC",
+    "KSC",
+    "LYI",
+    "LYT",
+    "MMZ",
+    "MON",
+    "MYB",
+    "NGB",
+    "NGS",
+    "NIF",
+    "OTH",
+    "PEB",
+    "PLM",
+    "PMO"
+  ]
+}
