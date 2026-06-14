@@ -18,7 +18,7 @@ BATCH6 = {"kupbc13", "mdsbm27", "sicap", "sbsd", "evisan", "bcg", "puma",
           "tb_det", "tb_cls", "nuinsseg", "effusion",
           "msi", "orchid", "kidney", "mihic", "tvmi3k", "tcga",
           "tanzania", "riva", "placenta", "koh", "csf", "ivcm"}
-BATCH7 = {"cryonuseg"}
+BATCH7 = {"cryonuseg", "blastocyst"}
 
 # 來源(blurb 未必含, 這裡 curated; 找不到再退回 blurb 解析)
 SOURCE = {
@@ -34,10 +34,12 @@ SOURCE = {
     "placenta": "Zenodo 10535022 (HAPPY)", "koh": "Figshare 14678514 (hyphae KOH)",
     "csf": "Zenodo 6543147 (CSF cytology)", "ivcm": "Figshare 19838083 (IVCM-Keratitis)",
     "cryonuseg": "Kaggle ipateam/segmentation-of-nuclei-in-cryosectioned-he-images (CryoNuSeg)",
+    "blastocyst": "Figshare 20123153 (human blastocyst IVF benchmark)",
 }
 
 DISCIPLINE_KW = ["微生物", "黴菌", "寄生蟲", "血液/骨髓", "血液腫瘤", "血液", "組織病理", "細胞學",
-                 "免疫組化", "免疫病理", "免疫", "男科", "眼科", "細胞遺傳學", "尿液分析", "尿液"]
+                 "免疫組化", "免疫病理", "免疫", "男科", "眼科", "細胞遺傳學", "尿液分析", "尿液",
+                 "生殖醫學", "生殖", "胚胎學"]
 
 
 def parse_registry(src):

@@ -1,6 +1,6 @@
 # ClinScope
 
-臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：67 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：68 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
 自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
 
 ## 現實定位（先讀這段）
@@ -83,6 +83,7 @@
 | 細胞學（腦脊髓液 CSF） | CSF 16 類 | 體液離心抹片 | ResNet-50 | ~30k 圖 / 16 類 | val 0.829、macro-F1 0.686 ✅ patient-disjoint |
 | 眼科（角膜共軛焦） | IVCM 角膜炎 | 共軛焦顯微 | ResNet-50 | ~3k 圖 / 4 類 | val 0.981、macro-F1 0.965 ⚠️ 影像級切分疑洩漏 |
 | 組織病理（凍結切片核） | CryoNuSeg | 冷凍切片 H&E | YOLOv8 | 30 圖 / 1 類 | mAP50 0.466、mAP50-95 0.265 ⚠️ val 僅 10 張 |
+| 生殖（IVF 囊胚分級） | Blastocyst | 胚胎明場 | ResNet-50 | 2,342 圖 / 5 類 | val 0.775、macro-F1 0.686 ✅ embryo-disjoint |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -206,6 +207,7 @@ pip install -r requirements.txt
 | CSF 16 類 | Zenodo `6543147`（腦脊髓液細胞學 16 類;檔名 Liquor_<病人> patient-disjoint,大類抽樣） |
 | IVCM 角膜炎 | Figshare `19838083`（角膜活體共軛焦 4 類:棘阿米巴/真菌/非特異/健康;影像級切分） |
 | CryoNuSeg | Kaggle `ipateam/segmentation-of-nuclei-in-cryosectioned-he-images`（冷凍切片 H&E 10 器官核 instance→bbox;組織級切分,val 僅 10 張） |
+| Blastocyst | Figshare `20123153`（人類囊胚 IVF benchmark;Gardner 擴張度 5 類;官方 train(silver)/test(gold) embryo-disjoint） |
 
 ## 免責
 
