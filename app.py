@@ -232,6 +232,22 @@ REGISTRY = [
      "label": "🔬 黑色素瘤組織核偵測 PUMA (H&E, 10 核類, YOLO)",
      "path": ROOT / "reports" / "yolo" / "puma" / "weights" / "best.pt",
      "blurb": "組織病理(本平台首條皮膚黑色素瘤 track):原發+轉移黑色素瘤 H&E ROI,偵測 10 種細胞核 — 腫瘤核/淋巴球/基質/內皮/組織球/嗜黑素細胞 melanophage/漿細胞/嗜中性球/凋亡核/上皮。YOLOv8s val mAP50 0.193 / mAP50-95 0.132 —— 誠實偏低:10 類極不平衡(腫瘤核 57k vs 嗜中性 366、嗜黑素 695),稀有核型近乎學不起來、密集小核偵測難;主力腫瘤核/淋巴球為主要貢獻。含黑色素瘤特有的 melanophage 等核型,為既有 PanNuke/NuInsSeg 所無。ROI 級切分(原發/轉移),CC0 授權。"},
+    {"key": "tb_det", "kind": "det",
+     "label": "🦠 結核抗酸桿菌偵測 TB-ZN (Ziehl-Neelsen 痰抹片, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "tb_det" / "weights" / "best.pt",
+     "blurb": "微生物(本平台首條結核 track,填補全球結核負擔的關鍵 ★ 缺口):ZN 抗酸染色痰抹片(手機接顯微鏡,Makerere/Mulago 烏干達臨床)偵測抗酸桿菌 1 類 TBbacillus。YOLOv8s val mAP50 0.840 / mAP50-95 0.414(P 0.78 / R 0.77),抗酸桿菌偵測表現良好。ZN 鏡檢是高負擔地區結核診斷第一線。⚠️ 影像級隨機切分(phonecamera 連號視野、無 slide id,相鄰視野可能輕微洩漏)。"},
+    {"key": "tb_cls", "kind": "cls",
+     "label": "🦠 結核塗片陽/陰性 TB-ZN (Ziehl-Neelsen, ResNet)",
+     "path": ROOT / "models" / "tb_cls_resnet50.pt",
+     "blurb": "微生物(結核塗片判讀,搭配 tb_det 偵測):ZN 痰抹片整張陽性(含抗酸桿菌)/陰性二分類。ResNet-50 val_acc 0.99 / macro-F1 0.972(Negative 0.994、Positive 0.95)。⚠️ Positive val 僅 20 張、影像級隨機切分(同片視野可能輕微洩漏);ZN 陽陰視覺可分性高,高分屬合理但仍需片級切分驗證。Mendeley 來源(培養確診)。"},
+    {"key": "nuinsseg", "kind": "det",
+     "label": "🔬 多器官細胞核偵測 NuInsSeg (H&E 31 器官, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "nuinsseg" / "weights" / "best.pt",
+     "blurb": "組織病理(多器官泛化,補既有 PanNuke 單一來源):31 種人體器官 H&E 的細胞核偵測(1 類 nucleus),由 instance mask 連通標記轉 bbox。YOLOv8s val mAP50 0.618 / mAP50-95 0.334。涵蓋膀胱/腦/腎/肝/小腸/子宮頸…等 31 器官,器官分層切分;對照 PanNuke(H&E 核 5 類),本 track 強調跨器官泛化的單類核偵測。"},
+    {"key": "effusion", "kind": "cls",
+     "label": "🔬 積液細胞學 良性/惡性 (體腔積液, ResNet)",
+     "path": ROOT / "models" / "effusion_resnet50.pt",
+     "blurb": "細胞學(本平台首條體腔積液 track):肋膜/腹腔/心包積液離心抹片,良性 vs 惡性細胞團二分類。ResNet-50 在小驗證集達 val 1.0。⚠️ **影像級隨機切分、693 圖疑似同案例多團塊分散到 train/val 造成洩漏,1.0 不代表真實表現**,僅供流程 demo;臨床判積液良惡性很常見,但此數字需病例級切分才可信。授權 © 原作者(Parikshit Sanyal),僅研究/作品集用。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
