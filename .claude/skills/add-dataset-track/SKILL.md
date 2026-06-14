@@ -92,6 +92,13 @@ app 只列「權重檔存在」的模型。**改完要重啟 server 才生效**�
 - **batch6 新 prep 轉換樣式(寫小腳本到 data/_pipeline/)**:VOC 類名可能在 `<label>` 非 `<name>` 且無 `<size>`→從圖讀 W,H(TB det);mask→bbox 用 `scipy.ndimage.label+find_objects`(instance/灰階閾值/顏色分類:nuinsseg/tvmi3k/kidney);GeoJSON polygon→bbox 遞迴取 min/max(puma);連續影片幀**別隨機切**改 video-block-disjoint(evisan);超大 cls(mihic 195k/msi 93k)每類抽樣+epochs 降 12–15;官方 split 在 .xlsx 需 `openpyxl`+pandas、one-hot 多標 argmax(sicap);只有 images/ 沒標註的(puma/blood_culture_gram/ignite)標註在同 record 另一檔要另抓;下載斷網整段秒掛→寫 retry 腳本,Figshare 簽章 URL 10s 過期用 `curl -L` 別用 aria2c。
 - **train_driver.py**(data/_pipeline/,gitignored)= 訓練佇列驅動器:逐 job marker 跳過已完成、det 用絕對 project、可續跑;一批訓完讀 reports 成績→改 app.py+README→重跑識別卡→逐批 commit。
 
+### batch6 第二波(+12, 2026-06-14)新工具/坑
+- **下載前先驗「模態 + 標籤型態」適不適 cls/det**(本次踩兩個假候選):① **sirscan 藥敏** Tables 是 `.docx`/`.xlsx` 抑菌圈**直徑數值 + S/I/R、無 disk 空間座標**→ 無法建 bbox、也非單一 cls 標籤 → 棄;② **onycho**(figshare 5398573)號稱「KOH 顯微」實為**臨床指甲外觀照**(檔名 `L#NAIL#...#onychomycosis`)→ 模態不合(我們只收顯微)棄。教訓:scout 的「微觀/有標籤」說法**下載後一定開箱驗**——看標註是否含空間座標、影像是否真顯微。
+- **Dryad / Anubis(Xe Iaso 工作量證明)反爬蟲**:curl 回 401/403 或「Validating...」HTML(含 `.within.website`)→ 用 **`data/_pipeline/dryad_anubis_dl.py`**:抓頁取 `#anubis_challenge`(`rules.difficulty`+`challenge.randomData`/`id`)→ fast 演算法 `sha256(randomData+nonce)` 找 hex 前 `difficulty` 個 0 的 nonce → GET `pass-challenge?id&response&nonce&redir&elapsedTime` 拿 auth cookie → 同 session 下載;全程**同一 UA**(challenge 綁 UA+IP)。Merritt 冷儲存對小檔常回 **HTTP 202**(組裝中)→ **retry-on-202**(sleep 重試, 可能要等數小時, 大檔反而立即 200)。
+- **中斷的 cls 救援**:cls 訓練被砍(重開機/TDR)時,`torch.save` best checkpoint **逐 epoch 已存**(權重在),但 `classification_report`+`summary.json` **只在跑完才寫**(報告缺)。⚠️ train_driver 的 marker 檢查只看「權重存在且 >1000 bytes」→ 會把這種**半成品當已完成跳過**。修法:`data/_pipeline/eval_resnet.py`(載 checkpoint→在 val set 跑一次→補出 report+summary,免重訓,大集如 msi 19萬張救超多時間);或刪權重重訓。
+- **gzip tar(`.tar.gz`)大量小檔解壓**:`tarfile.open("r:gz")` + 隨機順序 `extractfile` 是 **O(n²)**(gz 不可 seek,每次從頭解壓;60萬檔慢到 ~1檔/秒)。修法:**streaming `r|gz` 兩段式**——pass1 純循序 `for m in tf` 只收 `m.name` 決定抽樣/split,pass2 再 `r|gz` 循序解壓選中者;且 `m.isfile()` 跳過 sym/hardlink(TCGA 用 hardlink 存重複 patch,streaming extractfile 會 `StreamError`,順便去重更無洩漏)。
+- **點(keypoint)標註→det**:座標常是影像**百分比**(x,y 0-100)→ YOLO 正規化中心直接 = x/100,固定框邊長取影像比例(riva 用 0.07)近似合成 bbox(誠實掛「固定框近似」caveat,小目標+多類不平衡 mAP 會偏低)。
+
 ## 環境與坑（血淚）
 
 - venv `.venv\`（Py 3.11）、torch 2.6.0+**cu124**、ultralytics、sklearn、gradio 6.x、datasets+pyarrow（HF parquet 用）。
