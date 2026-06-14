@@ -298,6 +298,10 @@ REGISTRY = [
      "label": "👁️ 角膜共軛焦顯微 感染性角膜炎 4 類 IVCM (ResNet)",
      "path": ROOT / "models" / "ivcm_resnet50.pt",
      "blurb": "眼科(本平台首條角膜活體共軛焦顯微 IVCM track):感染性角膜炎共軛焦顯微 4 類 — 棘阿米巴 Acanthamoeba / 真菌 Fungal / 非特異性 NonSpecific / 健康 Healthy。ResNet-50 val_acc 0.981 / macro-F1 0.965。角膜共軛焦可即時偵測棘阿米巴囊體與真菌菌絲、指導感染性角膜炎治療。⚠️ 小資料(~3000 圖)、影像級切分:同一眼連續共軛焦影像形態近似、可能分散 train/val 造成輕微洩漏,高分需病人級切分驗證。來源 Figshare 19838083(IVCM-Keratitis)。"},
+    {"key": "cryonuseg", "kind": "det",
+     "label": "🧊 凍結切片 H&E 細胞核偵測 CryoNuSeg (10 器官, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "cryonuseg" / "weights" / "best.pt",
+     "blurb": "組織病理(本平台首條「凍結切片 cryosection」模態,補既有全 FFPE 核資料如 PanNuke/NuInsSeg):術中冷凍切片 H&E 細胞核偵測 1 類(10 器官 × 3 = 30 張,器官分層 20 train / 10 val,每核 instance mask→bbox)。YOLOv8s val mAP50 0.466 / mAP50-95 0.265(P 0.72 / R 0.50)。冷凍切片有凍結假影、形態與 FFPE 差異大,是術中快速診斷的核偵測難點。⚠️ 資料極小(val 僅 10 張),成績僅供參考、數字不穩;組織級切分(同器官不同張分 train/val)。來源 Kaggle ipateam(CryoNuSeg, Mahbod et al.)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]

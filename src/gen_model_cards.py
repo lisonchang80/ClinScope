@@ -18,6 +18,7 @@ BATCH6 = {"kupbc13", "mdsbm27", "sicap", "sbsd", "evisan", "bcg", "puma",
           "tb_det", "tb_cls", "nuinsseg", "effusion",
           "msi", "orchid", "kidney", "mihic", "tvmi3k", "tcga",
           "tanzania", "riva", "placenta", "koh", "csf", "ivcm"}
+BATCH7 = {"cryonuseg"}
 
 # 來源(blurb 未必含, 這裡 curated; 找不到再退回 blurb 解析)
 SOURCE = {
@@ -32,6 +33,7 @@ SOURCE = {
     "tanzania": "Harvard Dataverse (Tanzania malaria thick/thin)", "riva": "Zenodo 17288879 (RIVA)",
     "placenta": "Zenodo 10535022 (HAPPY)", "koh": "Figshare 14678514 (hyphae KOH)",
     "csf": "Zenodo 6543147 (CSF cytology)", "ivcm": "Figshare 19838083 (IVCM-Keratitis)",
+    "cryonuseg": "Kaggle ipateam/segmentation-of-nuclei-in-cryosectioned-he-images (CryoNuSeg)",
 }
 
 DISCIPLINE_KW = ["微生物", "黴菌", "寄生蟲", "血液/骨髓", "血液腫瘤", "血液", "組織病理", "細胞學",
@@ -172,7 +174,8 @@ def main():
             "split_method": split_method(e["blurb"]),
             "weights": e["weights"],
             "status": "registered" if os.path.exists(weights_abs) else "pending",
-            "batch": "batch-6 (2026-06-14)" if key in BATCH6 else "batch 1-5",
+            "batch": ("batch-7 (2026-06-14)" if key in BATCH7
+                      else "batch-6 (2026-06-14)" if key in BATCH6 else "batch 1-5"),
         }
         if metrics and "num_classes" in (metrics or {}):
             card["num_classes"] = metrics.pop("num_classes")
