@@ -64,6 +64,8 @@
 | 組織病理（攝護腺 Gleason） | SICAPv2 | H&E patch | ResNet-50 | 9,959 patch / 4 類 | val 0.721、macro-F1 0.630 ✅ slide-disjoint 切分（G5 弱） |
 | 血液（裂紅細胞偵測） | SBSD | Giemsa 血抹片 | YOLOv8 | 615 圖 / 6 類 | mAP50 0.895、mAP50-95 0.713 |
 | 男科（精子偵測） | EVISAN | 顯微（200X/600X） | YOLOv8 | 6,000 圖 / 2 類 | mAP50 0.436 ✅ video-disjoint 切分 |
+| 微生物（血培養革蘭氏） | Blood-culture Gram | Gram 染色 ×100 油鏡 | YOLOv8 | 505 圖 / 1 類 | mAP50 0.737、mAP50-95 0.420 |
+| 組織病理（黑色素瘤核） | PUMA | H&E ROI 1024px | YOLOv8 | 206 ROI / 10 核類 | mAP50 0.193 ⚠️ 類別極不平衡、稀有核型學不起來 |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -168,6 +170,8 @@ pip install -r requirements.txt
 | SICAPv2 | Zenodo `14178894`（攝護腺 Gleason,NormalizedSICAPv2 子集 + Train/Val.xlsx 官方 slide-disjoint split;argmax one-hot→NC/G3/G4/G5） |
 | SBSD | Zenodo `15676241`（血抹片 6 類含裂紅細胞 Schistocyte,現成 YOLO txt + classes.txt;影像級切分） |
 | EVISAN | Zenodo `4303768`（多精子偵測 VOC xml,自寫 xml→YOLO;video-block-disjoint split 避免相鄰幀洩漏） |
+| Blood-culture Gram | Figshare `26004610`（陽性血培養 Gram 抹片,COCO DoubleCheck 共識標註;影像級切分,1 類 microorganism） |
+| PUMA | Zenodo `13859989`（原發+轉移黑色素瘤 H&E,GeoJSON 10 核類 polygon→bbox;ROI 級切分,CC0） |
 
 ## 免責
 

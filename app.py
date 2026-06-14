@@ -224,6 +224,14 @@ REGISTRY = [
      "label": "🔬 精子偵測 EVISAN (多精子偵測, YOLO)",
      "path": ROOT / "reports" / "yolo" / "evisan" / "weights" / "best.pt",
      "blurb": "男科(精子偵測,新任務 — 別於既有精子形態分類 SMIDS/HuSHeM):顯微多精子偵測,2 類依精子頭外觀 black/white(沿用資料集原始標註碼)。源為連續影片幀(200X+600X),採 video-block-disjoint 切分(整段不跨 train/val、避免相鄰幀洩漏)。YOLOv8s val mAP50 0.436 / mAP50-95 0.253 —— 誠實中等:video-disjoint + 200X/600X 倍率分布差異使 val 偏難(比隨機幀切誠實)。對應電腦輔助精液分析 CASA 的精子定位/計數。"},
+    {"key": "bcg", "kind": "det",
+     "label": "🦠 血培養革蘭氏微生物偵測 (Gram 染色, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "bcg" / "weights" / "best.pt",
+     "blurb": "微生物(本平台首條陽性血培養 track,菌血症/敗血症關鍵):陽性血培養抹片 Gram 染色(×100 油鏡)偵測微生物 1 類 microorganism(涵蓋革蘭氏陽/陰球菌、桿菌、酵母菌等多種形態,57 菌種來源)。YOLOv8s val mAP50 0.737 / mAP50-95 0.420。血培養陽性的快速形態判讀直接影響經驗性抗生素選擇。官方 DoubleCheck 共識標註。⚠️ 影像級隨機 split(505 圖各為一名病人陽性血培養,image-level≈patient-level、洩漏低);僅偵測「有無微生物」不分菌種(菌種仍需培養/質譜)。"},
+    {"key": "puma", "kind": "det",
+     "label": "🔬 黑色素瘤組織核偵測 PUMA (H&E, 10 核類, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "puma" / "weights" / "best.pt",
+     "blurb": "組織病理(本平台首條皮膚黑色素瘤 track):原發+轉移黑色素瘤 H&E ROI,偵測 10 種細胞核 — 腫瘤核/淋巴球/基質/內皮/組織球/嗜黑素細胞 melanophage/漿細胞/嗜中性球/凋亡核/上皮。YOLOv8s val mAP50 0.193 / mAP50-95 0.132 —— 誠實偏低:10 類極不平衡(腫瘤核 57k vs 嗜中性 366、嗜黑素 695),稀有核型近乎學不起來、密集小核偵測難;主力腫瘤核/淋巴球為主要貢獻。含黑色素瘤特有的 melanophage 等核型,為既有 PanNuke/NuInsSeg 所無。ROI 級切分(原發/轉移),CC0 授權。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
