@@ -6,7 +6,7 @@
     "zh": "真菌",
     "en": "Fungi"
   },
-  "discipline": null,
+  "discipline": "黴菌",
   "task": "classification",
   "model_type": "ResNet-50",
   "metrics": null,

@@ -17,7 +17,7 @@ DET_DIR = {"bloodcells": "bccd", "bbbc041_stage": "bbbc041", "mrose_gram": "mros
 BATCH6 = {"kupbc13", "mdsbm27", "sicap", "sbsd", "evisan", "bcg", "puma",
           "tb_det", "tb_cls", "nuinsseg", "effusion",
           "msi", "orchid", "kidney", "mihic", "tvmi3k", "tcga",
-          "tanzania", "riva", "placenta", "koh"}
+          "tanzania", "riva", "placenta", "koh", "csf", "ivcm"}
 
 # 來源(blurb 未必含, 這裡 curated; 找不到再退回 blurb 解析)
 SOURCE = {
@@ -31,10 +31,11 @@ SOURCE = {
     "tcga": "Zenodo 6604094 (TCGA-TILs)", "kidney": "Zenodo 4299694 (glomeruli)",
     "tanzania": "Harvard Dataverse (Tanzania malaria thick/thin)", "riva": "Zenodo 17288879 (RIVA)",
     "placenta": "Zenodo 10535022 (HAPPY)", "koh": "Figshare 14678514 (hyphae KOH)",
+    "csf": "Zenodo 6543147 (CSF cytology)", "ivcm": "Figshare 19838083 (IVCM-Keratitis)",
 }
 
-DISCIPLINE_KW = ["微生物", "寄生蟲", "血液/骨髓", "血液腫瘤", "血液", "組織病理", "細胞學",
-                 "免疫組化", "免疫病理", "免疫", "男科", "細胞遺傳學", "尿液分析", "尿液"]
+DISCIPLINE_KW = ["微生物", "黴菌", "寄生蟲", "血液/骨髓", "血液腫瘤", "血液", "組織病理", "細胞學",
+                 "免疫組化", "免疫病理", "免疫", "男科", "眼科", "細胞遺傳學", "尿液分析", "尿液"]
 
 
 def parse_registry(src):

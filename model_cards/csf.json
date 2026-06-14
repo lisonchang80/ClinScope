@@ -1,0 +1,48 @@
+{
+  "key": "csf",
+  "abbr": "csf",
+  "name": {
+    "display": "腦脊髓液細胞學 16 類 CSF (體液細胞學, ResNet)",
+    "zh": "腦脊髓液細胞學16類",
+    "en": "CSF"
+  },
+  "discipline": "細胞學",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.8294,
+    "n_train": 26155,
+    "n_val": 3704,
+    "macro_f1": 0.6859,
+    "weighted_f1": 0.8359
+  },
+  "experiment_summary": "細胞學(本平台首條腦脊髓液 CSF 體液 track):CSF 離心抹片細胞學 16 類 — 嗜中性/嗜酸性顆粒球、(活化)淋巴球、(活化)單核球、巨噬細胞、紅血球/吞紅細胞、含鐵血黃素吞噬細胞、Hämatoidin、漿細胞、分裂相、核影、人造假影、腫瘤細胞 Tumor。ResNet-50 val_acc 0.829 / macro-F1 0.686。**patient-disjoint 切分(檔名 Liquor_<病人> 分組,無洩漏)**,大類別抽樣上限 3000。CSF 中腫瘤細胞偵測為腦膜轉移/癌病關鍵。",
+  "caveats": [
+    "⚠️ 類別重度不平衡,稀有類(Plasmazelle/eosinophil/Artifizielle val 僅 10–24 張)F1 偏低、數字不穩。來源 Zenodo 6543147。"
+  ],
+  "source": "Zenodo 6543147 (CSF cytology)",
+  "license": null,
+  "split_method": null,
+  "weights": "models/csf_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)",
+  "num_classes": 16,
+  "classes": [
+    "Artifizielle Zelle",
+    "Erythrophage",
+    "Erythrozyt",
+    "Hämatoidin",
+    "Hämosiderophage",
+    "Kernschatten",
+    "Lymphozyt",
+    "Makrophagen",
+    "Mitose",
+    "Monozyt",
+    "Plasmazelle",
+    "Tumor",
+    "aktivierter Lymphozyt",
+    "aktivierter Monozyt",
+    "eosinophiler Granulozyt",
+    "neutrophiler Granulozyt"
+  ]
+}

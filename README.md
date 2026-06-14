@@ -80,6 +80,8 @@
 | 組織病理（胎盤） | HAPPY 絨毛細胞 | H&E | ResNet-50 | 6,951 圖 / 9 類 | val 0.886、macro-F1 0.839 |
 | 寄生蟲（瘧疾厚/薄抹片） | Tanzania malaria | Giemsa 血膜 | ResNet-50 | 3,544 圖 / 4 類 | val 0.998 ⚠️ 影像級切分疑洩漏 |
 | 細胞學（子宮頸 Bethesda） | RIVA | 子宮頸抹片 | YOLOv8 | 959 圖 / 8 類 | mAP50 0.146 ⚠️ 點標註合成框、類別不平衡 |
+| 細胞學（腦脊髓液 CSF） | CSF 16 類 | 體液離心抹片 | ResNet-50 | ~30k 圖 / 16 類 | val 0.829、macro-F1 0.686 ✅ patient-disjoint |
+| 眼科（角膜共軛焦） | IVCM 角膜炎 | 共軛焦顯微 | ResNet-50 | ~3k 圖 / 4 類 | val 0.981、macro-F1 0.965 ⚠️ 影像級切分疑洩漏 |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -200,6 +202,8 @@ pip install -r requirements.txt
 | HAPPY 胎盤 | Zenodo `10535022`（胎盤絨毛細胞 9 類;官方 cell_class CSV split,跨 3 機構 pool） |
 | Tanzania malaria | Harvard Dataverse（瘧疾厚/薄抹片 × 感染/未感染 4 類;⚠️ 影像級切分） |
 | RIVA | Zenodo `17288879`（子宮頸 Bethesda 8 類;關鍵點→固定框近似,case-disjoint） |
+| CSF 16 類 | Zenodo `6543147`（腦脊髓液細胞學 16 類;檔名 Liquor_<病人> patient-disjoint,大類抽樣） |
+| IVCM 角膜炎 | Figshare `19838083`（角膜活體共軛焦 4 類:棘阿米巴/真菌/非特異/健康;影像級切分） |
 
 ## 免責
 

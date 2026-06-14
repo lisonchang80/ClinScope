@@ -289,6 +289,15 @@ REGISTRY = [
      "label": "🔬 子宮頸 Bethesda 細胞偵測 RIVA (8 類, YOLO)",
      "path": ROOT / "reports" / "yolo" / "riva" / "weights" / "best.pt",
      "blurb": "細胞學(子宮頸抹片病變細胞偵測,補既有 SIPaKMeD 分類所無的「定位+分級」任務):子宮頸抹片 Bethesda 系統 8 類細胞偵測 — NILM 正常 / INFL 發炎 / ASCUS / ASCH / LSIL / HSIL / SCC / ENDO。YOLOv8s val mAP50 0.146 / mAP50-95 0.067 —— **誠實偏低**:原始為關鍵點標註,本 track 以固定框(影像邊長 7%)近似合成 bbox、8 類重度不平衡(NILM/INFL 佔多數、稀有病變類近乎學不起來),僅示流程;case-disjoint 切分,來源 RIVA。"},
+    # --- batch 6 run-3 (round-3 預抓資料, 2026-06-14) ---
+    {"key": "csf", "kind": "cls",
+     "label": "🔬 腦脊髓液細胞學 16 類 CSF (體液細胞學, ResNet)",
+     "path": ROOT / "models" / "csf_resnet50.pt",
+     "blurb": "細胞學(本平台首條腦脊髓液 CSF 體液 track):CSF 離心抹片細胞學 16 類 — 嗜中性/嗜酸性顆粒球、(活化)淋巴球、(活化)單核球、巨噬細胞、紅血球/吞紅細胞、含鐵血黃素吞噬細胞、Hämatoidin、漿細胞、分裂相、核影、人造假影、腫瘤細胞 Tumor。ResNet-50 val_acc 0.829 / macro-F1 0.686。**patient-disjoint 切分(檔名 Liquor_<病人> 分組,無洩漏)**,大類別抽樣上限 3000。CSF 中腫瘤細胞偵測為腦膜轉移/癌病關鍵。⚠️ 類別重度不平衡,稀有類(Plasmazelle/eosinophil/Artifizielle val 僅 10–24 張)F1 偏低、數字不穩。來源 Zenodo 6543147。"},
+    {"key": "ivcm", "kind": "cls",
+     "label": "👁️ 角膜共軛焦顯微 感染性角膜炎 4 類 IVCM (ResNet)",
+     "path": ROOT / "models" / "ivcm_resnet50.pt",
+     "blurb": "眼科(本平台首條角膜活體共軛焦顯微 IVCM track):感染性角膜炎共軛焦顯微 4 類 — 棘阿米巴 Acanthamoeba / 真菌 Fungal / 非特異性 NonSpecific / 健康 Healthy。ResNet-50 val_acc 0.981 / macro-F1 0.965。角膜共軛焦可即時偵測棘阿米巴囊體與真菌菌絲、指導感染性角膜炎治療。⚠️ 小資料(~3000 圖)、影像級切分:同一眼連續共軛焦影像形態近似、可能分散 train/val 造成輕微洩漏,高分需病人級切分驗證。來源 Figshare 19838083(IVCM-Keratitis)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]

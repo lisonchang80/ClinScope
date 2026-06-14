@@ -1,13 +1,13 @@
 {
   "platform": "ClinScope",
-  "n_models": 64,
+  "n_models": 66,
   "cards": [
     {
       "key": "fungi",
       "name_zh": "真菌",
       "name_en": "Fungi",
       "task": "classification",
-      "discipline": null,
+      "discipline": "黴菌",
       "metrics": null,
       "status": "registered"
     },
@@ -947,6 +947,36 @@
         "precision": 0.2766,
         "recall": 0.2865,
         "epochs": 55
+      },
+      "status": "registered"
+    },
+    {
+      "key": "csf",
+      "name_zh": "腦脊髓液細胞學16類",
+      "name_en": "CSF",
+      "task": "classification",
+      "discipline": "細胞學",
+      "metrics": {
+        "val_acc": 0.8294,
+        "n_train": 26155,
+        "n_val": 3704,
+        "macro_f1": 0.6859,
+        "weighted_f1": 0.8359
+      },
+      "status": "registered"
+    },
+    {
+      "key": "ivcm",
+      "name_zh": "角膜共軛焦顯微感染性角膜炎4類",
+      "name_en": "IVCM",
+      "task": "classification",
+      "discipline": "眼科",
+      "metrics": {
+        "val_acc": 0.9806,
+        "n_train": 2506,
+        "n_val": 515,
+        "macro_f1": 0.9647,
+        "weighted_f1": 0.9808
       },
       "status": "registered"
     }

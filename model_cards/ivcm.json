@@ -1,0 +1,36 @@
+{
+  "key": "ivcm",
+  "abbr": "ivcm",
+  "name": {
+    "display": "角膜共軛焦顯微 感染性角膜炎 4 類 IVCM (ResNet)",
+    "zh": "角膜共軛焦顯微感染性角膜炎4類",
+    "en": "IVCM"
+  },
+  "discipline": "眼科",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9806,
+    "n_train": 2506,
+    "n_val": 515,
+    "macro_f1": 0.9647,
+    "weighted_f1": 0.9808
+  },
+  "experiment_summary": "眼科(本平台首條角膜活體共軛焦顯微 IVCM track):感染性角膜炎共軛焦顯微 4 類 — 棘阿米巴 Acanthamoeba / 真菌 Fungal / 非特異性 NonSpecific / 健康 Healthy。ResNet-50 val_acc 0.981 / macro-F1 0.965。角膜共軛焦可即時偵測棘阿米巴囊體與真菌菌絲、指導感染性角膜炎治療。",
+  "caveats": [
+    "⚠️ 小資料(~3000 圖)、影像級切分:同一眼連續共軛焦影像形態近似、可能分散 train/val 造成輕微洩漏,高分需病人級切分驗證。來源 Figshare 19838083(IVCM-Keratitis)。"
+  ],
+  "source": "Figshare 19838083 (IVCM-Keratitis)",
+  "license": null,
+  "split_method": "patient-level (病人級)",
+  "weights": "models/ivcm_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)",
+  "num_classes": 4,
+  "classes": [
+    "Acanthamoeba",
+    "Fungal",
+    "Healthy",
+    "NonSpecific"
+  ]
+}
