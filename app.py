@@ -248,6 +248,11 @@ REGISTRY = [
      "label": "🔬 積液細胞學 良性/惡性 (體腔積液, ResNet)",
      "path": ROOT / "models" / "effusion_resnet50.pt",
      "blurb": "細胞學(本平台首條體腔積液 track):肋膜/腹腔/心包積液離心抹片,良性 vs 惡性細胞團二分類。ResNet-50 在小驗證集達 val 1.0。⚠️ **影像級隨機切分、693 圖疑似同案例多團塊分散到 train/val 造成洩漏,1.0 不代表真實表現**,僅供流程 demo;臨床判積液良惡性很常見,但此數字需病例級切分才可信。授權 © 原作者(Parikshit Sanyal),僅研究/作品集用。"},
+    # --- batch 6 續 (2026-06-14) ---
+    {"key": "msi", "kind": "cls",
+     "label": "🔬 大腸癌微衛星不穩定 MSI/MSS (H&E, 分子病理, ResNet)",
+     "path": ROOT / "models" / "msi_resnet50.pt",
+     "blurb": "組織病理／分子病理(本平台首條「形態預測分子狀態」track):大腸直腸癌 H&E patch 預測微衛星不穩定狀態 — 高度不穩定 MSImut(MSI-H,對免疫檢查點治療反應佳、與 Lynch 症候群相關)vs 穩定 MSS 二分類(Kather CRC-MSI,TCGA 來源)。ResNet-50 val_acc 0.753 / macro-F1 0.629(n_val 98904)。MSI 狀態關乎免疫治療適應症與遺傳性篩查。⚠️ MSImut(臨床關鍵少數類)recall 僅 0.31、0.75 acc 僅略高於多數類基線 0.71(MSS 佔 71%);patch 級隨機切分(TCGA 同病人/片可能跨 train/val 洩漏),數字需 patient-level 切分才可信。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]

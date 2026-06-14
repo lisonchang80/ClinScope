@@ -1,0 +1,34 @@
+{
+  "key": "msi",
+  "abbr": "msi",
+  "name": {
+    "display": "大腸癌微衛星不穩定 MSI/MSS (H&E, 分子病理, ResNet)",
+    "zh": "大腸癌微衛星不穩定",
+    "en": "MSI/MSS"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.7532,
+    "n_train": null,
+    "n_val": 98904,
+    "macro_f1": 0.6294,
+    "weighted_f1": 0.7209
+  },
+  "experiment_summary": "組織病理／分子病理(本平台首條「形態預測分子狀態」track):大腸直腸癌 H&E patch 預測微衛星不穩定狀態 — 高度不穩定 MSImut(MSI-H,對免疫檢查點治療反應佳、與 Lynch 症候群相關)vs 穩定 MSS 二分類(Kather CRC-MSI,TCGA 來源)。ResNet-50 val_acc 0.753 / macro-F1 0.629(n_val 98904)。MSI 狀態關乎免疫治療適應症與遺傳性篩查。",
+  "caveats": [
+    "⚠️ MSImut(臨床關鍵少數類)recall 僅 0.31、0.75 acc 僅略高於多數類基線 0.71(MSS 佔 71%);patch 級隨機切分(TCGA 同病人/片可能跨 train/val 洩漏),數字需 patient-level 切分才可信。"
+  ],
+  "source": "Zenodo 2530835 (Kather CRC-DX MSI)",
+  "license": null,
+  "split_method": "patient-level (病人級)",
+  "weights": "models/msi_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)",
+  "num_classes": 2,
+  "classes": [
+    "MSIMUT",
+    "MSS"
+  ]
+}

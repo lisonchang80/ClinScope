@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 54,
+  "n_models": 55,
   "cards": [
     {
       "key": "fungi",
@@ -797,6 +797,21 @@
         "n_val": 139,
         "macro_f1": 1.0,
         "weighted_f1": 1.0
+      },
+      "status": "registered"
+    },
+    {
+      "key": "msi",
+      "name_zh": "大腸癌微衛星不穩定",
+      "name_en": "MSI/MSS",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.7532,
+        "n_train": null,
+        "n_val": 98904,
+        "macro_f1": 0.6294,
+        "weighted_f1": 0.7209
       },
       "status": "registered"
     }

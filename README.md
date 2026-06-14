@@ -70,6 +70,7 @@
 | 微生物（結核 ZN 分類） | TB-ZN 陽/陰 | ZN 痰抹片 | ResNet-50 | 1,000 圖 / 2 類 | val 0.99、macro-F1 0.972 ⚠️ Pos val 20、疑片級洩漏 |
 | 組織病理（多器官核） | NuInsSeg | H&E 31 器官 | YOLOv8 | 665 圖 / 1 類 | mAP50 0.618、mAP50-95 0.334 |
 | 細胞學（體腔積液） | 積液 良/惡 | 積液離心抹片 | ResNet-50 | 693 圖 / 2 類 | val 1.0 ⚠️ 影像級切分疑洩漏、僅 demo |
+| 分子病理（大腸癌 MSI） | CRC MSI/MSS | H&E patch | ResNet-50 | ~99k val / 2 類 | val 0.753、macro-F1 0.629 ⚠️ MSImut recall 0.31、patch 級切分 |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -180,6 +181,7 @@ pip install -r requirements.txt
 | TB-ZN 陽/陰 | Mendeley `yhybmfrmgs`（ZN 痰抹片陽/陰性,培養確診;ImageFolder Negative/Positive,影像級切分） |
 | NuInsSeg | Zenodo `10518968`（31 器官 H&E 核 instance seg;label mask 連通標記→bbox,器官分層切分,1 類 nucleus） |
 | 積液細胞學 | Kaggle `cmacus/body-cavity-fluid-cytology-images`（體腔積液良/惡細胞團;影像級切分。© 原作者,研究用） |
+| CRC MSI/MSS | Kather CRC-MSI（TCGA H&E patch 預測微衛星不穩定 MSImut/MSS;patch 級切分,⚠️ 同病人可能跨 train/val） |
 
 ## 免責
 
