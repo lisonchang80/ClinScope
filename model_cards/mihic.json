@@ -1,0 +1,39 @@
+{
+  "key": "mihic",
+  "abbr": "mihic",
+  "name": {
+    "display": "肺癌多重免疫組化組織 7 類 MIHIC (multiplex-IHC, ResNet)",
+    "zh": "肺癌多重免疫組化組織7類",
+    "en": "MIHIC"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.8378,
+    "n_train": 35000,
+    "n_val": 10262,
+    "macro_f1": 0.8361,
+    "weighted_f1": 0.8353
+  },
+  "experiment_summary": "免疫組化／組織病理(搭配既有 HER2 IHC,本平台首條多重 IHC 組織分型):肺癌多重免疫組化(multiplex-IHC)組織 patch 7 類 — 腫瘤 Tumor / 基質 Stroma / 免疫細胞 Immune cells / 壞死 Necrosis / 肺泡 alveoli / 背景 background / 其他 Other。ResNet-50 val_acc 0.838 / macro-F1 0.836(類別均衡)。可用於量化腫瘤微環境組成。",
+  "caveats": [
+    "⚠️ 原始 train ~19.5 萬張過大,每類抽樣(train≤5000、val≤1500)後訓練;來源 MIHIC。"
+  ],
+  "source": "Zenodo 10065510 (MIHIC)",
+  "license": null,
+  "split_method": null,
+  "weights": "models/mihic_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)",
+  "num_classes": 7,
+  "classes": [
+    "Immune cells",
+    "Necrosis",
+    "Other",
+    "Stroma",
+    "Tumor",
+    "alveoli",
+    "background"
+  ]
+}

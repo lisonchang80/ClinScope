@@ -16,7 +16,8 @@ DET_DIR = {"bloodcells": "bccd", "bbbc041_stage": "bbbc041", "mrose_gram": "mros
            "dataset19_colony": "dataset19", "giardia_crypto": "giardia"}
 BATCH6 = {"kupbc13", "mdsbm27", "sicap", "sbsd", "evisan", "bcg", "puma",
           "tb_det", "tb_cls", "nuinsseg", "effusion",
-          "msi", "orchid", "kidney", "mihic", "tvmi3k", "tcga"}
+          "msi", "orchid", "kidney", "mihic", "tvmi3k", "tcga",
+          "tanzania", "riva", "placenta"}
 
 # 來源(blurb 未必含, 這裡 curated; 找不到再退回 blurb 解析)
 SOURCE = {
@@ -27,7 +28,9 @@ SOURCE = {
     "effusion": "Kaggle cmacus/body-cavity-fluid-cytology-images",
     "msi": "Zenodo 2530835 (Kather CRC-DX MSI)", "orchid": "Zenodo 12646943 (ORCHID oral)",
     "mihic": "Zenodo 10065510 (MIHIC)", "tvmi3k": "Zenodo 6534086 (TVMI3K)",
-    "tcga": "Zenodo 6604094 (TCGA-TILs)",
+    "tcga": "Zenodo 6604094 (TCGA-TILs)", "kidney": "Zenodo 4299694 (glomeruli)",
+    "tanzania": "Harvard Dataverse (Tanzania malaria thick/thin)", "riva": "Zenodo 17288879 (RIVA)",
+    "placenta": "Zenodo 10535022 (HAPPY)",
 }
 
 DISCIPLINE_KW = ["微生物", "寄生蟲", "血液/骨髓", "血液腫瘤", "血液", "組織病理", "細胞學",

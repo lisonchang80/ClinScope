@@ -71,6 +71,10 @@
 | 組織病理（多器官核） | NuInsSeg | H&E 31 器官 | YOLOv8 | 665 圖 / 1 類 | mAP50 0.618、mAP50-95 0.334 |
 | 細胞學（體腔積液） | 積液 良/惡 | 積液離心抹片 | ResNet-50 | 693 圖 / 2 類 | val 1.0 ⚠️ 影像級切分疑洩漏、僅 demo |
 | 分子病理（大腸癌 MSI） | CRC MSI/MSS | H&E patch | ResNet-50 | ~99k val / 2 類 | val 0.753、macro-F1 0.629 ⚠️ MSImut recall 0.31、patch 級切分 |
+| 組織病理（口腔鱗癌） | ORCHID OSCC | H&E | ResNet-50 | 4,477 圖 / 5 類 | val 0.881、macro-F1 0.894 ✅ 含 OSMF 癌前 |
+| 組織病理（腎絲球） | 腎絲球 正常/硬化 | H&E/PAS | YOLOv8 | 78 圖 / 2 類 | mAP50 0.465 ⚠️ 極小資料、recall 0.40 |
+| 免疫組化（肺多重 IHC） | MIHIC | multiplex-IHC | ResNet-50 | 7 組織類 | val 0.838、macro-F1 0.836（每類抽樣）|
+| 寄生蟲（陰道滴蟲） | TVMI3K | 濕抹片 | YOLOv8 | 3,158 圖 / 1 類 | mAP50 0.417、mAP50-95 0.240 |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -182,6 +186,10 @@ pip install -r requirements.txt
 | NuInsSeg | Zenodo `10518968`（31 器官 H&E 核 instance seg;label mask 連通標記→bbox,器官分層切分,1 類 nucleus） |
 | 積液細胞學 | Kaggle `cmacus/body-cavity-fluid-cytology-images`（體腔積液良/惡細胞團;影像級切分。© 原作者,研究用） |
 | CRC MSI/MSS | Kather CRC-MSI（TCGA H&E patch 預測微衛星不穩定 MSImut/MSS;patch 級切分,⚠️ 同病人可能跨 train/val） |
+| ORCHID OSCC | Zenodo `12646943`（口腔鱗癌 H&E 5 類含 OSMF;官方 val→train、test→val,case 不跨） |
+| 腎絲球 | Zenodo `4299694`（腎切片腎絲球 normal/sclerosed;mask 顏色→bbox,slide-disjoint,78 圖） |
+| MIHIC | Zenodo `10065510`（肺癌多重 IHC 組織 7 類;原始 19.5 萬張,每類抽樣訓練） |
+| TVMI3K | Zenodo `6534086`（陰道滴蟲濕抹片偵測;官方 Train/Test,mask 連通標記→bbox） |
 
 ## 免責
 

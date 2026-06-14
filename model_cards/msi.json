@@ -10,11 +10,11 @@
   "task": "classification",
   "model_type": "ResNet-50",
   "metrics": {
-    "val_acc": 0.7532,
-    "n_train": null,
+    "val_acc": 0.7542,
+    "n_train": 93408,
     "n_val": 98904,
-    "macro_f1": 0.6294,
-    "weighted_f1": 0.7209
+    "macro_f1": 0.6503,
+    "weighted_f1": 0.7317
   },
   "experiment_summary": "組織病理／分子病理(本平台首條「形態預測分子狀態」track):大腸直腸癌 H&E patch 預測微衛星不穩定狀態 — 高度不穩定 MSImut(MSI-H,對免疫檢查點治療反應佳、與 Lynch 症候群相關)vs 穩定 MSS 二分類(Kather CRC-MSI,TCGA 來源)。ResNet-50 val_acc 0.753 / macro-F1 0.629(n_val 98904)。MSI 狀態關乎免疫治療適應症與遺傳性篩查。",
   "caveats": [

@@ -1,0 +1,29 @@
+{
+  "key": "kidney",
+  "abbr": "kidney",
+  "name": {
+    "display": "腎絲球偵測 — 正常/硬化 (H&E/PAS, YOLO)",
+    "zh": "腎絲球偵測",
+    "en": ""
+  },
+  "discipline": "組織病理",
+  "task": "detection",
+  "model_type": "YOLOv8s",
+  "metrics": {
+    "mAP50": 0.4654,
+    "mAP50_95": 0.3298,
+    "precision": 0.62,
+    "recall": 0.3998,
+    "epochs": 93
+  },
+  "experiment_summary": "組織病理(本平台首條腎臟病理 track):腎切片腎絲球偵測 2 類 — 正常 normal / 硬化 sclerosed glomerulus(腎絲球硬化為慢性腎病、腎絲球腎炎的關鍵病變)。YOLOv8s val mAP50 0.465 / mAP50-95 0.330(P 0.62 / R 0.40),slide-disjoint 切分(檔名含機構/片號)。",
+  "caveats": [
+    "⚠️ 僅 78 影像極小資料、recall 偏低(0.40),數字不穩、僅示流程;硬化類較稀。"
+  ],
+  "source": "Zenodo 4299694 (glomeruli)",
+  "license": null,
+  "split_method": "slide-disjoint (片級)",
+  "weights": "reports/yolo/kidney/weights/best.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)"
+}

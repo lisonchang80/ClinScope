@@ -253,6 +253,22 @@ REGISTRY = [
      "label": "🔬 大腸癌微衛星不穩定 MSI/MSS (H&E, 分子病理, ResNet)",
      "path": ROOT / "models" / "msi_resnet50.pt",
      "blurb": "組織病理／分子病理(本平台首條「形態預測分子狀態」track):大腸直腸癌 H&E patch 預測微衛星不穩定狀態 — 高度不穩定 MSImut(MSI-H,對免疫檢查點治療反應佳、與 Lynch 症候群相關)vs 穩定 MSS 二分類(Kather CRC-MSI,TCGA 來源)。ResNet-50 val_acc 0.753 / macro-F1 0.629(n_val 98904)。MSI 狀態關乎免疫治療適應症與遺傳性篩查。⚠️ MSImut(臨床關鍵少數類)recall 僅 0.31、0.75 acc 僅略高於多數類基線 0.71(MSS 佔 71%);patch 級隨機切分(TCGA 同病人/片可能跨 train/val 洩漏),數字需 patient-level 切分才可信。"},
+    {"key": "orchid", "kind": "cls",
+     "label": "🔬 口腔鱗癌分化分級 ORCHID (H&E, 5 類含 OSMF 癌前)",
+     "path": ROOT / "models" / "orchid_resnet50.pt",
+     "blurb": "組織病理(本平台首條口腔/頭頸癌 track):口腔鱗狀細胞癌 OSCC 組織 H&E 5 類 — 正常 normal / 口腔黏膜下纖維化 OSMF(癌前病變)/ 高分化 wdOSCC / 中分化 mdOSCC / 低分化 pdOSCC。ResNet-50 val_acc 0.881 / macro-F1 0.894(類別均衡、表現佳),涵蓋癌前→分化分級全譜。⚠️ 完整 train.zip 達 39GB,改以官方 val 當 train、test 當 val(規模較小但 case 不跨、無洩漏);來源 ORCHID。"},
+    {"key": "kidney", "kind": "det",
+     "label": "🔬 腎絲球偵測 — 正常/硬化 (H&E/PAS, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "kidney" / "weights" / "best.pt",
+     "blurb": "組織病理(本平台首條腎臟病理 track):腎切片腎絲球偵測 2 類 — 正常 normal / 硬化 sclerosed glomerulus(腎絲球硬化為慢性腎病、腎絲球腎炎的關鍵病變)。YOLOv8s val mAP50 0.465 / mAP50-95 0.330(P 0.62 / R 0.40),slide-disjoint 切分(檔名含機構/片號)。⚠️ 僅 78 影像極小資料、recall 偏低(0.40),數字不穩、僅示流程;硬化類較稀。"},
+    {"key": "mihic", "kind": "cls",
+     "label": "🔬 肺癌多重免疫組化組織 7 類 MIHIC (multiplex-IHC, ResNet)",
+     "path": ROOT / "models" / "mihic_resnet50.pt",
+     "blurb": "免疫組化／組織病理(搭配既有 HER2 IHC,本平台首條多重 IHC 組織分型):肺癌多重免疫組化(multiplex-IHC)組織 patch 7 類 — 腫瘤 Tumor / 基質 Stroma / 免疫細胞 Immune cells / 壞死 Necrosis / 肺泡 alveoli / 背景 background / 其他 Other。ResNet-50 val_acc 0.838 / macro-F1 0.836(類別均衡)。可用於量化腫瘤微環境組成。⚠️ 原始 train ~19.5 萬張過大,每類抽樣(train≤5000、val≤1500)後訓練;來源 MIHIC。"},
+    {"key": "tvmi3k", "kind": "det",
+     "label": "🦠 陰道滴蟲偵測 TVMI3K (濕抹片, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "tvmi3k" / "weights" / "best.pt",
+     "blurb": "寄生蟲(本平台首條陰道滴蟲 track):陰道分泌物濕抹片陰道滴蟲 Trichomonas vaginalis 偵測 1 類(TVMI3K,官方 Train/Test 切分,由 mask 連通標記轉 bbox)。YOLOv8s val mAP50 0.417 / mAP50-95 0.240 —— 誠實中等:滴蟲與背景上皮/白血球形態相近、為小目標偵測難題。對應臨床陰道炎濕抹片鏡檢的滴蟲辨識。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]

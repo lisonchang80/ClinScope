@@ -1,0 +1,37 @@
+{
+  "key": "orchid",
+  "abbr": "orchid",
+  "name": {
+    "display": "口腔鱗癌分化分級 ORCHID (H&E, 5 類含 OSMF 癌前)",
+    "zh": "口腔鱗癌分化分級",
+    "en": "ORCHID"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.8813,
+    "n_train": 2885,
+    "n_val": 1592,
+    "macro_f1": 0.8939,
+    "weighted_f1": 0.8803
+  },
+  "experiment_summary": "組織病理(本平台首條口腔/頭頸癌 track):口腔鱗狀細胞癌 OSCC 組織 H&E 5 類 — 正常 normal / 口腔黏膜下纖維化 OSMF(癌前病變)/ 高分化 wdOSCC / 中分化 mdOSCC / 低分化 pdOSCC。ResNet-50 val_acc 0.881 / macro-F1 0.894(類別均衡、表現佳),涵蓋癌前→分化分級全譜。",
+  "caveats": [
+    "⚠️ 完整 train.zip 達 39GB,改以官方 val 當 train、test 當 val(規模較小但 case 不跨、無洩漏);來源 ORCHID。"
+  ],
+  "source": "Zenodo 12646943 (ORCHID oral)",
+  "license": null,
+  "split_method": "official split",
+  "weights": "models/orchid_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-6 (2026-06-14)",
+  "num_classes": 5,
+  "classes": [
+    "mdoscc",
+    "normal",
+    "osmf",
+    "pdoscc",
+    "wdoscc"
+  ]
+}

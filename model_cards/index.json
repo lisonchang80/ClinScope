@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 55,
+  "n_models": 59,
   "cards": [
     {
       "key": "fungi",
@@ -807,11 +807,71 @@
       "task": "classification",
       "discipline": "組織病理",
       "metrics": {
-        "val_acc": 0.7532,
-        "n_train": null,
+        "val_acc": 0.7542,
+        "n_train": 93408,
         "n_val": 98904,
-        "macro_f1": 0.6294,
-        "weighted_f1": 0.7209
+        "macro_f1": 0.6503,
+        "weighted_f1": 0.7317
+      },
+      "status": "registered"
+    },
+    {
+      "key": "orchid",
+      "name_zh": "口腔鱗癌分化分級",
+      "name_en": "ORCHID",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.8813,
+        "n_train": 2885,
+        "n_val": 1592,
+        "macro_f1": 0.8939,
+        "weighted_f1": 0.8803
+      },
+      "status": "registered"
+    },
+    {
+      "key": "kidney",
+      "name_zh": "腎絲球偵測",
+      "name_en": "",
+      "task": "detection",
+      "discipline": "組織病理",
+      "metrics": {
+        "mAP50": 0.4654,
+        "mAP50_95": 0.3298,
+        "precision": 0.62,
+        "recall": 0.3998,
+        "epochs": 93
+      },
+      "status": "registered"
+    },
+    {
+      "key": "mihic",
+      "name_zh": "肺癌多重免疫組化組織7類",
+      "name_en": "MIHIC",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.8378,
+        "n_train": 35000,
+        "n_val": 10262,
+        "macro_f1": 0.8361,
+        "weighted_f1": 0.8353
+      },
+      "status": "registered"
+    },
+    {
+      "key": "tvmi3k",
+      "name_zh": "陰道滴蟲偵測3",
+      "name_en": "TVMI3K",
+      "task": "detection",
+      "discipline": "寄生蟲",
+      "metrics": {
+        "mAP50": 0.417,
+        "mAP50_95": 0.2405,
+        "precision": 0.4482,
+        "recall": 0.4518,
+        "epochs": 39
       },
       "status": "registered"
     }
