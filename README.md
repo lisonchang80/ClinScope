@@ -1,6 +1,6 @@
 # ClinScope
 
-臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：85 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：85 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet／病理基礎模型(Phikon-v2) 分類 + YOLO(可選 SAHI 切片) 偵測**多引擎。
 自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
 
 ## 現實定位（先讀這段）
@@ -91,7 +91,7 @@
 | 組織病理（大腸分化 6 階段） | EBHI-SEG | H&E 組織 | ResNet-50 | 2,228 圖 / 6 類 | val 0.949、macro-F1 0.923 |
 | 細胞遺傳學（核型偵測） | AutoKary2022 | 中期分裂全圖 | YOLOv8 | 1,257 圖 / 24 類 | mAP50 0.851、mAP50-95 0.663 |
 | 寄生蟲（克氏錐蟲 Chagas） | T. cruzi | Giemsa 血抹片 | YOLOv8 | 726 圖 / 1 類 | mAP50 0.257 ⚠️ val 蟲體稀疏、case-disjoint |
-| 組織病理（卵巢癌 5 亞型） | UBC-OCEAN | H&E 縮圖 | ResNet-50 | 538 圖 / 5 類 | val 0.543、macro-F1 0.436 ⚠️ 縮圖、LGSC 失敗 |
+| 組織病理（卵巢癌 5 亞型） | UBC-OCEAN | H&E 縮圖 | **Phikon-v2 FM**+LogReg | 538 圖 / 5 類 | val 0.543→**0.679**、macro-F1 0.436→**0.604**（病理 FM 取代 ResNet，救回 LGSC）|
 | 組織病理（乳腺 7 類細分） | BRACS | H&E 299px | ResNet-50 | 4,391 圖 / 7 類 | val 0.659、macro-F1 0.641 ⚠️ 細粒度、相鄰類易混 |
 | 血液腫瘤（漿細胞偵測） | SegPC-2021 | 骨髓抹片 | YOLOv8 | 498 圖 / 1 類 | mAP50 0.833、mAP50-95 0.735 ✅ 官方 split |
 | 組織病理（胃癌 TME 8 類） | HMU-GC | H&E patch | ResNet-50 | 31,096 圖 / 8 類 | val 0.746、macro-F1 0.747 ⚠️ patch 隨機 split |

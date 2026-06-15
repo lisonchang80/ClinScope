@@ -2,7 +2,7 @@
   "key": "ubc_ocean",
   "abbr": "ubc_ocean",
   "name": {
-    "display": "卵巢癌組織亞型 5 類 UBC-OCEAN (H&E, ResNet)",
+    "display": "卵巢癌組織亞型 5 類 UBC-OCEAN (H&E, Phikon-v2 FM)",
     "zh": "卵巢癌組織亞型5類",
     "en": "UBC-OCEAN"
   },
@@ -10,15 +10,15 @@
   "task": "classification",
   "model_type": "ResNet-50",
   "metrics": {
-    "val_acc": 0.5432,
+    "val_acc": 0.679,
     "n_train": 457,
     "n_val": 81,
-    "macro_f1": 0.4355,
-    "weighted_f1": 0.5199
+    "macro_f1": 0.6039,
+    "weighted_f1": 0.6575
   },
-  "experiment_summary": "組織病理／婦科腫瘤(本平台首條卵巢癌 track):卵巢癌組織亞型 5 類 — 高度漿液性 HGSC / 子宮內膜樣 EC / 亮細胞 CC / 低度漿液性 LGSC / 黏液性 MC。ResNet-50 val_acc 0.543 / macro-F1 0.436。",
+  "experiment_summary": "組織病理／婦科腫瘤(本平台首條卵巢癌 track):卵巢癌組織亞型 5 類 — 高度漿液性 HGSC / 子宮內膜樣 EC / 亮細胞 CC / 低度漿液性 LGSC / 黏液性 MC。**本 track 改用病理基礎模型引擎:Phikon-v2(ViT-L, frozen)特徵 + LogReg → val_acc 0.679 / macro-F1 0.604**,顯著勝過 ResNet-50 從頭訓(0.543 / 0.436),且救回 ResNet 全崩的稀有類 LGSC(F1 0→0.22)——小資料 WSI 亞型用 frozen 病理 FM 特徵+線性 head 比從頭微調更穩(見 skill pick-model-arch)。",
   "caveats": [
-    "⚠️ 用 2964px **降採縮圖**(非全解析 WSI)、資料小(538 例)、隨機切分;LGSC(7 val)F1 0、MC/EC 偏弱 —— 卵巢亞型分類本就難,成績偏低、僅展示。來源 Kaggle 競賽 UBC-OCEAN(標籤)+ 社群縮圖鏡像 utm529fg/ubc-reduced-png-2964x2964。"
+    "⚠️ 用 2964px 降採縮圖(3×3 tile mean-pool)、資料小(538 例)、隨機切分,卵巢亞型本就難。Phikon-v2 為 Owkin 非商用授權。來源 Kaggle 競賽 UBC-OCEAN(標籤)+ 社群縮圖鏡像 utm529fg/ubc-reduced-png-2964x2964。"
   ],
   "source": "Kaggle UBC-OCEAN comp + mirror utm529fg/ubc-reduced-png-2964x2964",
   "license": null,

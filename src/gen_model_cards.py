@@ -11,7 +11,8 @@ OUT = os.path.join(ROOT, "model_cards")
 
 # REGISTRY key -> reports 夾名(不一致者)
 CLS_DIR = {"wbc": "pbc", "bacteria": "dibas", "ana": "hep2", "fungi_koh": "defungi",
-           "sperm": "smids", "her2_ihc": "her2ihc", "pap": "sipakmed", "fungi": "openfungi"}
+           "sperm": "smids", "her2_ihc": "her2ihc", "pap": "sipakmed", "fungi": "openfungi",
+           "ubc_ocean": "ubc_ocean_fm"}  # FM 引擎: 卡片讀 Phikon-v2 報告而非 ResNet
 DET_DIR = {"bloodcells": "bccd", "bbbc041_stage": "bbbc041", "mrose_gram": "mrose",
            "dataset19_colony": "dataset19", "giardia_crypto": "giardia"}
 BATCH6 = {"kupbc13", "mdsbm27", "sicap", "sbsd", "evisan", "bcg", "puma",

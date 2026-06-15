@@ -334,10 +334,10 @@ REGISTRY = [
      "label": "🦟 克氏錐蟲 T. cruzi (Chagas) 偵測 (Giemsa 血抹片, YOLO)",
      "path": ROOT / "reports" / "yolo" / "tcruzi_chagas" / "weights" / "best.pt",
      "blurb": "寄生蟲(全新病原,vs 既有 tryp=布氏錐蟲 T. brucei 為不同蟲種):克氏錐蟲 Trypanosoma cruzi 偵測 1 類(美洲錐蟲病 Chagas 病原),Giemsa 血抹片 + CSF。YOLOv8s val mAP50 0.257 / mAP50-95 0.101(P 0.26 / R 0.37)。**case-disjoint 切分(依 caseId 分組,無洩漏)**,但 val 蟲體稀疏(69 圖僅 59 框、多為陰性背景)使 mAP 偏低、數字不穩。⚠️ 成績僅參考;CC-BY-NC(非商用)。來源 Zenodo 15007339(PLOS NTD 2026)。"},
-    {"key": "ubc_ocean", "kind": "cls",
-     "label": "♀️ 卵巢癌組織亞型 5 類 UBC-OCEAN (H&E, ResNet)",
+    {"key": "ubc_ocean", "kind": "cls", "fm": "models/ubc_ocean_fmprobe.joblib",
+     "label": "♀️ 卵巢癌組織亞型 5 類 UBC-OCEAN (H&E, Phikon-v2 FM)",
      "path": ROOT / "models" / "ubc_ocean_resnet50.pt",
-     "blurb": "組織病理／婦科腫瘤(本平台首條卵巢癌 track):卵巢癌組織亞型 5 類 — 高度漿液性 HGSC / 子宮內膜樣 EC / 亮細胞 CC / 低度漿液性 LGSC / 黏液性 MC。ResNet-50 val_acc 0.543 / macro-F1 0.436。⚠️ 用 2964px **降採縮圖**(非全解析 WSI)、資料小(538 例)、隨機切分;LGSC(7 val)F1 0、MC/EC 偏弱 —— 卵巢亞型分類本就難,成績偏低、僅展示。來源 Kaggle 競賽 UBC-OCEAN(標籤)+ 社群縮圖鏡像 utm529fg/ubc-reduced-png-2964x2964。"},
+     "blurb": "組織病理／婦科腫瘤(本平台首條卵巢癌 track):卵巢癌組織亞型 5 類 — 高度漿液性 HGSC / 子宮內膜樣 EC / 亮細胞 CC / 低度漿液性 LGSC / 黏液性 MC。**本 track 改用病理基礎模型引擎:Phikon-v2(ViT-L, frozen)特徵 + LogReg → val_acc 0.679 / macro-F1 0.604**,顯著勝過 ResNet-50 從頭訓(0.543 / 0.436),且救回 ResNet 全崩的稀有類 LGSC(F1 0→0.22)——小資料 WSI 亞型用 frozen 病理 FM 特徵+線性 head 比從頭微調更穩(見 skill pick-model-arch)。⚠️ 用 2964px 降採縮圖(3×3 tile mean-pool)、資料小(538 例)、隨機切分,卵巢亞型本就難。Phikon-v2 為 Owkin 非商用授權。來源 Kaggle 競賽 UBC-OCEAN(標籤)+ 社群縮圖鏡像 utm529fg/ubc-reduced-png-2964x2964。"},
     {"key": "bracs", "kind": "cls",
      "label": "🎀 乳腺病變 7 類細分 BRACS (H&E, ResNet)",
      "path": ROOT / "models" / "bracs_resnet50.pt",
@@ -382,6 +382,16 @@ BY_LABEL = {m["label"]: m for m in AVAILABLE}
 _cls_cache: dict = {}
 _yolo_cache: dict = {}
 _sahi_cache: dict = {}
+_fm_cache: dict = {}
+
+
+def load_fm(rel):
+    """載入 FM-probe 產物(Phikon-v2 frozen 特徵 + LogReg head),見 src/train_fm_probe.py。"""
+    import joblib
+    p = str((ROOT / rel)) if not Path(rel).is_absolute() else rel
+    if p not in _fm_cache:
+        _fm_cache[p] = joblib.load(p)
+    return _fm_cache[p]
 
 
 def prettify(name: str) -> str:
@@ -439,6 +449,22 @@ def run(image, model_label, topk, conf):
         return {}, None, "找不到該模型(權重檔可能還在訓練中)。"
 
     if spec["kind"] == "cls":
+        if spec.get("fm"):
+            # 病理基礎模型引擎: Phikon-v2(frozen)特徵 + LogReg(WSI 亞型/小資料 track 用,見 pick-model-arch)
+            import sys as _sys
+            _sys.path.insert(0, str(ROOT / "src"))
+            import fm_features
+            import numpy as np
+            art = load_fm(spec["fm"])
+            feat = fm_features.extract_feature(image, DEVICE, grid=art["grid"]).reshape(1, -1)
+            probs = art["clf"].predict_proba(art["scaler"].transform(feat))[0]
+            classes = art["classes"]
+            k = min(int(topk), len(classes))
+            idx = list(np.argsort(probs)[::-1][:k])
+            result = {prettify(classes[i]): float(probs[i]) for i in idx}
+            note = (f"**{spec['blurb']}**\n\n類別數:{len(classes)} · "
+                    f"引擎:🧬 Phikon-v2 FM + LogReg · 裝置:{DEVICE.type.upper()}")
+            return result, None, note
         model, classes, tf = load_cls(spec["path"])
         x = tf(image.convert("RGB")).unsqueeze(0).to(DEVICE)
         probs = F.softmax(model(x), dim=1)[0]

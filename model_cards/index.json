@@ -1128,11 +1128,11 @@
       "task": "classification",
       "discipline": "組織病理",
       "metrics": {
-        "val_acc": 0.5432,
+        "val_acc": 0.679,
         "n_train": 457,
         "n_val": 81,
-        "macro_f1": 0.4355,
-        "weighted_f1": 0.5199
+        "macro_f1": 0.6039,
+        "weighted_f1": 0.6575
       },
       "status": "registered"
     },
