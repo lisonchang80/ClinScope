@@ -17,7 +17,18 @@ ClinScope 預設兩引擎:**cls=ResNet-50**(`src/train_resnet.py`)、**det=YOLOv
 | **cls: Phikon-v2 frozen + LogReg @ ubc_ocean** | ResNet-50 val 0.543 / macro-F1 0.436(LGSC F1 0) | **val 0.679 / macro-F1 0.593(LGSC 0.222)** | **+13.6 acc / +15.7 macro-F1**,救回全崩的稀有類 | 只訓 1 個 logistic regression,骨幹凍結;3×3 tile mean-pool 1024 維特徵 |
 | **det: SAHI 切片 vs 整圖 @ puma(密集小核)** | 整圖 mAP50 0.200 | **SAHI 切片 mAP50 0.276** | **+37.6% 相對**,框數 12k→26k 找回小核 | **零重訓**,只切片推論(slice 640/overlap 0.2) |
 
-> 結論:「WSI 亞型/小資料 cls → 病理 FM frozen + linear」「大圖密集小核 det → SAHI 切片」兩條建議在本專案資料上**實測有效**。PoC 腳本 `data/_pipeline/phikon_poc.py`、`sahi_poc.py`(gitignore)。
+cls 支柱穩贏。但 det 端 **SAHI 不是通解** —— 對 8 條 det track 做 sweep(`sahi_sweep.py`)後**只有 puma 受益**:
+
+| track | 訓練影像尺寸 | 整圖 | SAHI 切片 | Δ |
+|---|---|---|---|---|
+| **puma** | 1024 | 0.200 | **0.276** | **+37.6%** ✅ 整合 |
+| pannuke / nuinsseg / cryonuseg | 256 / 512 / 512 | 0.69 / 0.60 / 0.47 | ≈同 | -0~2%(圖≤640,根本沒切到) |
+| oral_cyto | 2048 | 0.450 | 0.334 | **-25.8%** ❌ |
+| tvmi3k | 3088 | 0.542 | 0.393 | **-27.6%** ❌ |
+
+> **關鍵修正(重要,別再誤用)**:SAHI **zero-shot 推論只在「模型訓練尺度 ≈ slice 尺度」時有益**。puma 訓練 1024→640(接近 640 slice)故大賺;但 oral_cyto/tvmi3k 訓練時把 2048/3088 大幅縮到 640,模型學的是「縮小後的小目標」,改用 640 native slice 推論 = **訓練/推論尺度錯配 → 反而大跌 25~28%**。圖 ≤640 的 track 切片不發生 → 中性。
+> **正解**:(1) SAHI 論文「+12~14% AP」是**重訓 on slices** 的數字,非 zero-shot;(2) 要讓 oral_cyto/tvmi3k 這類大圖享受 SAHI,得**用 SAHI 切片資料重新訓練/fine-tune**(slice 與推論同尺度),而非直接套切片推論;(3) zero-shot 套用前**務必先 sweep 驗證**(同模型同評估器比整圖 vs 切片),別假設一定贏。
+> 本專案落地:cls「病理 FM frozen+linear」穩贏;det **只有 puma 在 app.py 啟用 `"sahi": True`**(REGISTRY flag → `run()` 走 `load_sahi`+`get_sliced_prediction`)。PoC/sweep 腳本 `data/_pipeline/{phikon_poc,sahi_poc,sahi_sweep}.py`(gitignore)。
 
 ## 先診斷:這是「模型問題」還是別的問題?
 
@@ -38,8 +49,8 @@ ClinScope 預設兩引擎:**cls=ResNet-50**(`src/train_resnet.py`)、**det=YOLOv
 |---|---|---|
 | **WSI 亞型/降採縮圖分類,資料小** | ubc_ocean(0.54)、ipdbrain(0.53)、patchgastric(0.49) | ①病理 FM **frozen 特徵 + linear/MIL head** ②tile-and-aggregate 別硬 resize 成 224 |
 | **資料極小(數十~數百張)** | kidney(78圖)、cryonuseg(30圖) | ①FM frozen + **linear probe**(數十張唯一不崩) ②zero/few-shot VLM(CONCH/BiomedCLIP) ③EfficientNet-B0/ConvNeXtV2-Nano(參數少抗過擬合) |
-| **大圖密集小核偵測** | puma(0.19)、riva、cryonuseg det、kidney det | ①**SAHI 切片**(外掛現有 YOLO,最低成本) ②**StarDist** H&E 核開箱權重當第二引擎 ③NMS-free(RT-DETR/YOLOv10)解 NMS 爆炸 |
-| **稀疏微小寄生蟲偵測** | tcruzi(0.26)、leishmania(0.27 mAP50-95)、pf_vivax(0.40) | **YOLO + SAHI**(切片讓小蟲體相對變大);不要用 StarDist(那是數核工具) |
+| **大圖密集小核偵測** | puma(0.19)、riva、cryonuseg det、kidney det | ①**SAHI 切片**(外掛現有 YOLO,最低成本)**但僅當訓練尺度≈slice 才賺(實測 puma +37.6%、oral_cyto/tvmi3k 反跌 26~28%),否則要 slice 重訓** ②**StarDist** H&E 核開箱權重當第二引擎 ③NMS-free(RT-DETR/YOLOv10)解 NMS 爆炸 |
+| **稀疏微小寄生蟲偵測** | tcruzi(0.26)、leishmania(0.27 mAP50-95)、pf_vivax(0.40) | **YOLO + SAHI**(切片讓小蟲體相對變大);⚠️先 sweep 驗證(實測 tcruzi 套切片反略跌,大幅降採訓練者需 slice 重訓);不要用 StarDist(那是數核工具) |
 | **連續分級(有序譜)** | thyroid(0.50)、sicap Gleason(G5 弱)、patchgastric | **ordinal head**(CORAL/CORN)取代 N 類 softmax + **label smoothing** + 評估用 **QWK** 而非 acc;搭 FM 特徵 |
 
 ## cls 替代架構表(取代/補強 ResNet-50)
@@ -72,7 +83,7 @@ ClinScope 預設兩引擎:**cls=ResNet-50**(`src/train_resnet.py`)、**det=YOLOv
 | Cellpose v3 / SAM | instance-seg | code BSD-3 / **權重 CC-BY-NC** | 推論可 | 通用 robust,稀疏佳、極密不如 StarDist;**權重禁商用** |
 | HoVer-Net | seg+**核分類** | code MIT / PanNuke 權重 CC-BY-NC-SA | 訓重推慢 | H&E 核分割+分類一把抓,但慢、商用受限 |
 | InstanSeg | instance-seg | **Apache-2.0 含模型** | 輕量 | 商用友善核分割,QuPath 內建 |
-| **SAHI** ⭐ | 切片推論框架(套任一偵測器) | **MIT** | 推論記憶體友善 | **最高 CP 值**:原解析度切片,論文 fine-tune 後 **AP +12.7~14.5%** |
+| **SAHI** ⭐ | 切片推論框架(套任一偵測器) | **MIT** | 推論記憶體友善 | 原解析度切片;**論文 +12.7~14.5% 是 fine-tune 數字**;zero-shot **僅訓練尺度≈slice 才賺**(本專案實測:puma +37.6%,但大幅降採訓練的 oral_cyto/tvmi3k 反跌)→套用前先 sweep |
 
 > imgsz 硬拉 1280 在 8GB **會 OOM**。要提解析度走 **tiling 訓練(切 640/768) + SAHI 切片推論**,不要單張拉大。
 
