@@ -89,12 +89,12 @@ cls 支柱穩贏。但 det 端 **SAHI 不是通解** —— 對 8 條 det track 
 
 ## 最小整合配方(8GB)
 
-**A. 病理 FM frozen 特徵 + linear/MIL(救 WSI 亞型/小資料 cls)**
-1. `pip install timm`(UNI/Phikon 走 timm 或 transformers);Phikon-v2 HF 直抓免申請。
-2. 凍結 FM,對每張(或每 tile)抽特徵存 `.npy`(GPU inference, bs 8~16)。
-3. 2964px 縮圖**別 resize 224**:切多個 224/256 tile → 各抽特徵 → mean-pool 或 attention-MIL 聚合。
-4. 只訓 logistic regression / 1-2 層 MLP head(CPU/GPU 都極快)。
-5. 新引擎落 `src/train_fm_probe.py`,app.py 照舊掛權重/特徵+head。
+**A. 病理 FM frozen 特徵 + linear(救 WSI 亞型/小資料 cls)── 已實作落地**
+- 共用模組 `src/fm_features.py`(Phikon-v2 ViT-L frozen, tile mean-pool CLS 1024維, train/app 共用確保前處理一致)。
+- 訓練器 `src/train_fm_probe.py --data-dir data/<k>_split --out models/<k>_fmprobe.joblib --report-dir reports/<k>_fm --grid <3 大圖|1 patch級>`(凍結 FM 抽特徵 + StandardScaler + LogReg(balanced),產 joblib + summary/report)。
+- app.py:REGISTRY 條目加 `"fm": "models/<k>_fmprobe.joblib"` → `run()` cls 分支自動走 `load_fm`+`extract_feature`+LogReg。gen_model_cards 用 CLS_DIR 把該 key 指到 `<k>_fm` 報告。
+- 2964px 縮圖用 `--grid 3`(別 resize 224);已是 patch 級(≤512)用 `--grid 1`。
+- **FM 也不是無腦贏**:3 條 sweep 只有 ubc_ocean 明確贏(0.543→0.679);ipdbrain 混合(macro-F1 0.332→0.429↑ 但 acc 0.529→0.471↓,FM 更均衡卻任務受限);patchgastric FM 較差(分化分級判讀者變異天花板)。→**逐條比 baseline,只上線明確贏的**(同 SAHI 紀律)。
 
 **B. SAHI 外掛(救大圖密集/稀疏小物件 det,不用重訓、不動授權)**
 1. `pip install sahi`。
