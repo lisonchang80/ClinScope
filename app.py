@@ -358,6 +358,22 @@ REGISTRY = [
      "label": "🐄 獸醫家畜糞檢蟲卵 6 類 (光學顯微, ResNet)",
      "path": ROOT / "models" / "vet_egg_resnet50.pt",
      "blurb": "獸醫寄生蟲學(本平台首條獸醫 track,與既有人類糞便蟲卵不同物種):反芻家畜糞檢蟲卵/囊體 6 類 — 蛔蟲 Ascaris / 結腸小袋纖毛蟲 Balantidium coli / 肝吸蟲 Fasciola / 同盤吸蟲 Paramphistomum / 胃線蟲 Stomach worm / 陰性對照。ResNet-50 val_acc 0.893 / macro-F1 0.785。展示跨物種(獸醫)泛化。⚠️ 資料小(546 圖、稀有類 val 7-8 張)、Negative 類佔多;隨機切分。來源 Mendeley wbvb4whbks。"},
+    {"key": "openfungi", "kind": "cls",
+     "label": "🍄 絲狀黴菌 6 屬顯微辨識 OpenFungi (乳酸酚棉藍, ResNet)",
+     "path": ROOT / "models" / "openfungi_resnet50.pt",
+     "blurb": "微生物學/黴菌學(延伸既有 DeFungi,不同真菌軸):絲狀黴菌屬級顯微 6 類 — 鏈格孢 Alternaria / 麴菌黃麴組 Aspergillus(Flavi) / 黑麴組 Aspergillus(Nigri) / 鐮刀菌 Fusarium / 青黴 Penicillium / 根黴 Rhizopus(乳酸酚棉藍+培養鏡檢,僅取顯微 micro 子集、排除菌落 macro 照)。ResNet-50 val_acc 0.989 / macro-F1 0.958。絲狀黴菌形態鑑別是臨床黴菌學與環境/食品分離株判讀的基本功。⚠️ val 極小(87 張,Rhizopus 僅 2、Penicillium 4、Alternaria 3→數字不穩);類別重度不平衡(Aspergillus-Flavi 384 vs Rhizopus 12);含食品/環境分離株、非純臨床。來源 Zenodo 15692069(OpenFungi)。"},
+    {"key": "ufsc", "kind": "det",
+     "label": "🔬 子宮頸/口腔多染色細胞核偵測 22 類 UFSC-MultiCyto (Pap/AgNOR/Feulgen, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "ufsc" / "weights" / "best.pt",
+     "blurb": "細胞學(本平台首條 AgNOR/Feulgen 多染色核偵測,補既有 SIPaKMeD/RIVA 僅 Pap 之缺):多染色細胞學細胞核偵測 22 類 — Pap 染(正常/異常/失焦/血性/分裂/反應性等 7)+ AgNOR 染(核/簇/衛星/重疊核/白血球核等 7)+ Feulgen 染(改變/中間/老化/重疊/嗜中性等 8)。YOLOv8s val mAP50 0.497 / mAP50-95 0.375(ep70 早停)。AgNOR(核仁組成區)與 Feulgen(DNA 定量)染色的核形態量化是子宮頸/口腔癌風險評估研究工具。官方 train 12502 / val 2448。⚠️ 22 類含多染色×核態、長尾稀有類偏弱;器官(子宮頸/口腔)與既有 track 重疊,新增值在多染色模態。來源 Mendeley b8bygdxr7r(UFSC Multi-Cyto, CC-BY-4.0)。"},
+    {"key": "parasites", "kind": "cls",
+     "label": "🦠 血液/體液寄生蟲 8 類面板 (Giemsa, ResNet)",
+     "path": ROOT / "models" / "parasites_resnet50.pt",
+     "blurb": "寄生蟲學(統一多蟲種面板,新增 Babesia/Toxoplasma 病原):血液/體液寄生蟲與宿主細胞 8 類 — 巴貝斯蟲 Babesia / 利什曼原蟲 Leishmania / 瘧原蟲 Plasmodium / 弓形蟲 Toxoplasma / 陰道滴蟲 Trichomonad / 錐蟲 Trypanosome + 宿主紅血球 RBC / 白血球 Leukocyte。ResNet-50 val_acc 0.998 / macro-F1 0.995。Babesia(蜱媒)、Toxoplasma 為既有單蟲種 track 所無;統一面板可一次判別蟲種 vs 宿主細胞。⚠️ **成績過高、強烈疑洩漏**:隨機切分、每蟲種多為單一採集來源→模型可能在背染片/來源外觀而非泛化形態(同 tanzania 0.998 caveat);Plasmodium/Trichomonad/Trypanosome/Leishmania 與既有 track 部分同源。需 group-aware split 才可信。來源 Mendeley 38jtn4nzs6。"},
+    {"key": "oral_cyto", "kind": "det",
+     "label": "🦷 口腔脫落細胞學核偵測 4 類 (Pap, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "oral_cyto" / "weights" / "best.pt",
+     "blurb": "細胞學(本平台首條口腔脫落細胞學「核偵測」任務,別於既有 ORCHID 口腔組織分類):口腔刷取細胞學 Pap 抹片細胞核偵測,依 geojson 核標註分 4 級 I/II/III/IV(類 Bethesda 口腔分級)。YOLOv8s val mAP50 0.486 / mAP50-95 0.356。2048px 大圖、每圖 21–136 個密集小核。口腔細胞學是口腔癌篩檢的非侵入工具。⚠️ 密集小核 @640 縮放後極小(~8px)偵測難;分級類別不平衡;2048px+密集核使 batch 需降載避免驗證 NMS/VRAM 爆炸(SAHI 切片可改善,見 skill pick-model-arch)。來源 Kaggle abhijeetptl5/oral-cytology-dataset。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]

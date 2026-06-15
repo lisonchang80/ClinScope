@@ -9,7 +9,13 @@
   "discipline": "黴菌",
   "task": "classification",
   "model_type": "ResNet-50",
-  "metrics": null,
+  "metrics": {
+    "val_acc": 0.9885,
+    "n_train": 484,
+    "n_val": 87,
+    "macro_f1": 0.9579,
+    "weighted_f1": 0.9877
+  },
   "experiment_summary": "環境/食品黴菌屬級分類(Aspergillus、Penicillium…)。LPCB 染色、培養後影像。",
   "caveats": [],
   "source": null,
@@ -17,5 +23,14 @@
   "split_method": null,
   "weights": "models/resnet50_fungi.pt",
   "status": "registered",
-  "batch": "batch 1-5"
+  "batch": "batch 1-5",
+  "num_classes": 6,
+  "classes": [
+    "Alternaria_spp",
+    "Aspergillus_section_Flavi",
+    "Aspergillus_section_Nigri",
+    "Fusarium_spp",
+    "Penicillium_spp",
+    "Rhizopus_spp"
+  ]
 }

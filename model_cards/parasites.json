@@ -1,0 +1,40 @@
+{
+  "key": "parasites",
+  "abbr": "parasites",
+  "name": {
+    "display": "血液/體液寄生蟲 8 類面板 (Giemsa, ResNet)",
+    "zh": "血液/體液寄生蟲8類面板",
+    "en": ""
+  },
+  "discipline": "寄生蟲",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9983,
+    "n_train": 29154,
+    "n_val": 5144,
+    "macro_f1": 0.9954,
+    "weighted_f1": 0.9982
+  },
+  "experiment_summary": "寄生蟲學(統一多蟲種面板,新增 Babesia/Toxoplasma 病原):血液/體液寄生蟲與宿主細胞 8 類 — 巴貝斯蟲 Babesia / 利什曼原蟲 Leishmania / 瘧原蟲 Plasmodium / 弓形蟲 Toxoplasma / 陰道滴蟲 Trichomonad / 錐蟲 Trypanosome + 宿主紅血球 RBC / 白血球 Leukocyte。ResNet-50 val_acc 0.998 / macro-F1 0.995。Babesia(蜱媒)、Toxoplasma 為既有單蟲種 track 所無;統一面板可一次判別蟲種 vs 宿主細胞。",
+  "caveats": [
+    "⚠️ **成績過高、強烈疑洩漏**:隨機切分、每蟲種多為單一採集來源→模型可能在背染片/來源外觀而非泛化形態(同 tanzania 0.998 caveat);Plasmodium/Trichomonad/Trypanosome/Leishmania 與既有 track 部分同源。需 group-aware split 才可信。來源 Mendeley 38jtn4nzs6。"
+  ],
+  "source": "Mendeley 38jtn4nzs6 (blood/fluid parasites 8-class)",
+  "license": null,
+  "split_method": "random (⚠️可能洩漏)",
+  "weights": "models/parasites_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-8 (2026-06-15)",
+  "num_classes": 8,
+  "classes": [
+    "Babesia",
+    "Leishmania",
+    "Leukocyte",
+    "Plasmodium",
+    "RBCs",
+    "Toxoplasma",
+    "Trichomonad",
+    "Trypanosome"
+  ]
+}

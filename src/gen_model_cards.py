@@ -21,6 +21,7 @@ BATCH6 = {"kupbc13", "mdsbm27", "sicap", "sbsd", "evisan", "bcg", "puma",
 BATCH7 = {"cryonuseg", "blastocyst", "thalassemia", "osteosarcoma", "breast_idc", "sperm_dfi",
           "ebhi_seg", "autokary2022", "tcruzi_chagas", "ubc_ocean", "bracs", "segpc",
           "hmu_gc", "glomeruli_char", "vet_egg"}
+BATCH8 = {"openfungi", "ufsc", "parasites", "oral_cyto"}
 
 # 來源(blurb 未必含, 這裡 curated; 找不到再退回 blurb 解析)
 SOURCE = {
@@ -50,6 +51,10 @@ SOURCE = {
     "hmu_gc": "Figshare 25954813 (HMU-GC-HE-30K)",
     "glomeruli_char": "Mendeley k7nvtgn2x6 (glomeruli DATASET_B)",
     "vet_egg": "Mendeley wbvb4whbks (livestock fecal egg)",
+    "openfungi": "Zenodo 15692069 (OpenFungi, MDPI Life 2025) — micro subset",
+    "ufsc": "Mendeley b8bygdxr7r (UFSC Multi-Cyto, CC-BY-4.0)",
+    "parasites": "Mendeley 38jtn4nzs6 (blood/fluid parasites 8-class)",
+    "oral_cyto": "Kaggle abhijeetptl5/oral-cytology-dataset (geojson->bbox)",
 }
 
 DISCIPLINE_KW = ["微生物", "黴菌", "寄生蟲", "血液/骨髓", "血液腫瘤", "血液", "組織病理", "細胞學",
@@ -191,7 +196,8 @@ def main():
             "split_method": split_method(e["blurb"]),
             "weights": e["weights"],
             "status": "registered" if os.path.exists(weights_abs) else "pending",
-            "batch": ("batch-7 (2026-06-14)" if key in BATCH7
+            "batch": ("batch-8 (2026-06-15)" if key in BATCH8
+                      else "batch-7 (2026-06-14)" if key in BATCH7
                       else "batch-6 (2026-06-14)" if key in BATCH6 else "batch 1-5"),
         }
         if metrics and "num_classes" in (metrics or {}):

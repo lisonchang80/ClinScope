@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 81,
+  "n_models": 85,
   "cards": [
     {
       "key": "fungi",
@@ -8,7 +8,13 @@
       "name_en": "Fungi",
       "task": "classification",
       "discipline": "黴菌",
-      "metrics": null,
+      "metrics": {
+        "val_acc": 0.9885,
+        "n_train": 484,
+        "n_val": 87,
+        "macro_f1": 0.9579,
+        "weighted_f1": 0.9877
+      },
       "status": "registered"
     },
     {
@@ -1202,6 +1208,66 @@
         "n_val": 84,
         "macro_f1": 0.7851,
         "weighted_f1": 0.8787
+      },
+      "status": "registered"
+    },
+    {
+      "key": "openfungi",
+      "name_zh": "絲狀黴菌6屬顯微辨識",
+      "name_en": "OpenFungi",
+      "task": "classification",
+      "discipline": "微生物",
+      "metrics": {
+        "val_acc": 0.9885,
+        "n_train": 484,
+        "n_val": 87,
+        "macro_f1": 0.9579,
+        "weighted_f1": 0.9877
+      },
+      "status": "registered"
+    },
+    {
+      "key": "ufsc",
+      "name_zh": "子宮頸/口腔多染色細胞核偵測22類",
+      "name_en": "UFSC-MultiCyto",
+      "task": "detection",
+      "discipline": "細胞學",
+      "metrics": {
+        "mAP50": 0.4745,
+        "mAP50_95": 0.3529,
+        "precision": 0.4541,
+        "recall": 0.5103,
+        "epochs": 70
+      },
+      "status": "registered"
+    },
+    {
+      "key": "parasites",
+      "name_zh": "血液/體液寄生蟲8類面板",
+      "name_en": "",
+      "task": "classification",
+      "discipline": "寄生蟲",
+      "metrics": {
+        "val_acc": 0.9983,
+        "n_train": 29154,
+        "n_val": 5144,
+        "macro_f1": 0.9954,
+        "weighted_f1": 0.9982
+      },
+      "status": "registered"
+    },
+    {
+      "key": "oral_cyto",
+      "name_zh": "口腔脫落細胞學核偵測4類",
+      "name_en": "",
+      "task": "detection",
+      "discipline": "細胞學",
+      "metrics": {
+        "mAP50": 0.4851,
+        "mAP50_95": 0.3463,
+        "precision": 0.4354,
+        "recall": 0.6138,
+        "epochs": 30
       },
       "status": "registered"
     }

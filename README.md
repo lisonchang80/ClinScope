@@ -1,6 +1,6 @@
 # ClinScope
 
-臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：81 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：85 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet 分類 + YOLO 偵測雙引擎**。
 自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
 
 ## 現實定位（先讀這段）
@@ -97,6 +97,10 @@
 | 組織病理（胃癌 TME 8 類） | HMU-GC | H&E patch | ResNet-50 | 31,096 圖 / 8 類 | val 0.746、macro-F1 0.747 ⚠️ patch 隨機 split |
 | 組織病理（腎絲球分類） | Glomeruli char | PAS patch | ResNet-50 | 2,340 圖 / 2 類 | val 0.997 ⚠️ 隨機 split 含洩漏 |
 | 獸醫（家畜糞檢蟲卵） | Vet egg | 光學顯微 | ResNet-50 | 546 圖 / 6 類 | val 0.893、macro-F1 0.785 ⚠️ 小資料 |
+| 微生物（絲狀黴菌 6 屬） | OpenFungi | 乳酸酚棉藍鏡檢 | ResNet-50 | 571 圖 / 6 類 | val 0.989、macro-F1 0.958 ⚠️ val 極小、不平衡 |
+| 細胞學（多染色核偵測 22 類） | UFSC-MultiCyto | Pap/AgNOR/Feulgen | YOLOv8 | 14,950 圖 / 22 類 | mAP50 0.497、mAP50-95 0.375 ⚠️ 長尾 |
+| 寄生蟲（血/體液 8 類面板） | Parasites panel | Giemsa | ResNet-50 | 34,298 圖 / 8 類 | val 0.998 ⚠️ 強烈疑單源洩漏 |
+| 細胞學（口腔脫落核偵測） | Oral cytology | Pap 抹片 | YOLOv8 | 739 圖 / 4 類 | mAP50 0.486、mAP50-95 0.356 ⚠️ 密集小核 |
 
 > 分類模型回傳 top-k 機率；偵測模型回傳標註圖 + 每類計數。`app.py` 只會列出**權重檔存在**的模型，所以即使某些 track 還沒訓練好，前端也能正常啟動。
 
@@ -234,6 +238,9 @@ pip install -r requirements.txt
 | HMU-GC | Figshare `25954813`（HMU-GC-HE-30K;胃癌 TME 8 類 patch;patch 級隨機 split） |
 | Glomeruli char | Mendeley `k7nvtgn2x6`（腎絲球 normal/sclerosed patch cls;DATASET_B;隨機 split 含洩漏） |
 | Vet egg | Mendeley `wbvb4whbks`（獸醫家畜糞檢蟲卵 6 類;Ascaris/Fasciola/Balantidium…+陰性） |
+| UFSC Multi-Cyto | Mendeley `b8bygdxr7r`（子宮頸/口腔 Pap/AgNOR/Feulgen 多染色核偵測 22 類;polygon→bbox;CC-BY-4.0） |
+| Parasites panel | Mendeley `38jtn4nzs6`（血/體液寄生蟲 8 類;Babesia/Toxoplasma 新類;合併放大倍率;隨機 split 疑洩漏） |
+| Oral cytology | Kaggle `abhijeetptl5/oral-cytology-dataset`（口腔脫落細胞學 Pap 核偵測 4 級;geojson→bbox;2048px 密集核） |
 
 ## 免責
 

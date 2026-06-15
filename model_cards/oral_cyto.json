@@ -1,0 +1,29 @@
+{
+  "key": "oral_cyto",
+  "abbr": "oral_cyto",
+  "name": {
+    "display": "口腔脫落細胞學核偵測 4 類 (Pap, YOLO)",
+    "zh": "口腔脫落細胞學核偵測4類",
+    "en": ""
+  },
+  "discipline": "細胞學",
+  "task": "detection",
+  "model_type": "YOLOv8s",
+  "metrics": {
+    "mAP50": 0.4851,
+    "mAP50_95": 0.3463,
+    "precision": 0.4354,
+    "recall": 0.6138,
+    "epochs": 30
+  },
+  "experiment_summary": "細胞學(本平台首條口腔脫落細胞學「核偵測」任務,別於既有 ORCHID 口腔組織分類):口腔刷取細胞學 Pap 抹片細胞核偵測,依 geojson 核標註分 4 級 I/II/III/IV(類 Bethesda 口腔分級)。YOLOv8s val mAP50 0.486 / mAP50-95 0.356。2048px 大圖、每圖 21–136 個密集小核。口腔細胞學是口腔癌篩檢的非侵入工具。",
+  "caveats": [
+    "⚠️ 密集小核 @640 縮放後極小(~8px)偵測難;分級類別不平衡;2048px+密集核使 batch 需降載避免驗證 NMS/VRAM 爆炸(SAHI 切片可改善,見 skill pick-model-arch)。來源 Kaggle abhijeetptl5/oral-cytology-dataset。"
+  ],
+  "source": "Kaggle abhijeetptl5/oral-cytology-dataset (geojson->bbox)",
+  "license": null,
+  "split_method": null,
+  "weights": "reports/yolo/oral_cyto/weights/best.pt",
+  "status": "registered",
+  "batch": "batch-8 (2026-06-15)"
+}

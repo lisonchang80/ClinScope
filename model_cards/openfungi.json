@@ -1,0 +1,38 @@
+{
+  "key": "openfungi",
+  "abbr": "openfungi",
+  "name": {
+    "display": "絲狀黴菌 6 屬顯微辨識 OpenFungi (乳酸酚棉藍, ResNet)",
+    "zh": "絲狀黴菌6屬顯微辨識",
+    "en": "OpenFungi"
+  },
+  "discipline": "微生物",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9885,
+    "n_train": 484,
+    "n_val": 87,
+    "macro_f1": 0.9579,
+    "weighted_f1": 0.9877
+  },
+  "experiment_summary": "微生物學/黴菌學(延伸既有 DeFungi,不同真菌軸):絲狀黴菌屬級顯微 6 類 — 鏈格孢 Alternaria / 麴菌黃麴組 Aspergillus(Flavi) / 黑麴組 Aspergillus(Nigri) / 鐮刀菌 Fusarium / 青黴 Penicillium / 根黴 Rhizopus(乳酸酚棉藍+培養鏡檢,僅取顯微 micro 子集、排除菌落 macro 照)。ResNet-50 val_acc 0.989 / macro-F1 0.958。絲狀黴菌形態鑑別是臨床黴菌學與環境/食品分離株判讀的基本功。",
+  "caveats": [
+    "⚠️ val 極小(87 張,Rhizopus 僅 2、Penicillium 4、Alternaria 3→數字不穩);類別重度不平衡(Aspergillus-Flavi 384 vs Rhizopus 12);含食品/環境分離株、非純臨床。來源 Zenodo 15692069(OpenFungi)。"
+  ],
+  "source": "Zenodo 15692069 (OpenFungi, MDPI Life 2025) — micro subset",
+  "license": null,
+  "split_method": null,
+  "weights": "models/openfungi_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-8 (2026-06-15)",
+  "num_classes": 6,
+  "classes": [
+    "Alternaria_spp",
+    "Aspergillus_section_Flavi",
+    "Aspergillus_section_Nigri",
+    "Fusarium_spp",
+    "Penicillium_spp",
+    "Rhizopus_spp"
+  ]
+}
