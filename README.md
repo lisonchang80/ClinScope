@@ -1,6 +1,6 @@
 # ClinScope
 
-臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：85 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet／病理基礎模型(Phikon-v2) 分類 + YOLO(可選 SAHI 切片) 偵測**多引擎。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：86 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet／病理基礎模型(Phikon-v2) 分類 + YOLO(可選 SAHI 切片) 偵測**多引擎。
 自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
 
 ## 現實定位（先讀這段）
@@ -44,6 +44,7 @@
 | 組織病理（乳腺嚴重度） | BACH ICIAR2018 | H&E 組織切片（tile） | ResNet-50 | 400 圖→4,800 tile / 4 級 | val 0.873（影像級切分、無 tile 洩漏） |
 | 組織病理（甲狀腺 PTC） | PathoTiroid PTIC | H&E 組織切片 | ResNet-50 | 1,006 張 / 2 類 | val 0.994 ✅ 病人級切分（⚠️ 僅 5 病人） |
 | 尿液分析（尿沉渣） | Urine particles | 明場尿沉渣 | YOLOv8 | 4,250 圖 / 7 類 | mAP50 0.896 |
+| 微生物/泌尿（UTI 尿沉渣） | UTI urine (RODARE) | 未染色明場 | YOLOv8 | 300 圖 / 7 類 | mAP50 0.402 ⚠️ 小資料、語意遮罩→併框、與既有尿沉渣 track 重疊 |
 | 血液（單細胞 18 類） | MLL23 | Giemsa 單 WBC | ResNet-50 | 41,621 張 / 18 類 | val 0.948、macro-F1 0.861（含毛細胞白血病） |
 | 血液（RBC 排列） | Rouleaux | Giemsa 全視野薄血膜 | ResNet-50 | 1,544 張 / 2 類 | val 1.0 ⚠️ 任務易+val 小，恐受試者洩漏 |
 | 血液/骨髓（巨核細胞） | MK-11 | Wright-Giemsa 單細胞 | ResNet-50 | 7,204 張 / 11 亞型 | val 0.810 ✅ 病人級切分 |
@@ -185,6 +186,7 @@ pip install -r requirements.txt
 | BACH | Hugging Face `1aurent/BACH`（ICIAR2018 乳腺 4 級大圖;自寫 `src/bach_tile_group_split.py` 切 512 tile + 影像級切分） |
 | PathoTiroid | Zenodo `10.5281/zenodo.18827019`（甲狀腺 PTC vs 非PTC,24 病人 PTIC;以檔名 patient token 做病人級切分） |
 | Urine sediment | Hugging Face `dikaizm/urine-particle-image-dataset`（尿沉渣 7 類 Roboflow COCO,官方 split;`coco_to_yolo` 轉 YOLO） |
+| UTI urine | RODARE `10.14278/rodare.2473`（UTI 未染色尿沉渣 7 類語意遮罩,官方 train/val/test;`prep_uti.py` mult_mask 連通元件→bbox;RODARE 端點 B `/record/.../files/` 才支援 range 續傳） |
 | MLL23 | Zenodo `14277609`（周邊血 18 類 per-class zip,含毛細胞白血病/芽細胞/抹片細胞;MLL 慕尼黑） |
 | Rouleaux | Zenodo `13763939`（串錢狀 vs 正常 RBC 薄血膜,100 受試者;用 original-form 全視野） |
 | MK-11 | figshare `29264819`（骨髓巨核細胞 11 亞型,class 子資料夾 + 官方 5-fold 病人級切分） |

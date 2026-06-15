@@ -374,6 +374,10 @@ REGISTRY = [
      "label": "🦷 口腔脫落細胞學核偵測 4 類 (Pap, YOLO)",
      "path": ROOT / "reports" / "yolo" / "oral_cyto" / "weights" / "best.pt",
      "blurb": "細胞學(本平台首條口腔脫落細胞學「核偵測」任務,別於既有 ORCHID 口腔組織分類):口腔刷取細胞學 Pap 抹片細胞核偵測,依 geojson 核標註分 4 級 I/II/III/IV(類 Bethesda 口腔分級)。YOLOv8s val mAP50 0.486 / mAP50-95 0.356。2048px 大圖、每圖 21–136 個密集小核。口腔細胞學是口腔癌篩檢的非侵入工具。⚠️ 密集小核 @640 縮放後極小(~8px)偵測難;分級類別不平衡;2048px+密集核使 batch 需降載避免驗證 NMS/VRAM 爆炸(SAHI 切片可改善,見 skill pick-model-arch)。來源 Kaggle abhijeetptl5/oral-cytology-dataset。"},
+    {"key": "uti_urine", "kind": "det",
+     "label": "💧 尿沉渣 UTI 細胞偵測 7 類 (未染色明場, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "uti_urine" / "weights" / "best.pt",
+     "blurb": "微生物/泌尿(UTI 特異尿沉渣,別於既有 Urine-particles 一般尿沉渣 track):未染色明場尿沉渣 7 類 — 桿菌 Rod / 紅白血球 RBC-WBC / 酵母菌 Yeast / 雜項 Miscellaneous / 單一上皮細胞 Single-EPC / 小上皮細胞片 Small-EPC-sheet / 大上皮細胞片 Large-EPC-sheet。YOLOv8s val mAP50 0.402 / mAP50-95 0.286(RBC-WBC 0.80、Single-EPC 0.87 表現佳)。UTI 可由尿沉渣顯微鏡細胞標記診斷,本資料集走簡易成像普及化路線(x20 物鏡、未染色明場)。⚠️ 與既有 urine(Urine-particles 一般尿沉渣 det, mAP50 0.896)同屬尿沉渣偵測;本 track 區別在 UTI 臨床情境、未染色、UTI 特異類別(桿菌/酵母/上皮細胞片)、語意遮罩來源。⚠️ 小資料(官方 train 97 / val 98 圖, 共 300);標註為**語意分割遮罩→連通元件 bbox**,同類相鄰細胞會併成一框(尤其密集桿菌 Rod mAP50 僅 0.06);稀有類 Yeast(val 20 框)/Small-EPC-sheet(16)/Large-EPC-sheet(2) 樣本太少不可信。來源 RODARE 10.14278/rodare.2473(CC-BY-4.0, 倫敦 LUTS 門診)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]

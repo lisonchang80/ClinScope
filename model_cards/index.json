@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 85,
+  "n_models": 86,
   "cards": [
     {
       "key": "fungi",
@@ -1268,6 +1268,21 @@
         "precision": 0.4354,
         "recall": 0.6138,
         "epochs": 30
+      },
+      "status": "registered"
+    },
+    {
+      "key": "uti_urine",
+      "name_zh": "尿沉渣細胞偵測7類",
+      "name_en": "UTI",
+      "task": "detection",
+      "discipline": "微生物",
+      "metrics": {
+        "mAP50": 0.3744,
+        "mAP50_95": 0.2555,
+        "precision": 0.4778,
+        "recall": 0.556,
+        "epochs": 32
       },
       "status": "registered"
     }
