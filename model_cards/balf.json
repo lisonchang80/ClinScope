@@ -1,0 +1,29 @@
+{
+  "key": "balf",
+  "abbr": "balf",
+  "name": {
+    "display": "支氣管肺泡灌洗液 BALF 細胞偵測 7 類 (Diff-Quik/Gram, YOLO)",
+    "zh": "支氣管肺泡灌洗液細胞偵測7類",
+    "en": "BALF"
+  },
+  "discipline": "細胞學",
+  "task": "detection",
+  "model_type": "YOLOv8s",
+  "metrics": {
+    "mAP50": 0.7551,
+    "mAP50_95": 0.5635,
+    "precision": 0.8126,
+    "recall": 0.6966,
+    "epochs": 53
+  },
+  "experiment_summary": "細胞學(本平台首條支氣管肺泡灌洗液 BALF 體液細胞學偵測):BAL 灌洗液 7 類細胞 — 紅血球 erythrocyte / 淋巴球 lymphocyte / 纖毛柱狀上皮 ciliated-columnar / 鱗狀上皮 squamous / 巨噬細胞 macrophage / 嗜酸性球 eosinophil / 嗜中性球 neutrophil。YOLOv8s val mAP50 0.810 / mAP50-95 0.592(macrophage 0.93、lymphocyte/neutrophil 0.85 佳,七類皆學起來無弱類)。BALF 細胞分類計數(巨噬/淋巴/嗜中性/嗜酸比例)是間質性肺病與肺部感染診斷的臨床依據。官方 train 1895 / val 210 圖(共 2105 圖/13263 細胞, 中國 PLA 總醫院)。",
+  "caveats": [
+    "⚠️ class-id→名稱對應為依各類豐度+BAL 臨床比例推定(資料集/論文未附機器可讀 legend;id4=macrophage 最多、id1=lymphocyte 次多已由 val 豐度佐證,其餘 4 類沿論文列舉序推定);標註多邊形→bbox;少量重複框由 YOLO 自動移除。來源 Zenodo 14871206(PW-BALFC, Sci Data 2025, CC-BY-4.0)。"
+  ],
+  "source": "Zenodo 14871206 (PW-BALFC bronchoalveolar lavage)",
+  "license": "CC-BY-4.0",
+  "split_method": "official split",
+  "weights": "reports/yolo/balf/weights/best.pt",
+  "status": "registered",
+  "batch": "batch-9 (2026-06-15)"
+}

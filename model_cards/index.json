@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 86,
+  "n_models": 87,
   "cards": [
     {
       "key": "fungi",
@@ -1283,6 +1283,21 @@
         "precision": 0.4778,
         "recall": 0.556,
         "epochs": 32
+      },
+      "status": "registered"
+    },
+    {
+      "key": "balf",
+      "name_zh": "支氣管肺泡灌洗液細胞偵測7類",
+      "name_en": "BALF",
+      "task": "detection",
+      "discipline": "細胞學",
+      "metrics": {
+        "mAP50": 0.7551,
+        "mAP50_95": 0.5635,
+        "precision": 0.8126,
+        "recall": 0.6966,
+        "epochs": 53
       },
       "status": "registered"
     }

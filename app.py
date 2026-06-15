@@ -378,6 +378,10 @@ REGISTRY = [
      "label": "💧 尿沉渣 UTI 細胞偵測 7 類 (未染色明場, YOLO)",
      "path": ROOT / "reports" / "yolo" / "uti_urine" / "weights" / "best.pt",
      "blurb": "微生物/泌尿(UTI 特異尿沉渣,別於既有 Urine-particles 一般尿沉渣 track):未染色明場尿沉渣 7 類 — 桿菌 Rod / 紅白血球 RBC-WBC / 酵母菌 Yeast / 雜項 Miscellaneous / 單一上皮細胞 Single-EPC / 小上皮細胞片 Small-EPC-sheet / 大上皮細胞片 Large-EPC-sheet。YOLOv8s val mAP50 0.402 / mAP50-95 0.286(RBC-WBC 0.80、Single-EPC 0.87 表現佳)。UTI 可由尿沉渣顯微鏡細胞標記診斷,本資料集走簡易成像普及化路線(x20 物鏡、未染色明場)。⚠️ 與既有 urine(Urine-particles 一般尿沉渣 det, mAP50 0.896)同屬尿沉渣偵測;本 track 區別在 UTI 臨床情境、未染色、UTI 特異類別(桿菌/酵母/上皮細胞片)、語意遮罩來源。⚠️ 小資料(官方 train 97 / val 98 圖, 共 300);標註為**語意分割遮罩→連通元件 bbox**,同類相鄰細胞會併成一框(尤其密集桿菌 Rod mAP50 僅 0.06);稀有類 Yeast(val 20 框)/Small-EPC-sheet(16)/Large-EPC-sheet(2) 樣本太少不可信。來源 RODARE 10.14278/rodare.2473(CC-BY-4.0, 倫敦 LUTS 門診)。"},
+    {"key": "balf", "kind": "det",
+     "label": "🫁 支氣管肺泡灌洗液 BALF 細胞偵測 7 類 (Diff-Quik/Gram, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "balf" / "weights" / "best.pt",
+     "blurb": "細胞學(本平台首條支氣管肺泡灌洗液 BALF 體液細胞學偵測):BAL 灌洗液 7 類細胞 — 紅血球 erythrocyte / 淋巴球 lymphocyte / 纖毛柱狀上皮 ciliated-columnar / 鱗狀上皮 squamous / 巨噬細胞 macrophage / 嗜酸性球 eosinophil / 嗜中性球 neutrophil。YOLOv8s val mAP50 0.810 / mAP50-95 0.592(macrophage 0.93、lymphocyte/neutrophil 0.85 佳,七類皆學起來無弱類)。BALF 細胞分類計數(巨噬/淋巴/嗜中性/嗜酸比例)是間質性肺病與肺部感染診斷的臨床依據。官方 train 1895 / val 210 圖(共 2105 圖/13263 細胞, 中國 PLA 總醫院)。⚠️ class-id→名稱對應為依各類豐度+BAL 臨床比例推定(資料集/論文未附機器可讀 legend;id4=macrophage 最多、id1=lymphocyte 次多已由 val 豐度佐證,其餘 4 類沿論文列舉序推定);標註多邊形→bbox;少量重複框由 YOLO 自動移除。來源 Zenodo 14871206(PW-BALFC, Sci Data 2025, CC-BY-4.0)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
