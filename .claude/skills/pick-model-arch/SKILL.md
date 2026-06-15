@@ -10,6 +10,15 @@ ClinScope 預設兩引擎:**cls=ResNet-50**(`src/train_resnet.py`)、**det=YOLOv
 > 硬體前提:單顆 **RTX 4060 Ti 8GB VRAM**。所有建議都以 8GB 可行為前提。
 > 定位:本平台 self-study/portfolio → **非商用 OK**(可用 research-only 權重);但授權欄仍標清楚,未來若要商用是硬限制。
 
+## ✅ 本專案實測驗證(2026-06-15 PoC, 兩支柱都坐實)
+
+| PoC | 原 baseline | 換架構後 | 提升 | 成本 |
+|---|---|---|---|---|
+| **cls: Phikon-v2 frozen + LogReg @ ubc_ocean** | ResNet-50 val 0.543 / macro-F1 0.436(LGSC F1 0) | **val 0.679 / macro-F1 0.593(LGSC 0.222)** | **+13.6 acc / +15.7 macro-F1**,救回全崩的稀有類 | 只訓 1 個 logistic regression,骨幹凍結;3×3 tile mean-pool 1024 維特徵 |
+| **det: SAHI 切片 vs 整圖 @ puma(密集小核)** | 整圖 mAP50 0.200 | **SAHI 切片 mAP50 0.276** | **+37.6% 相對**,框數 12k→26k 找回小核 | **零重訓**,只切片推論(slice 640/overlap 0.2) |
+
+> 結論:「WSI 亞型/小資料 cls → 病理 FM frozen + linear」「大圖密集小核 det → SAHI 切片」兩條建議在本專案資料上**實測有效**。PoC 腳本 `data/_pipeline/phikon_poc.py`、`sahi_poc.py`(gitignore)。
+
 ## 先診斷:這是「模型問題」還是別的問題?
 
 換架構前先排除**不是模型能救的**(換了也沒用,別浪費 GPU):
