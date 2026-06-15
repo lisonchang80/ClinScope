@@ -169,10 +169,13 @@ def det_metrics(rdir):
     rows = list(csv.DictReader(open(p)))
     if not rows:
         return None
-    last = rows[-1]
-    g = lambda s: next((k for k in last if s in k), None)
+    # best.pt 是「最佳 epoch」非「最後 epoch」;早停/跨域過擬時兩者差很大(midog last 0.148 vs best 0.362)。
+    # app.py 部署 best.pt → 卡片取 max mAP50 那列才對齊實際部署權重。
+    mkey = next((k for k in rows[0] if "mAP50(B)" in k), None)
+    best = max(rows, key=lambda r: float(r[mkey] or 0)) if mkey else rows[-1]
+    g = lambda s: next((k for k in best if s in k), None)
     def fv(s):
-        k = g(s); return round(float(last[k]), 4) if k else None
+        k = g(s); return round(float(best[k]), 4) if k else None
     return {"mAP50": fv("mAP50(B)"), "mAP50_95": fv("mAP50-95(B)"),
             "precision": fv("precision(B)"), "recall": fv("recall(B)"), "epochs": len(rows)}
 

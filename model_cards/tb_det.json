@@ -10,10 +10,10 @@
   "task": "detection",
   "model_type": "YOLOv8s",
   "metrics": {
-    "mAP50": 0.8401,
-    "mAP50_95": 0.4144,
-    "precision": 0.7745,
-    "recall": 0.7731,
+    "mAP50": 0.8472,
+    "mAP50_95": 0.4165,
+    "precision": 0.751,
+    "recall": 0.8117,
     "epochs": 52
   },
   "experiment_summary": "微生物(本平台首條結核 track,填補全球結核負擔的關鍵 ★ 缺口):ZN 抗酸染色痰抹片(手機接顯微鏡,Makerere/Mulago 烏干達臨床)偵測抗酸桿菌 1 類 TBbacillus。YOLOv8s val mAP50 0.840 / mAP50-95 0.414(P 0.78 / R 0.77),抗酸桿菌偵測表現良好。ZN 鏡檢是高負擔地區結核診斷第一線。",

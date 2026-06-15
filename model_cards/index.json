@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 87,
+  "n_models": 88,
   "cards": [
     {
       "key": "fungi",
@@ -153,10 +153,10 @@
       "task": "detection",
       "discipline": null,
       "metrics": {
-        "mAP50": 0.8905,
-        "mAP50_95": 0.6004,
-        "precision": 0.837,
-        "recall": 0.8827,
+        "mAP50": 0.9193,
+        "mAP50_95": 0.6224,
+        "precision": 0.8479,
+        "recall": 0.8828,
         "epochs": 46
       },
       "status": "registered"
@@ -258,10 +258,10 @@
       "task": "detection",
       "discipline": "組織病理",
       "metrics": {
-        "mAP50": 0.9285,
-        "mAP50_95": 0.6484,
-        "precision": 0.875,
-        "recall": 0.9227,
+        "mAP50": 0.9434,
+        "mAP50_95": 0.6407,
+        "precision": 0.9114,
+        "recall": 0.9341,
         "epochs": 80
       },
       "status": "registered"
@@ -408,10 +408,10 @@
       "task": "detection",
       "discipline": "尿液分析",
       "metrics": {
-        "mAP50": 0.8998,
-        "mAP50_95": 0.5389,
-        "precision": 0.8313,
-        "recall": 0.8608,
+        "mAP50": 0.9037,
+        "mAP50_95": 0.5396,
+        "precision": 0.8133,
+        "recall": 0.8873,
         "epochs": 60
       },
       "status": "registered"
@@ -468,10 +468,10 @@
       "task": "detection",
       "discipline": "寄生蟲",
       "metrics": {
-        "mAP50": 0.8064,
-        "mAP50_95": 0.4374,
-        "precision": 0.8232,
-        "recall": 0.7504,
+        "mAP50": 0.807,
+        "mAP50_95": 0.434,
+        "precision": 0.8194,
+        "recall": 0.7536,
         "epochs": 60
       },
       "status": "registered"
@@ -558,10 +558,10 @@
       "task": "detection",
       "discipline": "寄生蟲",
       "metrics": {
-        "mAP50": 0.6759,
-        "mAP50_95": 0.4137,
-        "precision": 0.7337,
-        "recall": 0.6115,
+        "mAP50": 0.7517,
+        "mAP50_95": 0.4555,
+        "precision": 0.6095,
+        "recall": 0.7917,
         "epochs": 68
       },
       "status": "registered"
@@ -573,10 +573,10 @@
       "task": "detection",
       "discipline": "寄生蟲",
       "metrics": {
-        "mAP50": 0.307,
-        "mAP50_95": 0.2463,
-        "precision": 0.3926,
-        "recall": 0.3161,
+        "mAP50": 0.3953,
+        "mAP50_95": 0.3049,
+        "precision": 0.5275,
+        "recall": 0.3545,
         "epochs": 28
       },
       "status": "registered"
@@ -588,10 +588,10 @@
       "task": "detection",
       "discipline": "微生物",
       "metrics": {
-        "mAP50": 0.902,
-        "mAP50_95": 0.6573,
-        "precision": 0.8595,
-        "recall": 0.8174,
+        "mAP50": 0.9167,
+        "mAP50_95": 0.652,
+        "precision": 0.8427,
+        "recall": 0.846,
         "epochs": 80
       },
       "status": "registered"
@@ -603,10 +603,10 @@
       "task": "detection",
       "discipline": "微生物",
       "metrics": {
-        "mAP50": 0.9692,
-        "mAP50_95": 0.7519,
-        "precision": 0.9692,
-        "recall": 0.9468,
+        "mAP50": 0.9716,
+        "mAP50_95": 0.7503,
+        "precision": 0.9682,
+        "recall": 0.9464,
         "epochs": 80
       },
       "status": "registered"
@@ -618,10 +618,10 @@
       "task": "detection",
       "discipline": "寄生蟲",
       "metrics": {
-        "mAP50": 0.5862,
-        "mAP50_95": 0.2268,
-        "precision": 0.6508,
-        "recall": 0.5635,
+        "mAP50": 0.6433,
+        "mAP50_95": 0.264,
+        "precision": 0.6977,
+        "recall": 0.592,
         "epochs": 42
       },
       "status": "registered"
@@ -633,10 +633,10 @@
       "task": "detection",
       "discipline": "寄生蟲",
       "metrics": {
-        "mAP50": 0.8682,
-        "mAP50_95": 0.4499,
-        "precision": 0.8667,
-        "recall": 0.8505,
+        "mAP50": 0.8934,
+        "mAP50_95": 0.4622,
+        "precision": 0.8519,
+        "recall": 0.8462,
         "epochs": 80
       },
       "status": "registered"
@@ -693,10 +693,10 @@
       "task": "detection",
       "discipline": "血液",
       "metrics": {
-        "mAP50": 0.8951,
-        "mAP50_95": 0.7125,
-        "precision": 0.8089,
-        "recall": 0.8568,
+        "mAP50": 0.934,
+        "mAP50_95": 0.746,
+        "precision": 0.8382,
+        "recall": 0.9021,
         "epochs": 80
       },
       "status": "registered"
@@ -708,10 +708,10 @@
       "task": "detection",
       "discipline": "男科",
       "metrics": {
-        "mAP50": 0.4356,
-        "mAP50_95": 0.2527,
-        "precision": 0.4304,
-        "recall": 0.4128,
+        "mAP50": 0.4517,
+        "mAP50_95": 0.2551,
+        "precision": 0.4198,
+        "recall": 0.4438,
         "epochs": 37
       },
       "status": "registered"
@@ -723,10 +723,10 @@
       "task": "detection",
       "discipline": "微生物",
       "metrics": {
-        "mAP50": 0.737,
-        "mAP50_95": 0.4196,
-        "precision": 0.7953,
-        "recall": 0.7032,
+        "mAP50": 0.7393,
+        "mAP50_95": 0.4184,
+        "precision": 0.7912,
+        "recall": 0.7115,
         "epochs": 80
       },
       "status": "registered"
@@ -738,10 +738,10 @@
       "task": "detection",
       "discipline": "組織病理",
       "metrics": {
-        "mAP50": 0.1934,
-        "mAP50_95": 0.1316,
-        "precision": 0.6375,
-        "recall": 0.2259,
+        "mAP50": 0.2064,
+        "mAP50_95": 0.1358,
+        "precision": 0.616,
+        "recall": 0.2552,
         "epochs": 100
       },
       "status": "registered"
@@ -753,10 +753,10 @@
       "task": "detection",
       "discipline": "微生物",
       "metrics": {
-        "mAP50": 0.8401,
-        "mAP50_95": 0.4144,
-        "precision": 0.7745,
-        "recall": 0.7731,
+        "mAP50": 0.8472,
+        "mAP50_95": 0.4165,
+        "precision": 0.751,
+        "recall": 0.8117,
         "epochs": 52
       },
       "status": "registered"
@@ -783,10 +783,10 @@
       "task": "detection",
       "discipline": "組織病理",
       "metrics": {
-        "mAP50": 0.6184,
-        "mAP50_95": 0.3344,
-        "precision": 0.7088,
-        "recall": 0.6319,
+        "mAP50": 0.6265,
+        "mAP50_95": 0.3384,
+        "precision": 0.7106,
+        "recall": 0.6281,
         "epochs": 77
       },
       "status": "registered"
@@ -843,10 +843,10 @@
       "task": "detection",
       "discipline": "組織病理",
       "metrics": {
-        "mAP50": 0.4654,
-        "mAP50_95": 0.3298,
-        "precision": 0.62,
-        "recall": 0.3998,
+        "mAP50": 0.5237,
+        "mAP50_95": 0.3749,
+        "precision": 0.6619,
+        "recall": 0.4185,
         "epochs": 93
       },
       "status": "registered"
@@ -873,10 +873,10 @@
       "task": "detection",
       "discipline": "寄生蟲",
       "metrics": {
-        "mAP50": 0.417,
-        "mAP50_95": 0.2405,
-        "precision": 0.4482,
-        "recall": 0.4518,
+        "mAP50": 0.4471,
+        "mAP50_95": 0.257,
+        "precision": 0.4852,
+        "recall": 0.4685,
         "epochs": 39
       },
       "status": "registered"
@@ -888,10 +888,10 @@
       "task": "detection",
       "discipline": "微生物",
       "metrics": {
-        "mAP50": 0.8651,
-        "mAP50_95": 0.5127,
-        "precision": 0.842,
-        "recall": 0.7971,
+        "mAP50": 0.8667,
+        "mAP50_95": 0.516,
+        "precision": 0.8332,
+        "recall": 0.8071,
         "epochs": 80
       },
       "status": "registered"
@@ -948,10 +948,10 @@
       "task": "detection",
       "discipline": "細胞學",
       "metrics": {
-        "mAP50": 0.1462,
-        "mAP50_95": 0.0672,
-        "precision": 0.2766,
-        "recall": 0.2865,
+        "mAP50": 0.1694,
+        "mAP50_95": 0.0974,
+        "precision": 0.3132,
+        "recall": 0.25,
         "epochs": 55
       },
       "status": "registered"
@@ -993,10 +993,10 @@
       "task": "detection",
       "discipline": "組織病理",
       "metrics": {
-        "mAP50": 0.4663,
-        "mAP50_95": 0.2649,
-        "precision": 0.7224,
-        "recall": 0.5022,
+        "mAP50": 0.4693,
+        "mAP50_95": 0.27,
+        "precision": 0.7153,
+        "recall": 0.5105,
         "epochs": 100
       },
       "status": "registered"
@@ -1098,10 +1098,10 @@
       "task": "detection",
       "discipline": "細胞遺傳學",
       "metrics": {
-        "mAP50": 0.8507,
-        "mAP50_95": 0.6625,
-        "precision": 0.8606,
-        "recall": 0.7566,
+        "mAP50": 0.8578,
+        "mAP50_95": 0.6662,
+        "precision": 0.8469,
+        "recall": 0.7711,
         "epochs": 100
       },
       "status": "registered"
@@ -1113,10 +1113,10 @@
       "task": "detection",
       "discipline": "寄生蟲",
       "metrics": {
-        "mAP50": 0.2571,
-        "mAP50_95": 0.1011,
-        "precision": 0.2559,
-        "recall": 0.3729,
+        "mAP50": 0.3488,
+        "mAP50_95": 0.1594,
+        "precision": 0.3831,
+        "recall": 0.3559,
         "epochs": 68
       },
       "status": "registered"
@@ -1158,10 +1158,10 @@
       "task": "detection",
       "discipline": "血液腫瘤",
       "metrics": {
-        "mAP50": 0.8328,
-        "mAP50_95": 0.7348,
-        "precision": 0.8293,
-        "recall": 0.8343,
+        "mAP50": 0.868,
+        "mAP50_95": 0.7681,
+        "precision": 0.8271,
+        "recall": 0.8698,
         "epochs": 71
       },
       "status": "registered"
@@ -1233,10 +1233,10 @@
       "task": "detection",
       "discipline": "細胞學",
       "metrics": {
-        "mAP50": 0.4745,
-        "mAP50_95": 0.3529,
-        "precision": 0.4541,
-        "recall": 0.5103,
+        "mAP50": 0.4964,
+        "mAP50_95": 0.373,
+        "precision": 0.5053,
+        "recall": 0.5238,
         "epochs": 70
       },
       "status": "registered"
@@ -1263,10 +1263,10 @@
       "task": "detection",
       "discipline": "細胞學",
       "metrics": {
-        "mAP50": 0.4851,
-        "mAP50_95": 0.3463,
-        "precision": 0.4354,
-        "recall": 0.6138,
+        "mAP50": 0.4859,
+        "mAP50_95": 0.3496,
+        "precision": 0.4521,
+        "recall": 0.6086,
         "epochs": 30
       },
       "status": "registered"
@@ -1278,10 +1278,10 @@
       "task": "detection",
       "discipline": "微生物",
       "metrics": {
-        "mAP50": 0.3744,
-        "mAP50_95": 0.2555,
-        "precision": 0.4778,
-        "recall": 0.556,
+        "mAP50": 0.401,
+        "mAP50_95": 0.2853,
+        "precision": 0.6176,
+        "recall": 0.3906,
         "epochs": 32
       },
       "status": "registered"
@@ -1293,11 +1293,26 @@
       "task": "detection",
       "discipline": "細胞學",
       "metrics": {
-        "mAP50": 0.7551,
-        "mAP50_95": 0.5635,
-        "precision": 0.8126,
-        "recall": 0.6966,
+        "mAP50": 0.8077,
+        "mAP50_95": 0.5896,
+        "precision": 0.7894,
+        "recall": 0.7481,
         "epochs": 53
+      },
+      "status": "registered"
+    },
+    {
+      "key": "midog",
+      "name_zh": "跨掃描儀有絲分裂偵測2021",
+      "name_en": "MIDOG",
+      "task": "detection",
+      "discipline": "組織病理",
+      "metrics": {
+        "mAP50": 0.3673,
+        "mAP50_95": 0.1002,
+        "precision": 0.404,
+        "recall": 0.4345,
+        "epochs": 57
       },
       "status": "registered"
     }

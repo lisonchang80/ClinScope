@@ -10,10 +10,10 @@
   "task": "detection",
   "model_type": "YOLOv8s",
   "metrics": {
-    "mAP50": 0.8905,
-    "mAP50_95": 0.6004,
-    "precision": 0.837,
-    "recall": 0.8827,
+    "mAP50": 0.9193,
+    "mAP50_95": 0.6224,
+    "precision": 0.8479,
+    "recall": 0.8828,
     "epochs": 46
   },
   "experiment_summary": "整片血抹片偵測 + 計數:RBC / WBC / Platelets。",

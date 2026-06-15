@@ -1,6 +1,6 @@
 # ClinScope
 
-臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：87 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet／病理基礎模型(Phikon-v2) 分類 + YOLO(可選 SAHI 切片) 偵測**多引擎。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：88 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet／病理基礎模型(Phikon-v2) 分類 + YOLO(可選 SAHI 切片) 偵測**多引擎。
 自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
 
 ## 現實定位（先讀這段）
@@ -46,6 +46,7 @@
 | 尿液分析（尿沉渣） | Urine particles | 明場尿沉渣 | YOLOv8 | 4,250 圖 / 7 類 | mAP50 0.896 |
 | 微生物/泌尿（UTI 尿沉渣） | UTI urine (RODARE) | 未染色明場 | YOLOv8 | 300 圖 / 7 類 | mAP50 0.402 ⚠️ 小資料、語意遮罩→併框、與既有尿沉渣 track 重疊 |
 | 細胞學（BALF 肺泡灌洗液） | PW-BALFC | Diff-Quik/Gram 明場 | YOLOv8 | 2,105 圖 / 7 類 | mAP50 0.810、mAP50-95 0.592 ✅ 七類皆佳 ⚠️ id→名推定 |
+| 組織病理（跨掃描儀分裂） | MIDOG 2021 | H&E ROI（3 台掃描儀） | YOLOv8 | 150 圖→1,982 tile / 2 類 | mAP50 0.362（scanner-disjoint 跨域，mitotic 單類 0.56）⚠️ domain-gen 示範、刻意跨掃描儀掉分 |
 | 血液（單細胞 18 類） | MLL23 | Giemsa 單 WBC | ResNet-50 | 41,621 張 / 18 類 | val 0.948、macro-F1 0.861（含毛細胞白血病） |
 | 血液（RBC 排列） | Rouleaux | Giemsa 全視野薄血膜 | ResNet-50 | 1,544 張 / 2 類 | val 1.0 ⚠️ 任務易+val 小，恐受試者洩漏 |
 | 血液/骨髓（巨核細胞） | MK-11 | Wright-Giemsa 單細胞 | ResNet-50 | 7,204 張 / 11 亞型 | val 0.810 ✅ 病人級切分 |
@@ -188,6 +189,9 @@ pip install -r requirements.txt
 | PathoTiroid | Zenodo `10.5281/zenodo.18827019`（甲狀腺 PTC vs 非PTC,24 病人 PTIC;以檔名 patient token 做病人級切分） |
 | Urine sediment | Hugging Face `dikaizm/urine-particle-image-dataset`（尿沉渣 7 類 Roboflow COCO,官方 split;`coco_to_yolo` 轉 YOLO） |
 | UTI urine | RODARE `10.14278/rodare.2473`（UTI 未染色尿沉渣 7 類語意遮罩,官方 train/val/test;`prep_uti.py` mult_mask 連通元件→bbox;RODARE 端點 B `/record/.../files/` 才支援 range 續傳） |
+| BALF cell | Zenodo `14871206`（PW-BALFC 支氣管肺泡灌洗液 7 類,官方 train/val;只取 Images.rar+Labels.rar 標準解析跳過 24GB 高解析;`prep_balf.py` polygon→bbox） |
+| MIDOG 2021 | Zenodo `4643381`（跨掃描儀有絲分裂 150 標註 TIFF+COCO json;`prep_midog.py` tile 1280px + scanner-disjoint split:掃描儀1-2 train/掃描儀3 val） |
+| Cervical AIS | figshare `24548953`（CASIHI 子宮頸腺癌原位 vs 正常腺體 2 類;⚠️ figshare 簽章 URL 10 秒過期→aria2c 必用單連線 `-x1 -s1`） |
 | MLL23 | Zenodo `14277609`（周邊血 18 類 per-class zip,含毛細胞白血病/芽細胞/抹片細胞;MLL 慕尼黑） |
 | Rouleaux | Zenodo `13763939`（串錢狀 vs 正常 RBC 薄血膜,100 受試者;用 original-form 全視野） |
 | MK-11 | figshare `29264819`（骨髓巨核細胞 11 亞型,class 子資料夾 + 官方 5-fold 病人級切分） |

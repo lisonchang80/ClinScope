@@ -10,10 +10,10 @@
   "task": "detection",
   "model_type": "YOLOv8s",
   "metrics": {
-    "mAP50": 0.9692,
-    "mAP50_95": 0.7519,
-    "precision": 0.9692,
-    "recall": 0.9468,
+    "mAP50": 0.9716,
+    "mAP50_95": 0.7503,
+    "precision": 0.9682,
+    "recall": 0.9464,
     "epochs": 80
   },
   "experiment_summary": "臨床微生物培養(本平台首條巨觀培養盤 track、全新模態 — 白光巨觀攝影而非顯微):瓊脂培養盤上 19 種臨床細菌的菌落偵測 + 菌種辨識。類別沿用資料集原始 3-字母代碼(aba/eco/kpn/sau/ses/sma/sep/efa/stm/eca/enc/cst/mmo/bce/spy/sag/ppu/spn/bcp;涵蓋 Acinetobacter / E. coli / Klebsiella / S. aureus / Enterococcus / Streptococcus 等)。YOLOv8s val mAP50 0.970 / mAP50-95 0.764,19 種 mAP50 0.93–0.99 均勻優異。菌落判讀是臨床微生物鑑定的核心。",

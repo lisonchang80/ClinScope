@@ -10,10 +10,10 @@
   "task": "detection",
   "model_type": "YOLOv8s",
   "metrics": {
-    "mAP50": 0.8064,
-    "mAP50_95": 0.4374,
-    "precision": 0.8232,
-    "recall": 0.7504,
+    "mAP50": 0.807,
+    "mAP50_95": 0.434,
+    "precision": 0.8194,
+    "recall": 0.7536,
     "epochs": 60
   },
   "experiment_summary": "血液寄生蟲:未染色厚血膜錐蟲 trypanosome 偵測(非洲昏睡病 T. brucei / 美洲查加斯病 T. cruzi)。YOLOv8s 單類偵測(含陰性背景圖降假陽性),官方 v3 split。val mAP50 0.807 / mAP50-95 0.439。第 5 條偵測 track,新增血液寄生蟲(對照瘧原蟲血抹片分類)。",

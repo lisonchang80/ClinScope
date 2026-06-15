@@ -10,10 +10,10 @@
   "task": "detection",
   "model_type": "YOLOv8s",
   "metrics": {
-    "mAP50": 0.3744,
-    "mAP50_95": 0.2555,
-    "precision": 0.4778,
-    "recall": 0.556,
+    "mAP50": 0.401,
+    "mAP50_95": 0.2853,
+    "precision": 0.6176,
+    "recall": 0.3906,
     "epochs": 32
   },
   "experiment_summary": "微生物/泌尿(UTI 特異尿沉渣,別於既有 Urine-particles 一般尿沉渣 track):未染色明場尿沉渣 7 類 — 桿菌 Rod / 紅白血球 RBC-WBC / 酵母菌 Yeast / 雜項 Miscellaneous / 單一上皮細胞 Single-EPC / 小上皮細胞片 Small-EPC-sheet / 大上皮細胞片 Large-EPC-sheet。YOLOv8s val mAP50 0.402 / mAP50-95 0.286(RBC-WBC 0.80、Single-EPC 0.87 表現佳)。UTI 可由尿沉渣顯微鏡細胞標記診斷,本資料集走簡易成像普及化路線(x20 物鏡、未染色明場)。",

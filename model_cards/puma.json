@@ -10,10 +10,10 @@
   "task": "detection",
   "model_type": "YOLOv8s",
   "metrics": {
-    "mAP50": 0.1934,
-    "mAP50_95": 0.1316,
-    "precision": 0.6375,
-    "recall": 0.2259,
+    "mAP50": 0.2064,
+    "mAP50_95": 0.1358,
+    "precision": 0.616,
+    "recall": 0.2552,
     "epochs": 100
   },
   "experiment_summary": "組織病理(本平台首條皮膚黑色素瘤 track):原發+轉移黑色素瘤 H&E ROI,偵測 10 種細胞核 — 腫瘤核/淋巴球/基質/內皮/組織球/嗜黑素細胞 melanophage/漿細胞/嗜中性球/凋亡核/上皮。YOLOv8s 整圖 val mAP50 0.193;**本 track 前端啟用 SAHI 切片推論(640/overlap 0.2)→ mAP50 0.200→0.276(+37.6%,零重訓)**——1024px 訓練尺度≈slice 尺度,密集小核切片後不被縮掉、找回約 2× 框。10 類極不平衡(腫瘤核 57k vs 嗜中性 366),稀有核型偏弱。含黑色素瘤特有 melanophage 核型,為既有 PanNuke/NuInsSeg 所無。ROI 級切分,CC0 授權。",

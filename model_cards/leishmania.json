@@ -10,10 +10,10 @@
   "task": "detection",
   "model_type": "YOLOv8s",
   "metrics": {
-    "mAP50": 0.5862,
-    "mAP50_95": 0.2268,
-    "precision": 0.6508,
-    "recall": 0.5635,
+    "mAP50": 0.6433,
+    "mAP50_95": 0.264,
+    "precision": 0.6977,
+    "recall": 0.592,
     "epochs": 42
   },
   "experiment_summary": "寄生蟲(本平台首條利什曼原蟲 track,皮膚黏膜利什曼病):Giemsa 皮膚抹片偵測利什曼原蟲無鞭毛體 amastigote(單類 parasite)。官方 slide-disjoint 切分(德文 geteilte Slides,合併兩子資料集、同片不跨 train/val、無洩漏)、含兩種顯微鏡來源(含可攜式)增加域變異。YOLOv8s val mAP50 0.651 / mAP50-95 0.265 —— amastigote 微小、皮膚抹片背景雜,屬合理中等偵測;定位精度(mAP50-95)偏低。對照血液原蟲分類 track(Babesia/Toxoplasma/Trypanosoma),本 track 是皮膚利什曼的偵測。AGPL-3.0 授權。",

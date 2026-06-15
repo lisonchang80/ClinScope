@@ -10,10 +10,10 @@
   "task": "detection",
   "model_type": "YOLOv8s",
   "metrics": {
-    "mAP50": 0.902,
-    "mAP50_95": 0.6573,
-    "precision": 0.8595,
-    "recall": 0.8174,
+    "mAP50": 0.9167,
+    "mAP50_95": 0.652,
+    "precision": 0.8427,
+    "recall": 0.846,
     "epochs": 80
   },
   "experiment_summary": "微生物快速現場評估 M-ROSE(本平台首條革蘭氏染色抹片 track,別於 DIBaS 菌落 cls):下呼吸道痰抹片 Gram 染色,偵測菌體並依染色反應分 2 類 — 革蘭氏陽性 G+(紫)/ 革蘭氏陰性 G-(紅)。源圖切 640 tile、source-disjoint 切分(1798/449 源圖,同源 tile 不跨 train/val、無洩漏)。YOLOv8s val mAP50 0.908 / mAP50-95 0.667(G- 0.937、G+ 0.879)。Gram 反應是臨床微生物的第一線判讀。",

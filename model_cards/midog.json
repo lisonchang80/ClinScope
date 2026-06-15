@@ -1,0 +1,29 @@
+{
+  "key": "midog",
+  "abbr": "midog",
+  "name": {
+    "display": "跨掃描儀有絲分裂偵測 MIDOG 2021 (H&E, YOLO, scanner-disjoint)",
+    "zh": "跨掃描儀有絲分裂偵測2021",
+    "en": "MIDOG"
+  },
+  "discipline": "組織病理",
+  "task": "detection",
+  "model_type": "YOLOv8s",
+  "metrics": {
+    "mAP50": 0.3673,
+    "mAP50_95": 0.1002,
+    "precision": 0.404,
+    "recall": 0.4345,
+    "epochs": 57
+  },
+  "experiment_summary": "組織病理(跨掃描儀 domain-generalization 示範,別於既有 mitosis 乳腺隨機切分 in-distribution 版):MIDOG 2021 乳腺癌 H&E ROI 有絲分裂偵測 2 類 — 有絲分裂 mitotic-figure / 形似非分裂 imposter。YOLOv8s **scanner-disjoint** val(訓練 Hamamatsu XR+S360 兩台掃描儀、驗證從未見過的 Aperio CS2 第三台) mAP50 0.362 / mitotic-figure 單類 0.560。跨掃描儀泛化是數位病理核心難題,本 track 刻意以掃描儀分層切分展示 out-of-domain 掉分。150 張大圖(7215×5412)tile 成 1329 train / 653 val patch。",
+  "caveats": [
+    "⚠️ mAP 偏低是**設計使然**:(1)scanner-disjoint 跨域驗證本就比 in-distribution 難(同 README『跨域掉到 60-80%』老坑的極端示範);(2)imposter 類對抗性強、mAP50 僅 0.163;(3)mitosis 物件小、mAP50-95 0.099(tile 框緊度有限)。與既有 mitosis(乳腺隨機切分)同任務但 distinct 在跨掃描儀 domain-gen。來源 Zenodo 4643381(MIDOG 2021, CC-BY)。"
+  ],
+  "source": "Zenodo 4643381 (MIDOG 2021 cross-scanner mitosis)",
+  "license": "CC-BY",
+  "split_method": "random (⚠️可能洩漏)",
+  "weights": "reports/yolo/midog/weights/best.pt",
+  "status": "registered",
+  "batch": "batch-9 (2026-06-15)"
+}

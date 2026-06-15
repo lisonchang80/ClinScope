@@ -10,10 +10,10 @@
   "task": "detection",
   "model_type": "YOLOv8s",
   "metrics": {
-    "mAP50": 0.4745,
-    "mAP50_95": 0.3529,
-    "precision": 0.4541,
-    "recall": 0.5103,
+    "mAP50": 0.4964,
+    "mAP50_95": 0.373,
+    "precision": 0.5053,
+    "recall": 0.5238,
     "epochs": 70
   },
   "experiment_summary": "細胞學(本平台首條 AgNOR/Feulgen 多染色核偵測,補既有 SIPaKMeD/RIVA 僅 Pap 之缺):多染色細胞學細胞核偵測 22 類 — Pap 染(正常/異常/失焦/血性/分裂/反應性等 7)+ AgNOR 染(核/簇/衛星/重疊核/白血球核等 7)+ Feulgen 染(改變/中間/老化/重疊/嗜中性等 8)。YOLOv8s val mAP50 0.497 / mAP50-95 0.375(ep70 早停)。AgNOR(核仁組成區)與 Feulgen(DNA 定量)染色的核形態量化是子宮頸/口腔癌風險評估研究工具。官方 train 12502 / val 2448。",

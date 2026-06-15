@@ -10,10 +10,10 @@
   "task": "detection",
   "model_type": "YOLOv8s",
   "metrics": {
-    "mAP50": 0.4654,
-    "mAP50_95": 0.3298,
-    "precision": 0.62,
-    "recall": 0.3998,
+    "mAP50": 0.5237,
+    "mAP50_95": 0.3749,
+    "precision": 0.6619,
+    "recall": 0.4185,
     "epochs": 93
   },
   "experiment_summary": "組織病理(本平台首條腎臟病理 track):腎切片腎絲球偵測 2 類 — 正常 normal / 硬化 sclerosed glomerulus(腎絲球硬化為慢性腎病、腎絲球腎炎的關鍵病變)。YOLOv8s val mAP50 0.465 / mAP50-95 0.330(P 0.62 / R 0.40),slide-disjoint 切分(檔名含機構/片號)。",

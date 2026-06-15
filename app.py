@@ -382,6 +382,10 @@ REGISTRY = [
      "label": "🫁 支氣管肺泡灌洗液 BALF 細胞偵測 7 類 (Diff-Quik/Gram, YOLO)",
      "path": ROOT / "reports" / "yolo" / "balf" / "weights" / "best.pt",
      "blurb": "細胞學(本平台首條支氣管肺泡灌洗液 BALF 體液細胞學偵測):BAL 灌洗液 7 類細胞 — 紅血球 erythrocyte / 淋巴球 lymphocyte / 纖毛柱狀上皮 ciliated-columnar / 鱗狀上皮 squamous / 巨噬細胞 macrophage / 嗜酸性球 eosinophil / 嗜中性球 neutrophil。YOLOv8s val mAP50 0.810 / mAP50-95 0.592(macrophage 0.93、lymphocyte/neutrophil 0.85 佳,七類皆學起來無弱類)。BALF 細胞分類計數(巨噬/淋巴/嗜中性/嗜酸比例)是間質性肺病與肺部感染診斷的臨床依據。官方 train 1895 / val 210 圖(共 2105 圖/13263 細胞, 中國 PLA 總醫院)。⚠️ class-id→名稱對應為依各類豐度+BAL 臨床比例推定(資料集/論文未附機器可讀 legend;id4=macrophage 最多、id1=lymphocyte 次多已由 val 豐度佐證,其餘 4 類沿論文列舉序推定);標註多邊形→bbox;少量重複框由 YOLO 自動移除。來源 Zenodo 14871206(PW-BALFC, Sci Data 2025, CC-BY-4.0)。"},
+    {"key": "midog", "kind": "det",
+     "label": "🔬 跨掃描儀有絲分裂偵測 MIDOG 2021 (H&E, YOLO, scanner-disjoint)",
+     "path": ROOT / "reports" / "yolo" / "midog" / "weights" / "best.pt",
+     "blurb": "組織病理(跨掃描儀 domain-generalization 示範,別於既有 mitosis 乳腺隨機切分 in-distribution 版):MIDOG 2021 乳腺癌 H&E ROI 有絲分裂偵測 2 類 — 有絲分裂 mitotic-figure / 形似非分裂 imposter。YOLOv8s **scanner-disjoint** val(訓練 Hamamatsu XR+S360 兩台掃描儀、驗證從未見過的 Aperio CS2 第三台) mAP50 0.362 / mitotic-figure 單類 0.560。跨掃描儀泛化是數位病理核心難題,本 track 刻意以掃描儀分層切分展示 out-of-domain 掉分。150 張大圖(7215×5412)tile 成 1329 train / 653 val patch。⚠️ mAP 偏低是**設計使然**:(1)scanner-disjoint 跨域驗證本就比 in-distribution 難(同 README『跨域掉到 60-80%』老坑的極端示範);(2)imposter 類對抗性強、mAP50 僅 0.163;(3)mitosis 物件小、mAP50-95 0.099(tile 框緊度有限)。與既有 mitosis(乳腺隨機切分)同任務但 distinct 在跨掃描儀 domain-gen。來源 Zenodo 4643381(MIDOG 2021, CC-BY)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
