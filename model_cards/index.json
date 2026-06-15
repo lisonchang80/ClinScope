@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 88,
+  "n_models": 89,
   "cards": [
     {
       "key": "fungi",
@@ -1313,6 +1313,21 @@
         "precision": 0.404,
         "recall": 0.4345,
         "epochs": 57
+      },
+      "status": "registered"
+    },
+    {
+      "key": "caishi",
+      "name_zh": "子宮頸腺癌原位組織病理2類",
+      "name_en": "AIS",
+      "task": "classification",
+      "discipline": "組織病理",
+      "metrics": {
+        "val_acc": 0.9822,
+        "n_train": 1905,
+        "n_val": 337,
+        "macro_f1": 0.9821,
+        "weighted_f1": 0.9822
       },
       "status": "registered"
     }

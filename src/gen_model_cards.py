@@ -23,7 +23,7 @@ BATCH7 = {"cryonuseg", "blastocyst", "thalassemia", "osteosarcoma", "breast_idc"
           "ebhi_seg", "autokary2022", "tcruzi_chagas", "ubc_ocean", "bracs", "segpc",
           "hmu_gc", "glomeruli_char", "vet_egg"}
 BATCH8 = {"openfungi", "ufsc", "parasites", "oral_cyto"}
-BATCH9 = {"uti_urine", "balf", "midog", "leukemia_attri"}
+BATCH9 = {"uti_urine", "balf", "midog", "caishi"}
 
 # 來源(blurb 未必含, 這裡 curated; 找不到再退回 blurb 解析)
 SOURCE = {
@@ -60,7 +60,7 @@ SOURCE = {
     "uti_urine": "RODARE 10.14278/rodare.2473 (UTI urine microscopy, mask->bbox)",
     "balf": "Zenodo 14871206 (PW-BALFC bronchoalveolar lavage)",
     "midog": "Zenodo 4643381 (MIDOG 2021 cross-scanner mitosis)",
-    "leukemia_attri": "GitHub intelligentMachines-ITU LeukemiaAttri (MICCAI 2024)",
+    "caishi": "figshare 24548953 (CASIHI / MIaMIA-Open-Data cervical AIS, CC-BY-4.0)",
 }
 
 DISCIPLINE_KW = ["微生物", "黴菌", "寄生蟲", "血液/骨髓", "血液腫瘤", "血液", "組織病理", "細胞學",

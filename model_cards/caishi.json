@@ -1,0 +1,34 @@
+{
+  "key": "caishi",
+  "abbr": "caishi",
+  "name": {
+    "display": "子宮頸腺癌原位 AIS 組織病理 2 類 (H&E, ResNet)",
+    "zh": "子宮頸腺癌原位組織病理2類",
+    "en": "AIS"
+  },
+  "discipline": "組織病理",
+  "task": "classification",
+  "model_type": "ResNet-50",
+  "metrics": {
+    "val_acc": 0.9822,
+    "n_train": 1905,
+    "n_val": 337,
+    "macro_f1": 0.9821,
+    "weighted_f1": 0.9822
+  },
+  "experiment_summary": "組織病理(子宮頸腺體 AIS,別於既有 pap/RIVA 子宮頸「細胞學」):子宮頸腺癌原位 H&E 組織病理二分類 — 正常腺體 Normal / 腺癌原位 Abnormal(AIS)。ResNet-50 val_acc 0.982 / macro-F1 0.982(Abnormal precision 1.00、recall 0.97;Normal recall 1.00)。AIS 是子宮頸腺癌前驅病變,組織學上易與良性腺體混淆,自動篩檢有臨床意義。train 1905 / val 337(Normal 1011 + Abnormal 1231 圖)。",
+  "caveats": [
+    "⚠️ 子宮頸器官與既有 pap/riva 重疊,但本 track 是腺體「組織病理」AIS(任務/模態不同於細胞學抹片);2 類、單中心來源,跨域(他院切片/染色)恐顯著掉分(同 README 跨域 60-80% 老坑)。來源 figshare 24548953(CASIHI / MIaMIA-Open-Data, CC-BY-4.0)。"
+  ],
+  "source": "figshare 24548953 (CASIHI / MIaMIA-Open-Data cervical AIS, CC-BY-4.0)",
+  "license": "CC-BY-4.0",
+  "split_method": null,
+  "weights": "models/caishi_resnet50.pt",
+  "status": "registered",
+  "batch": "batch-9 (2026-06-15)",
+  "num_classes": 2,
+  "classes": [
+    "Abnormal",
+    "Normal"
+  ]
+}

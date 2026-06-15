@@ -386,6 +386,10 @@ REGISTRY = [
      "label": "🔬 跨掃描儀有絲分裂偵測 MIDOG 2021 (H&E, YOLO, scanner-disjoint)",
      "path": ROOT / "reports" / "yolo" / "midog" / "weights" / "best.pt",
      "blurb": "組織病理(跨掃描儀 domain-generalization 示範,別於既有 mitosis 乳腺隨機切分 in-distribution 版):MIDOG 2021 乳腺癌 H&E ROI 有絲分裂偵測 2 類 — 有絲分裂 mitotic-figure / 形似非分裂 imposter。YOLOv8s **scanner-disjoint** val(訓練 Hamamatsu XR+S360 兩台掃描儀、驗證從未見過的 Aperio CS2 第三台) mAP50 0.362 / mitotic-figure 單類 0.560。跨掃描儀泛化是數位病理核心難題,本 track 刻意以掃描儀分層切分展示 out-of-domain 掉分。150 張大圖(7215×5412)tile 成 1329 train / 653 val patch。⚠️ mAP 偏低是**設計使然**:(1)scanner-disjoint 跨域驗證本就比 in-distribution 難(同 README『跨域掉到 60-80%』老坑的極端示範);(2)imposter 類對抗性強、mAP50 僅 0.163;(3)mitosis 物件小、mAP50-95 0.099(tile 框緊度有限)。與既有 mitosis(乳腺隨機切分)同任務但 distinct 在跨掃描儀 domain-gen。來源 Zenodo 4643381(MIDOG 2021, CC-BY)。"},
+    {"key": "caishi", "kind": "cls",
+     "label": "🔬 子宮頸腺癌原位 AIS 組織病理 2 類 (H&E, ResNet)",
+     "path": ROOT / "models" / "caishi_resnet50.pt",
+     "blurb": "組織病理(子宮頸腺體 AIS,別於既有 pap/RIVA 子宮頸「細胞學」):子宮頸腺癌原位 H&E 組織病理二分類 — 正常腺體 Normal / 腺癌原位 Abnormal(AIS)。ResNet-50 val_acc 0.982 / macro-F1 0.982(Abnormal precision 1.00、recall 0.97;Normal recall 1.00)。AIS 是子宮頸腺癌前驅病變,組織學上易與良性腺體混淆,自動篩檢有臨床意義。train 1905 / val 337(Normal 1011 + Abnormal 1231 圖)。⚠️ 子宮頸器官與既有 pap/riva 重疊,但本 track 是腺體「組織病理」AIS(任務/模態不同於細胞學抹片);2 類、單中心來源,跨域(他院切片/染色)恐顯著掉分(同 README 跨域 60-80% 老坑)。來源 figshare 24548953(CASIHI / MIaMIA-Open-Data, CC-BY-4.0)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]

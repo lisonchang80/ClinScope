@@ -1,6 +1,6 @@
 # ClinScope
 
-臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：88 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet／病理基礎模型(Phikon-v2) 分類 + YOLO(可選 SAHI 切片) 偵測**多引擎。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：89 個模型、跨醫檢 ~16 科、十多種成像模態、**ResNet／病理基礎模型(Phikon-v2) 分類 + YOLO(可選 SAHI 切片) 偵測**多引擎。
 自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
 
 ## 現實定位（先讀這段）
@@ -47,6 +47,7 @@
 | 微生物/泌尿（UTI 尿沉渣） | UTI urine (RODARE) | 未染色明場 | YOLOv8 | 300 圖 / 7 類 | mAP50 0.402 ⚠️ 小資料、語意遮罩→併框、與既有尿沉渣 track 重疊 |
 | 細胞學（BALF 肺泡灌洗液） | PW-BALFC | Diff-Quik/Gram 明場 | YOLOv8 | 2,105 圖 / 7 類 | mAP50 0.810、mAP50-95 0.592 ✅ 七類皆佳 ⚠️ id→名推定 |
 | 組織病理（跨掃描儀分裂） | MIDOG 2021 | H&E ROI（3 台掃描儀） | YOLOv8 | 150 圖→1,982 tile / 2 類 | mAP50 0.362（scanner-disjoint 跨域，mitotic 單類 0.56）⚠️ domain-gen 示範、刻意跨掃描儀掉分 |
+| 組織病理（子宮頸 AIS） | CASIHI | H&E 腺體組織切片 | ResNet-50 | 2,242 圖 / 2 類 | val 0.982、macro-F1 0.982 ✅ ⚠️ 單中心、2 類、跨域恐掉 |
 | 血液（單細胞 18 類） | MLL23 | Giemsa 單 WBC | ResNet-50 | 41,621 張 / 18 類 | val 0.948、macro-F1 0.861（含毛細胞白血病） |
 | 血液（RBC 排列） | Rouleaux | Giemsa 全視野薄血膜 | ResNet-50 | 1,544 張 / 2 類 | val 1.0 ⚠️ 任務易+val 小，恐受試者洩漏 |
 | 血液/骨髓（巨核細胞） | MK-11 | Wright-Giemsa 單細胞 | ResNet-50 | 7,204 張 / 11 亞型 | val 0.810 ✅ 病人級切分 |
