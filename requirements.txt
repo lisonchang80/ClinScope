@@ -8,3 +8,12 @@ scikit-learn
 matplotlib
 pillow
 tqdm
+numpy
+pyarrow            # 讀 HF parquet (src/hf_parquet_*, pannuke_to_yolo, bach_tile_group_split)
+joblib             # FM LogReg probe 存取 (app.py, src/train_fm_probe)
+transformers       # Phikon-v2 病理基礎模型特徵 (src/fm_features -> app.py FM 推論)
+datasets           # HF datasets 載入 (src/hf_dataset_to_imagefolder)
+sahi               # 大圖切片偵測 (app.py PUMA 推論)
+
+# 註: opencv-python / kaggle / gdown 僅 data/_pipeline 本機 prep 工具用到(已 gitignore,不在版控),
+#     跑 app.py + src/ 不需要,故不列入。
