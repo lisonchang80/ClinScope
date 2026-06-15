@@ -80,6 +80,8 @@ scouted ──► downloading ──► prepared ──► training ──► tr
        a. predict mini-check + 讀 classification_report
        b. 套用品質政策(見下) → 收錄 / 標 caveat / 或丟棄換候選
        c. 收錄者:app.py REGISTRY 加一條 + README 表格加一列 + 更新 memory
+          (README 表別手刻:先 `python src/gen_model_cards.py` 重生卡片,再用 `sync-readme-table` skill
+           的 `gen_readme_table.py --batch "<batch-tag>"` 取該批新列貼上、`--check` 對帳數量)
        d. git commit + push(這一個模型獨立一個 commit)     ← 逐模型 checkpoint
        e. status=registered;target_remaining -= 1
   3. 若 target_remaining==0 → 收尾總結、停止
