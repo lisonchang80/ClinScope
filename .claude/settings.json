@@ -1,0 +1,19 @@
+{
+  "env": {
+    "PYTHONIOENCODING": "utf-8",
+    "PYTHONUNBUFFERED": "1"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"D:/Claude code/ClinScope/.claude/hooks/guard_secrets.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
