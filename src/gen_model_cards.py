@@ -67,6 +67,7 @@ def parse_registry(src):
     out = []
     pat = re.compile(
         r'\{"key":\s*"([^"]+)",\s*"kind":\s*"([^"]+)",\s*'
+        r'(?:"[^"]+":\s*(?:"[^"]*"|True|False|[\d.]+),\s*)*?'  # 容忍 sahi 等額外旗標
         r'"label":\s*"([^"]+)",\s*'
         r'"path":\s*(.+?),\s*'
         r'"blurb":\s*"(.+?)"\}', re.DOTALL)

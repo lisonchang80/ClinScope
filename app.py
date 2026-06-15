@@ -228,10 +228,10 @@ REGISTRY = [
      "label": "🦠 血培養革蘭氏微生物偵測 (Gram 染色, YOLO)",
      "path": ROOT / "reports" / "yolo" / "bcg" / "weights" / "best.pt",
      "blurb": "微生物(本平台首條陽性血培養 track,菌血症/敗血症關鍵):陽性血培養抹片 Gram 染色(×100 油鏡)偵測微生物 1 類 microorganism(涵蓋革蘭氏陽/陰球菌、桿菌、酵母菌等多種形態,57 菌種來源)。YOLOv8s val mAP50 0.737 / mAP50-95 0.420。血培養陽性的快速形態判讀直接影響經驗性抗生素選擇。官方 DoubleCheck 共識標註。⚠️ 影像級隨機 split(505 圖各為一名病人陽性血培養,image-level≈patient-level、洩漏低);僅偵測「有無微生物」不分菌種(菌種仍需培養/質譜)。"},
-    {"key": "puma", "kind": "det",
-     "label": "🔬 黑色素瘤組織核偵測 PUMA (H&E, 10 核類, YOLO)",
+    {"key": "puma", "kind": "det", "sahi": True,
+     "label": "🔬 黑色素瘤組織核偵測 PUMA (H&E, 10 核類, YOLO+SAHI)",
      "path": ROOT / "reports" / "yolo" / "puma" / "weights" / "best.pt",
-     "blurb": "組織病理(本平台首條皮膚黑色素瘤 track):原發+轉移黑色素瘤 H&E ROI,偵測 10 種細胞核 — 腫瘤核/淋巴球/基質/內皮/組織球/嗜黑素細胞 melanophage/漿細胞/嗜中性球/凋亡核/上皮。YOLOv8s val mAP50 0.193 / mAP50-95 0.132 —— 誠實偏低:10 類極不平衡(腫瘤核 57k vs 嗜中性 366、嗜黑素 695),稀有核型近乎學不起來、密集小核偵測難;主力腫瘤核/淋巴球為主要貢獻。含黑色素瘤特有的 melanophage 等核型,為既有 PanNuke/NuInsSeg 所無。ROI 級切分(原發/轉移),CC0 授權。"},
+     "blurb": "組織病理(本平台首條皮膚黑色素瘤 track):原發+轉移黑色素瘤 H&E ROI,偵測 10 種細胞核 — 腫瘤核/淋巴球/基質/內皮/組織球/嗜黑素細胞 melanophage/漿細胞/嗜中性球/凋亡核/上皮。YOLOv8s 整圖 val mAP50 0.193;**本 track 前端啟用 SAHI 切片推論(640/overlap 0.2)→ mAP50 0.200→0.276(+37.6%,零重訓)**——1024px 訓練尺度≈slice 尺度,密集小核切片後不被縮掉、找回約 2× 框。10 類極不平衡(腫瘤核 57k vs 嗜中性 366),稀有核型偏弱。含黑色素瘤特有 melanophage 核型,為既有 PanNuke/NuInsSeg 所無。ROI 級切分,CC0 授權。"},
     {"key": "tb_det", "kind": "det",
      "label": "🦠 結核抗酸桿菌偵測 TB-ZN (Ziehl-Neelsen 痰抹片, YOLO)",
      "path": ROOT / "reports" / "yolo" / "tb_det" / "weights" / "best.pt",
@@ -381,6 +381,7 @@ BY_LABEL = {m["label"]: m for m in AVAILABLE}
 
 _cls_cache: dict = {}
 _yolo_cache: dict = {}
+_sahi_cache: dict = {}
 
 
 def prettify(name: str) -> str:
@@ -415,6 +416,20 @@ def load_yolo(path: Path):
     return _yolo_cache[key]
 
 
+def load_sahi(path: Path):
+    """SAHI 切片推論模型(大圖密集/稀疏小目標 track 用,見 skill pick-model-arch)。"""
+    key = str(path)
+    if key not in _sahi_cache:
+        from sahi import AutoDetectionModel
+        dev = "cuda:0" if DEVICE.type == "cuda" else "cpu"
+        try:
+            m = AutoDetectionModel.from_pretrained(model_type="ultralytics", model_path=str(path), device=dev)
+        except Exception:
+            m = AutoDetectionModel.from_pretrained(model_type="yolov8", model_path=str(path), device=dev)
+        _sahi_cache[key] = m
+    return _sahi_cache[key]
+
+
 @torch.no_grad()
 def run(image, model_label, topk, conf):
     if image is None:
@@ -434,18 +449,38 @@ def run(image, model_label, topk, conf):
         return result, None, note
 
     # detection
-    model = load_yolo(spec["path"])
-    res = model.predict(source=image.convert("RGB"), conf=float(conf), verbose=False)[0]
-    annotated = res.plot()[:, :, ::-1]  # BGR -> RGB
     counts: dict = {}
-    for c in res.boxes.cls.tolist():
-        name = res.names[int(c)]
-        counts[name] = counts.get(name, 0) + 1
+    if spec.get("sahi"):
+        # 大圖密集/稀疏小目標: SAHI 切片推論(原解析度逐片偵測,小目標不被縮掉)
+        import numpy as np
+        from sahi.predict import get_sliced_prediction
+        from sahi.utils.cv import visualize_object_predictions
+        sm = load_sahi(spec["path"])
+        sm.confidence_threshold = float(conf)
+        img_np = np.array(image.convert("RGB"))
+        result = get_sliced_prediction(
+            img_np, sm, slice_height=640, slice_width=640,
+            overlap_height_ratio=0.2, overlap_width_ratio=0.2, verbose=0)
+        opl = result.object_prediction_list
+        annotated = visualize_object_predictions(img_np.copy(), object_prediction_list=opl)["image"]
+        for o in opl:
+            counts[o.category.name] = counts.get(o.category.name, 0) + 1
+        engine_note = "🔪 SAHI 切片推論(640/overlap 0.2)"
+    else:
+        model = load_yolo(spec["path"])
+        res = model.predict(source=image.convert("RGB"), conf=float(conf), verbose=False)[0]
+        annotated = res.plot()[:, :, ::-1]  # BGR -> RGB
+        for c in res.boxes.cls.tolist():
+            name = res.names[int(c)]
+            counts[name] = counts.get(name, 0) + 1
+        engine_note = ""
     if counts:
         body = " · ".join(f"**{k}**: {v}" for k, v in sorted(counts.items()))
     else:
         body = "(未偵測到物件,可調低信心門檻)"
     note = f"**{spec['blurb']}**\n\n計數 → {body}"
+    if engine_note:
+        note += f"\n\n{engine_note}"
     return {}, annotated, note
 
 

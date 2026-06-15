@@ -2,7 +2,7 @@
   "key": "puma",
   "abbr": "puma",
   "name": {
-    "display": "黑色素瘤組織核偵測 PUMA (H&E, 10 核類, YOLO)",
+    "display": "黑色素瘤組織核偵測 PUMA (H&E, 10 核類, YOLO+SAHI)",
     "zh": "黑色素瘤組織核偵測",
     "en": "PUMA"
   },
@@ -16,7 +16,7 @@
     "recall": 0.2259,
     "epochs": 100
   },
-  "experiment_summary": "組織病理(本平台首條皮膚黑色素瘤 track):原發+轉移黑色素瘤 H&E ROI,偵測 10 種細胞核 — 腫瘤核/淋巴球/基質/內皮/組織球/嗜黑素細胞 melanophage/漿細胞/嗜中性球/凋亡核/上皮。YOLOv8s val mAP50 0.193 / mAP50-95 0.132 —— 誠實偏低:10 類極不平衡(腫瘤核 57k vs 嗜中性 366、嗜黑素 695),稀有核型近乎學不起來、密集小核偵測難;主力腫瘤核/淋巴球為主要貢獻。含黑色素瘤特有的 melanophage 等核型,為既有 PanNuke/NuInsSeg 所無。ROI 級切分(原發/轉移),CC0 授權。",
+  "experiment_summary": "組織病理(本平台首條皮膚黑色素瘤 track):原發+轉移黑色素瘤 H&E ROI,偵測 10 種細胞核 — 腫瘤核/淋巴球/基質/內皮/組織球/嗜黑素細胞 melanophage/漿細胞/嗜中性球/凋亡核/上皮。YOLOv8s 整圖 val mAP50 0.193;**本 track 前端啟用 SAHI 切片推論(640/overlap 0.2)→ mAP50 0.200→0.276(+37.6%,零重訓)**——1024px 訓練尺度≈slice 尺度,密集小核切片後不被縮掉、找回約 2× 框。10 類極不平衡(腫瘤核 57k vs 嗜中性 366),稀有核型偏弱。含黑色素瘤特有 melanophage 核型,為既有 PanNuke/NuInsSeg 所無。ROI 級切分,CC0 授權。",
   "caveats": [],
   "source": "Zenodo 13859989",
   "license": "CC0",

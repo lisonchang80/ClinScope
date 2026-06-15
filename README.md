@@ -65,7 +65,7 @@
 | 血液（裂紅細胞偵測） | SBSD | Giemsa 血抹片 | YOLOv8 | 615 圖 / 6 類 | mAP50 0.895、mAP50-95 0.713 |
 | 男科（精子偵測） | EVISAN | 顯微（200X/600X） | YOLOv8 | 6,000 圖 / 2 類 | mAP50 0.436 ✅ video-disjoint 切分 |
 | 微生物（血培養革蘭氏） | Blood-culture Gram | Gram 染色 ×100 油鏡 | YOLOv8 | 505 圖 / 1 類 | mAP50 0.737、mAP50-95 0.420 |
-| 組織病理（黑色素瘤核） | PUMA | H&E ROI 1024px | YOLOv8 | 206 ROI / 10 核類 | mAP50 0.193 ⚠️ 類別極不平衡、稀有核型學不起來 |
+| 組織病理（黑色素瘤核） | PUMA | H&E ROI 1024px | YOLOv8 **+SAHI** | 206 ROI / 10 核類 | mAP50 0.193→**0.276**（SAHI 切片 +37.6%）⚠️ 類別極不平衡 |
 | 微生物（結核 ZN 偵測） | TB-ZN bacilli | ZN 痰抹片（手機顯微） | YOLOv8 | 1,265 圖 / 1 類 | mAP50 0.840、mAP50-95 0.414 🎯 填結核缺口 |
 | 微生物（結核 ZN 分類） | TB-ZN 陽/陰 | ZN 痰抹片 | ResNet-50 | 1,000 圖 / 2 類 | val 0.99、macro-F1 0.972 ⚠️ Pos val 20、疑片級洩漏 |
 | 組織病理（多器官核） | NuInsSeg | H&E 31 器官 | YOLOv8 | 665 圖 / 1 類 | mAP50 0.618、mAP50-95 0.334 |
