@@ -3,6 +3,7 @@ data/
 models/
 reports/
 runs/
+exports/
 # ultralytics auto-downloaded base weights (land in repo root on YOLO train)
 /yolo*.pt
 
