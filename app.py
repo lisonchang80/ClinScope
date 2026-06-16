@@ -14,6 +14,7 @@ then open http://127.0.0.1:7860
 """
 from pathlib import Path
 import csv
+import html as _html
 import json
 import re
 import shutil
@@ -610,7 +611,7 @@ def det_infer(image, spec, conf):
 def new_state(label):
     spec = BY_LABEL[label]
     return {"label": label, "kind": spec["kind"], "files": [], "results": {},
-            "page": TOTAL, "view": "圖示", "page_files": [], "selected": None,
+            "page": TOTAL, "view": "詳細資料", "page_files": [], "selected": None,
             "view_open": False, "switch_open": False}
 
 
@@ -664,30 +665,55 @@ def _file_meta(p):
     return date, (pp.suffix.lstrip(".").upper() or "—"), sz
 
 
-def detail_table(S, pf):
-    kind, res = S["kind"], S["results"]
+def _cls_select_html(classes, selected, idx):
+    """分類欄的內嵌下拉選單(<select>);change 由前端 JS 透過 bridge 回傳給 on_bridge。"""
+    opts = "".join(
+        f'<option value="{_html.escape(c)}"{" selected" if c == selected else ""}>{_html.escape(c)}</option>'
+        for c in classes)
+    return f'<select class="cs-cls" data-i="{idx}">{opts}</select>'
+
+
+def _dt_row(idx, name, cells, selected=False):
+    tds = f'<td class="cs-name" title="{name}">{name}</td>' + "".join(f"<td>{c}</td>" for c in cells)
+    sel = " cs-sel-row" if selected else ""
+    return f'<tr class="cs-row{sel}" data-i="{idx}">{tds}</tr>'
+
+
+def detail_html_str(S):
+    """詳細資料改用自訂 HTML 表格 —— 分類欄為真正的內嵌 <select> 下拉。"""
+    kind, res, pf = S["kind"], S["results"], S["page_files"]
+    sel_p = S.get("selected")
     if kind == "cls":
-        headers, rows = ["檔名", "分類", "信心", "日期", "類型", "大小"], []
-        for p in pf:
+        headers = ["檔名", "分類", "信心", "日期", "類型", "大小"]
+        classes = model_classes(BY_LABEL[S["label"]]) + [NULLPAGE]
+        rows = []
+        for i, p in enumerate(pf):
             r = res.get(p)
             d, t, z = _file_meta(p)
             if r:
                 conf = "手動" if r.get("manual") else f"{r['prob'] * 100:.1f}%"
-                rows.append([Path(p).name, r["page"], conf, d, t, z])
+                cls_cell = _cls_select_html(classes, r["page"], i)
             else:
-                rows.append([Path(p).name, "—", "—", d, t, z])
+                conf, cls_cell = "—", "—"
+            rows.append(_dt_row(i, _html.escape(Path(p).name), [cls_cell, conf, d, t, z], selected=(p == sel_p)))
     else:
-        headers, rows = ["檔名", "物件總數", "主要類別", "日期", "類型", "大小"], []
-        for p in pf:
+        headers = ["檔名", "物件總數", "主要類別", "日期", "類型", "大小"]
+        rows = []
+        for i, p in enumerate(pf):
             r = res.get(p)
             d, t, z = _file_meta(p)
             if r and r["counts"]:
-                rows.append([Path(p).name, str(r["total"]), max(r["counts"], key=r["counts"].get), d, t, z])
+                cells = [str(r["total"]), _html.escape(max(r["counts"], key=r["counts"].get)), d, t, z]
             elif r:
-                rows.append([Path(p).name, "0", "—", d, t, z])
+                cells = ["0", "—", d, t, z]
             else:
-                rows.append([Path(p).name, "—", "—", d, t, z])
-    return headers, rows
+                cells = ["—", "—", d, t, z]
+            rows.append(_dt_row(i, _html.escape(Path(p).name), cells, selected=(p == sel_p)))
+    head = "".join(f"<th>{h}</th>" for h in headers)
+    body = "".join(rows) or '<tr><td colspan="6" class="cs-empty">（此分頁沒有檔案）</td></tr>'
+    cls_attr = "cs-dt cls" if kind == "cls" else "cs-dt det"
+    return (f'<div class="cs-dt-wrap"><table class="{cls_attr}">'
+            f'<thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>')
 
 
 def count_summary_md(S):
@@ -710,7 +736,7 @@ def count_summary_md(S):
 
 
 def render(S):
-    """回傳 (page_radio, gallery, detail_df, count_md) 四個 update。"""
+    """回傳 (page_radio, gallery, detail_html, count_md) 四個 update。"""
     pages = page_choices(S)
     keys = [p[1] for p in pages]
     if S["page"] not in keys:
@@ -718,15 +744,14 @@ def render(S):
     pf = page_files(S)
     S["page_files"] = pf
     if S["view"] == "詳細資料":
-        headers, rows = detail_table(S, pf)
         gal = gr.update(visible=False)
-        df = gr.update(visible=True, headers=headers, value=rows)
+        dh = gr.update(visible=True, value=detail_html_str(S))
     else:  # 圖示(已移除超大圖示)
-        gal = gr.update(visible=True, columns=8, height=600, value=gallery_items(S, pf))
-        df = gr.update(visible=False)
+        gal = gr.update(visible=True, columns=8, value=gallery_items(S, pf))
+        dh = gr.update(visible=False)
     pr = gr.update(choices=pages, value=S["page"])
     cs = count_summary_md(S)
-    return pr, gal, df, cs
+    return pr, gal, dh, cs
 
 
 # ============================================================================
@@ -972,9 +997,36 @@ def on_select(evt: gr.SelectData, S, label, thr):
     return _select_core(S, label, thr, evt.index)
 
 
-def on_select_df(evt: gr.SelectData, S, label, thr):
-    idx = evt.index[0] if isinstance(evt.index, (list, tuple)) else evt.index
-    return _select_core(S, label, thr, idx)
+def on_bridge(cmd, S, label, thr):
+    """詳細資料自訂 HTML 表的前端事件橋接:
+       {"a":"sel","i":idx} 選列(更新大圖) / {"a":"cls","i":idx,"p":類別} 內嵌下拉改分類。
+       輸出順序 = [S, detail_html, page_radio, count_md, switch_dd, preview_img, preview_meta]。"""
+    noop = (S, gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update())
+    if not cmd:
+        return noop
+    try:
+        obj = json.loads(cmd)
+    except Exception:
+        return noop
+    act, idx = obj.get("a"), obj.get("i")
+    pf = S["page_files"]
+    if not isinstance(idx, int) or idx < 0 or idx >= len(pf):
+        return noop
+    p = pf[idx]
+    if act == "sel":
+        # 選列:不重繪表格(避免方向鍵連按時閃爍),只更新大圖 + 工具列切換下拉
+        _, sw, pv, meta = _select_core(S, label, thr, idx)
+        return (S, gr.update(), gr.update(), gr.update(), sw, pv, meta)
+    if act == "cls":
+        page = obj.get("p")
+        S["selected"] = p
+        if page and p in S["results"]:
+            S["results"][p]["page"] = page
+            S["results"][p]["manual"] = True
+        pr, gal, dh, cs = render(S)
+        sw = gr.update(value=f"⇄ {page}", interactive=True)
+        return (S, dh, pr, cs, sw, gr.update(), gr.update())
+    return noop
 
 
 def _safe(name):
@@ -1042,10 +1094,21 @@ CSS = """
 }
 /* 滿版、隨視窗縮放;窄視窗時欄位自動換行堆疊 */
 .gradio-container{background:var(--paper)!important; color:var(--ink);
-  max-width:100%!important; width:100%!important; padding:10px 18px!important;}
+  max-width:100%!important; width:100%!important; padding:8px 16px!important;
+  height:100vh!important; overflow:hidden!important;}  /* 整頁鎖在視窗高度,捲動移進面板內部 */
 /* Gradio .main.fillable 預設 max-width:1536px → 解除才能真正貼齊視窗 */
 .gradio-container .main, .gradio-container .main.fillable{
-  max-width:100%!important; width:100%!important; margin:0!important;}
+  max-width:100%!important; width:100%!important; margin:0!important; padding:0!important;
+  height:100%!important; min-height:0!important; overflow:hidden!important;}
+/* 把視窗高度一路傳到內容欄,讓編輯區可 flex 撐滿、放到最大時不出現瀏覽器卷軸 */
+.main.fillable > .wrap,
+.main.fillable > .wrap > .contain,
+.main.fillable > .wrap > .contain > .column{flex:1 1 auto!important; min-height:0!important; overflow:hidden!important;}
+.main.fillable > .wrap > .contain > .column{gap:10px!important;}
+.contain > .column > .block{flex:0 0 auto!important; margin:0!important;}  /* 品牌列 / 頁尾不伸縮 */
+.toprow{flex:0 1 auto!important; min-height:0!important;}                  /* 上排(模型/顯示)依內容、可壓縮 */
+.editrow{flex:1 1 0!important; min-height:0!important; align-items:stretch!important;}  /* 下排吃滿剩餘高度;stretch 讓面板撐滿(否則 unequal-height 只取內容高) */
+.editrow > .column, .editrow .panel{min-height:0!important; height:100%!important;}
 footer{display:none!important;}
 
 /* 頂部品牌列 */
@@ -1064,12 +1127,12 @@ footer{display:none!important;}
 
 /* 三大視窗面板:明確外框 + 海軍藍標題列 */
 .panel{background:var(--surface)!important; border:2px solid var(--navy-500)!important;
-  border-radius:14px!important; padding:14px 16px 16px!important;
-  box-shadow:0 6px 20px rgba(11,31,58,.13);}
-.phead{display:flex; justify-content:space-between; align-items:center;
+  border-radius:14px!important; padding:10px 14px 12px!important;
+  box-shadow:0 6px 20px rgba(11,31,58,.13); display:flex!important; flex-direction:column!important; min-height:0!important;}
+.phead{display:flex; justify-content:space-between; align-items:center; flex:0 0 auto;
   background:linear-gradient(95deg,var(--navy-900),var(--navy-700));
-  margin:-14px -16px 14px -16px; padding:9px 16px;
-  border-radius:12px 12px 0 0; border-bottom:3px solid var(--lemon);}
+  margin:-10px -14px 10px -14px; padding:7px 14px;
+  border-radius:11px 11px 0 0; border-bottom:3px solid var(--lemon);}
 .phead .ph-tag{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px; color:var(--lemon)!important;}
 .phead .ph-en{color:#9FC0E6; font-size:11px; letter-spacing:2px; margin-left:8px; font-family:'IBM Plex Mono',monospace;}
 .phead .ph-sub{color:#CFE0F2; font-size:11.5px;}
@@ -1077,27 +1140,28 @@ footer{display:none!important;}
 .shortdd{min-width:104px!important; max-width:150px!important; flex:0 0 auto!important;}
 .shortdd .wrap, .shortdd input{font-size:13px!important;}
 .shortdd input:disabled, .shortdd input[disabled]{opacity:.5!important; cursor:not-allowed;}
-/* 分類 + 模型 同一排 */
-.modelrow{gap:10px!important;}
-/* 分頁欄與影像格上下緊鄰;移除多餘空白讓編輯區上下緊密 */
+/* 分類 + 模型 同一排;壓掉外框 padding 讓上排更矮、把高度讓給編輯區 */
+.modelrow{gap:10px!important; margin-bottom:0!important;}
+.modelrow .block{padding:0!important; min-width:0!important;}
+/* 閾值 slider 壓縮垂直高度 */
+.thr{padding:2px 0!important; margin-top:2px!important;}
+.thr .head{margin-bottom:2px!important;}
+/* 分頁欄與影像格/表頭上下緊鄰:父層 column 有 16px flex gap,用負 margin 抵銷讓分頁與表頭零間隙 */
 .tabstrip{margin-bottom:0!important;}
 .countbar{margin:2px 0 4px!important;}
-.grid{margin-top:0!important;}
-.detail{margin-top:0!important;}
-/* 隱藏詳細資料表格上方的複製/全螢幕等動作圖示與多餘空白 */
-.detail .icon-button-wrapper, .detail .icon-buttons,
-.detail button[aria-label="Fullscreen"], .detail button[aria-label="Copy"],
-.detail button[title*="ullscreen"], .detail button[title*="opy"]{display:none!important;}
+.grid{margin-top:-16px!important;}
+.detail{margin-top:-16px!important;}
 
 /* 模型卡 */
 .card{background:#F8FBFF!important; border:1px solid var(--line); border-radius:12px;
-  padding:12px 14px!important; margin-top:6px; font-size:13px; max-height:340px; overflow:auto;}
+  padding:10px 13px!important; margin-top:4px; font-size:12.5px; max-height:13vh; overflow:auto;}
 .card h3{font-family:'Space Grotesk',sans-serif; font-size:15px; margin:.1em 0 .5em; color:var(--navy-900);}
 .card code{background:var(--navy-100); color:var(--navy-700); padding:1px 7px; border-radius:6px; font-size:12px;}
 .card small{color:var(--muted);}
 
 /* 顯示面板大圖 */
-.preview{border-radius:12px!important; overflow:hidden; background:#fff; border:1px dashed var(--line)!important;}
+.preview{border-radius:12px!important; overflow:hidden; background:#fff; border:1px dashed var(--line)!important;
+  height:29vh!important; min-height:140px!important;}
 .preview img{object-fit:contain!important;}
 .pmeta{font-size:13px; color:var(--ink); margin-top:8px; min-height:24px;}
 .pmeta strong{color:var(--navy-700);}
@@ -1139,21 +1203,45 @@ footer{display:none!important;}
 .viewseg label:has(input:checked){background:var(--navy-700)!important; color:#fff!important; border-color:var(--navy-700)!important;}
 .viewseg label input{display:none!important;}
 
-/* 影像格 — 預設至少佔半個視窗高 */
+/* 影像格 / 詳細表 — 撐滿編輯區剩餘高度,捲動發生在格內(整頁不出卷軸) */
 .grid{background:#fff!important; border:1px solid var(--line)!important; border-radius:12px!important;
-  padding:6px!important; min-height:56vh!important;}
-.grid .grid-wrap, .grid .thumbnails{min-height:54vh!important;}
+  padding:6px!important; flex:1 1 0!important; min-height:0!important; height:auto!important; overflow:auto!important;}
+.grid .grid-wrap, .grid .thumbnails{min-height:0!important; height:100%!important;}
 .grid .thumbnail-item{border-radius:10px!important; overflow:hidden;}
 .grid .thumbnail-item.selected, .grid .selected{outline:3px solid var(--lemon)!important; outline-offset:-1px;}
 .grid .caption, .grid .caption-label{font-family:'IBM Plex Mono',monospace!important; font-size:11px!important;
   background:var(--navy-900)!important; color:#fff!important;}
-.detail{border-radius:12px!important; min-height:56vh!important;}
+/* 詳細資料 = 自訂 HTML 表;撐滿編輯區剩餘高度,表身內部捲動、表頭 sticky 貼住分頁 */
+.detail{flex:1 1 0!important; min-height:0!important; overflow:hidden!important; padding:0!important;
+  border:1px solid var(--line)!important; border-radius:12px!important; background:#fff!important;}
+.cs-dt-wrap{height:100%; overflow:auto; border-radius:12px;}
+.cs-dt{width:100%; border-collapse:collapse; table-layout:fixed; font-size:13px;}
+.cs-dt col, .cs-dt th, .cs-dt td{box-sizing:border-box;}
+.cs-dt thead th{position:sticky; top:0; z-index:3; background:var(--navy-100); color:var(--navy-900);
+  text-align:left; padding:7px 10px; border-bottom:2px solid var(--navy-500); font-weight:700; white-space:nowrap;}
+.cs-dt th:nth-child(1), .cs-dt td:nth-child(1){width:30%;}
+.cs-dt th:nth-child(2), .cs-dt td:nth-child(2){width:20%;}
+.cs-dt th:nth-child(3), .cs-dt td:nth-child(3){width:12%;}
+.cs-dt th:nth-child(4), .cs-dt td:nth-child(4){width:15%;}
+.cs-dt th:nth-child(5), .cs-dt td:nth-child(5){width:10%;}
+.cs-dt th:nth-child(6), .cs-dt td:nth-child(6){width:13%;}
+.cs-dt td{padding:3px 10px; border-bottom:1px solid var(--line); color:var(--ink); white-space:nowrap;}
+.cs-dt td.cs-name{overflow:hidden; text-overflow:ellipsis; font-family:'IBM Plex Mono',monospace; font-size:12px;}
+.cs-row{cursor:pointer;}
+.cs-row:hover{background:var(--navy-100);}
+.cs-row.cs-sel-row{background:var(--lemon-soft)!important; box-shadow:inset 3px 0 0 var(--lemon);}
+.cs-empty{text-align:center; color:var(--muted); padding:18px!important;}
+.cs-cls{width:100%; max-width:100%; font-size:12.5px; padding:2px 4px; cursor:pointer;
+  border:1.5px solid var(--navy-500); border-radius:6px; background:#fff; color:var(--navy-700); font-weight:600;}
+.cs-cls:hover{border-color:var(--navy-700); background:var(--navy-100);}
+/* 隱藏 bridge 文字框 + 觸發鈕完全不佔位 */
+#cs-bridge, #cs-trigger{display:none!important;}
 
 /* 閾值 slider 檸檬黃 */
 .thr input[type=range]{accent-color:var(--lemon);}
 
-.disc-foot{text-align:center; color:var(--muted); font-size:12px; margin-top:14px;
-  border-top:1px solid var(--line); padding-top:10px;}
+.disc-foot{text-align:center; color:var(--muted); font-size:11px; margin-top:4px;
+  border-top:1px solid var(--line); padding-top:5px; line-height:1.3;}
 .disc-foot b{color:var(--navy-700);}
 
 @media (prefers-reduced-motion: reduce){ .tbtn{transition:none;} }
@@ -1175,38 +1263,95 @@ FOOTER_HTML = (
     '<div class="disc-foot">⚠️ 研究／作品集用途,<b>非臨床診斷</b>。'
     '每個模型僅在其資料集分布內準確;跨到不同染色法／相機／倍率的影像,準確率預期下降。</div>')
 
-# 鍵盤左右方向鍵 → 切換影像格選取(前端事件,不在輸入框時才作用)
+# 前端互動橋接(詳細資料改成自訂 HTML 表):
+#  - 選列(點/方向鍵)→ 經隱藏 textbox #cs-bridge 送 {"a":"sel","i":idx} 給 on_bridge 更新大圖
+#  - 分類欄內嵌 <select> change → 送 {"a":"cls","i":idx,"p":類別} 改分類
+#  - 圖示檢視維持原本點 thumbnail 的方式
 ARROW_JS = """
 () => {
   if (window.__cs_keys) return;
   window.__cs_keys = true;
   window.__cs_idx = 0;
-  const getItems = () => {
+  const detailMode = () => { const d = document.querySelector('.detail'); return d && d.offsetParent !== null; };
+  const galItems = () => {
     const g = document.querySelector('.grid');
     if (g && g.offsetParent !== null) {
       const t = Array.from(g.querySelectorAll('button.thumbnail-item, .thumbnail-item'));
-      if (t.length) return {kind: 'gal', items: t};
+      if (t.length) return t;
     }
-    return {kind: 'row', items: Array.from(document.querySelectorAll('.detail tbody tr'))};
+    return null;
   };
+  const detailRows = () => Array.from(document.querySelectorAll('.detail .cs-row'));
+  const bridgeEl = () => document.querySelector('#cs-bridge textarea, #cs-bridge input');
+  const setNative = (el, val) => {
+    const proto = el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+    const d = Object.getOwnPropertyDescriptor(proto, 'value');
+    if (d && d.set) d.set.call(el, val); else el.value = val;
+    el.dispatchEvent(new Event('input', {bubbles: true}));
+  };
+  const send = (obj) => {
+    const el = bridgeEl(); if (!el) return;
+    window.__cs_n = (window.__cs_n || 0) + 1; obj.n = window.__cs_n;
+    setNative(el, JSON.stringify(obj));  // 更新 textbox 值(Svelte store)
+    const btn = document.querySelector('#cs-trigger button') || document.getElementById('cs-trigger');
+    if (btn) btn.click();                // 點隱藏鈕才會真正送後端事件
+  };
+  const highlight = (row) => {
+    document.querySelectorAll('.detail .cs-row.cs-sel-row').forEach((r) => r.classList.remove('cs-sel-row'));
+    if (row) row.classList.add('cs-sel-row');
+  };
+  const selDetail = (row) => {
+    if (!row) return;
+    const i = parseInt(row.dataset.i, 10);
+    window.__cs_idx = i; highlight(row); row.scrollIntoView({block: 'nearest'});
+    send({a: 'sel', i: i});
+  };
+  // 點選:詳細資料列(分類下拉本身除外)→ 選列;圖示 → 記錄索引
   document.addEventListener('click', (e) => {
-    const items = getItems().items;
-    const i = items.findIndex(it => it.contains(e.target));
-    if (i >= 0) window.__cs_idx = i;
+    if (e.target.closest && e.target.closest('.detail .cs-cls')) return;
+    const row = e.target.closest ? e.target.closest('.detail .cs-row') : null;
+    if (row) { selDetail(row); return; }
+    if (!detailMode()) {
+      const items = galItems() || [];
+      const i = items.findIndex((it) => it.contains(e.target));
+      if (i >= 0) window.__cs_idx = i;
+    }
   }, true);
+  // 原生 <select> 預設「原地再點一下不收回」→ 用 mousedown 旗標自行切換:第二下收回
+  document.addEventListener('mousedown', (e) => {
+    const s = e.target.closest ? e.target.closest('.detail .cs-cls') : null;
+    if (!s) { window.__cs_openSel = null; return; }
+    if (window.__cs_openSel === s) { e.preventDefault(); s.blur(); window.__cs_openSel = null; }
+    else { window.__cs_openSel = s; }
+  }, true);
+  document.addEventListener('blur', (e) => {
+    if (e.target && e.target.closest && e.target.closest('.detail .cs-cls')) window.__cs_openSel = null;
+  }, true);
+  // 分類欄內嵌下拉改值
+  document.addEventListener('change', (e) => {
+    const sel = e.target.closest ? e.target.closest('.detail .cs-cls') : null;
+    if (sel) { window.__cs_openSel = null; const i = parseInt(sel.dataset.i, 10); window.__cs_idx = i; send({a: 'cls', i: i, p: sel.value}); }
+  });
+  // 方向鍵切換檔案(聚焦在輸入框/下拉時不攔截)
   document.addEventListener('keydown', (e) => {
     if (!['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
     const t = (document.activeElement || {}).tagName || '';
     if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
-    const o = getItems();
-    if (!o.items.length) return;
     const fwd = (e.key === 'ArrowRight' || e.key === 'ArrowDown');
-    let i = Math.max(0, Math.min(o.items.length - 1, (window.__cs_idx || 0) + (fwd ? 1 : -1)));
+    if (detailMode()) {
+      const rows = detailRows();
+      if (!rows.length) return;
+      const i = Math.max(0, Math.min(rows.length - 1, (window.__cs_idx || 0) + (fwd ? 1 : -1)));
+      selDetail(rows[i]);
+      e.preventDefault();
+      return;
+    }
+    const items = galItems();
+    if (!items || !items.length) return;
+    const i = Math.max(0, Math.min(items.length - 1, (window.__cs_idx || 0) + (fwd ? 1 : -1)));
     window.__cs_idx = i;
-    const it = o.items[i];
-    if (o.kind === 'row') { const c = it.querySelector('td'); (c || it).click(); }
-    else it.click();
-    it.scrollIntoView({block: 'nearest'});
+    items[i].click();
+    items[i].scrollIntoView({block: 'nearest'});
     e.preventDefault();
   });
 }
@@ -1224,7 +1369,7 @@ def build():
         S = gr.State(new_state(init_label))
 
         # --- 上排:模型(左) + 顯示(右) ---
-        with gr.Row(equal_height=False):
+        with gr.Row(equal_height=False, elem_classes="toprow"):
             with gr.Column(scale=5, elem_classes="panel"):
                 gr.HTML(panel_head("模型", "MODEL", "🟢≥.85 🟡≥.70 🟠≥.50 🔴<.50 成績分級"))
                 with gr.Row(elem_classes="modelrow"):
@@ -1234,18 +1379,18 @@ def build():
                 thr = gr.Slider(0.0, 1.0, value=0.5, step=0.01, label="信心門檻（分類）",
                                 info="Top-1 機率低於此值 → 歸入 Null 待確認", elem_classes="thr")
             with gr.Column(scale=6, elem_classes="panel"):
-                gr.HTML(panel_head("顯示", "DISPLAY", "點選下方影像檢視大圖"))
-                preview_img = gr.Image(show_label=False, height=360, elem_classes="preview")
-                preview_meta = gr.Markdown("選一張影像檢視大圖。", elem_classes="pmeta")
+                gr.HTML(panel_head("顯示", "DISPLAY", ""))
+                preview_img = gr.Image(show_label=False, height=520, elem_classes="preview")
+                preview_meta = gr.Markdown("", visible=False, elem_classes="pmeta")
 
         # --- 下排:編輯(滿版) ---
-        with gr.Row():
+        with gr.Row(elem_classes="editrow"):
             with gr.Column(elem_classes="panel"):
                 gr.HTML(panel_head("編輯", "EDIT", "批次／單張計算 · 分類分頁 · 匯出"))
                 # 上排 ICON 列:按鈕 + 兩個短下拉(檢視 / 切換分類,各自前綴 👁 / ⇄ 自我標示)
                 with gr.Row(elem_classes="toolbar"):
                     btn_folder = gr.Button("📁 選擇資料夾", elem_classes="tbtn", scale=0)
-                    view_dd = gr.Dropdown(["👁 圖示", "👁 詳細資料"], value="👁 圖示",
+                    view_dd = gr.Dropdown(["👁 詳細資料", "👁 圖示"], value="👁 詳細資料",
                                           show_label=False, container=False, elem_classes="shortdd")
                     btn_batch = gr.Button("▶ 批次計算", elem_classes="tbtn primary", scale=0)
                     btn_single = gr.Button("◉ 單張計算", elem_classes="tbtn accent", scale=0)
@@ -1257,21 +1402,26 @@ def build():
                 count_md = gr.Markdown("", visible=False, elem_classes="countbar")
                 page_radio = gr.Radio([TOTAL], value=TOTAL, show_label=False,
                                       container=False, elem_classes="tabstrip")
-                gallery = gr.Gallery(show_label=False, columns=8, height=600, object_fit="cover",
+                gallery = gr.Gallery(show_label=False, columns=8, object_fit="cover",
                                      allow_preview=False, elem_classes="grid")
-                detail_df = gr.Dataframe(headers=["檔名", "分類", "信心", "日期", "類型", "大小"],
-                                         interactive=False, wrap=True, visible=False, show_label=False,
-                                         type="array", elem_classes="detail")
+                # 詳細資料 = 自訂 HTML 表(分類欄內嵌 <select> 下拉);互動經 bridge 回傳
+                # 注意:建立時 visible=True 才會掛載,初始可見性交給首次 render 決定(visible=False 建立者不掛載)
+                detail_html = gr.HTML("", elem_classes="detail")
+                # bridge:前端 JS 寫入指令的隱藏 textbox + 觸發鈕。Gradio 不認「合成 input 事件」,
+                # 故改用「JS 設 textbox 值 → 點隱藏按鈕」觸發後端(按鈕的合成 click 才會送事件)。兩者都用 CSS 藏。
+                bridge = gr.Textbox("", elem_id="cs-bridge", show_label=False)
+                bridge_btn = gr.Button("bridge", elem_id="cs-trigger")
                 csv_out = gr.File(label="下載 CSV", visible=False)
 
         gr.HTML(FOOTER_HTML)
 
-        MODEL_OUT = [S, card_md, thr, page_radio, gallery, detail_df, count_md,
+        MODEL_OUT = [S, card_md, thr, page_radio, gallery, detail_html, count_md,
                      switch_dd, preview_img, preview_meta]
-        FOLDER_OUT = [S, page_radio, gallery, detail_df, count_md, preview_img, preview_meta]
-        COMPUTE_OUT = [S, page_radio, gallery, detail_df, count_md, preview_img, preview_meta]
-        PANEL_OUT = [S, page_radio, gallery, detail_df, count_md]
+        FOLDER_OUT = [S, page_radio, gallery, detail_html, count_md, preview_img, preview_meta]
+        COMPUTE_OUT = [S, page_radio, gallery, detail_html, count_md, preview_img, preview_meta]
+        PANEL_OUT = [S, page_radio, gallery, detail_html, count_md]
         SELECT_OUT = [S, switch_dd, preview_img, preview_meta]
+        BRIDGE_OUT = [S, detail_html, page_radio, count_md, switch_dd, preview_img, preview_meta]
 
         disc_dd.change(on_disc, [disc_dd], [model_dd]).then(on_model, [model_dd, S], MODEL_OUT)
         model_dd.change(on_model, [model_dd, S], MODEL_OUT)
@@ -1285,7 +1435,7 @@ def build():
         btn_csv.click(on_csv, [model_dd, S], [csv_out])
         btn_save.click(on_saveas, [S], None)
         gallery.select(on_select, [S, model_dd, thr], SELECT_OUT)
-        detail_df.select(on_select_df, [S, model_dd, thr], SELECT_OUT)
+        bridge_btn.click(on_bridge, [bridge, S, model_dd, thr], BRIDGE_OUT)  # 詳細資料 HTML 表的選列/改分類
         demo.load(on_model, [model_dd, S], MODEL_OUT)
         demo.load(None, None, None, js=ARROW_JS)  # 方向鍵切換檔案(圖示 / 詳細資料 皆可)
     return demo
