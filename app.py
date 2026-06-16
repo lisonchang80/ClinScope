@@ -13,6 +13,12 @@ Run:
 then open http://127.0.0.1:7860
 """
 from pathlib import Path
+import csv
+import json
+import re
+import shutil
+from collections import Counter
+from datetime import datetime
 
 import numpy as np
 import torch
@@ -21,6 +27,15 @@ import torch.nn.functional as F
 from torchvision import models, transforms
 from PIL import Image, ImageFile
 import gradio as gr
+
+# cp950 console 下 print 中文/emoji 會 UnicodeEncodeError;腳本自我 reconfigure 為 utf-8
+# (不依賴啟動端帶 PYTHONIOENCODING,任何 console 直接 `python app.py` 都不崩)
+import sys as _sys
+for _s in (_sys.stdout, _sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 ROOT = Path(__file__).resolve().parent
@@ -395,6 +410,62 @@ REGISTRY = [
 AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
 BY_LABEL = {m["label"]: m for m in AVAILABLE}
 
+# --- model cards: discipline / classes / metrics / caveats -----------------
+CARDS: dict = {}
+_cards_dir = ROOT / "model_cards"
+if _cards_dir.is_dir():
+    for _p in _cards_dir.glob("*.json"):
+        if _p.name == "index.json":
+            continue
+        try:
+            CARDS[_p.stem] = json.loads(_p.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+# 少數卡片 discipline 為 null,補上對應科別;未知歸「其他」
+_DISC_OVERRIDE = {
+    "fungi_koh": "黴菌", "malaria": "寄生蟲", "bonemarrow": "血液/骨髓",
+    "bacteria": "微生物", "mhist": "組織病理", "univali_leukocyte": "血液",
+    "mll23": "血液", "mk11": "血液/骨髓", "bloodcells": "血液",
+}
+_DISC_ORDER = ["血液", "血液/骨髓", "血液腫瘤", "微生物", "黴菌", "寄生蟲",
+               "組織病理", "免疫組化", "免疫", "細胞學", "男科", "生殖醫學",
+               "尿液分析", "細胞遺傳學", "眼科", "獸醫", "其他"]
+
+
+def disc_of(key: str) -> str:
+    c = CARDS.get(key) or {}
+    return c.get("discipline") or _DISC_OVERRIDE.get(key) or "其他"
+
+
+_DISC_PRESENT = {disc_of(m["key"]) for m in AVAILABLE}
+DISCIPLINES = [d for d in _DISC_ORDER if d in _DISC_PRESENT] + \
+              sorted(d for d in _DISC_PRESENT if d not in _DISC_ORDER)
+
+
+def labels_for(disc: str):
+    return [m["label"] for m in AVAILABLE if disc_of(m["key"]) == disc]
+
+
+def _model_score(key: str):
+    c = CARDS.get(key) or {}
+    m = c.get("metrics") or {}
+    return m.get("val_acc") if c.get("task") == "classification" else m.get("mAP50")
+
+
+def _score_tier(key: str) -> str:
+    """成績分級色點:🟢≥.85 🟡≥.70 🟠≥.50 🔴<.50 ⚪無數據。"""
+    s = _model_score(key)
+    if s is None:
+        return "⚪"
+    return "🟢" if s >= 0.85 else "🟡" if s >= 0.70 else "🟠" if s >= 0.50 else "🔴"
+
+
+def model_choices(disc: str):
+    """模型下拉:(顯示, 值) 元組;顯示前綴成績色點,值為原始 label(BY_LABEL 鍵)。"""
+    return [(f"{_score_tier(m['key'])} {m['label']}", m["label"])
+            for m in AVAILABLE if disc_of(m["key"]) == disc]
+
 _cls_cache: dict = {}
 _yolo_cache: dict = {}
 _sahi_cache: dict = {}
@@ -456,50 +527,66 @@ def load_sahi(path: Path):
     return _sahi_cache[key]
 
 
+# ============================================================================
+#  推論核心(可單張、可批次)
+#    分類 cls_rank → 全類別機率排序;偵測 det_infer → 計數 + 標註圖
+# ============================================================================
+IMG_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp", ".gif"}
+TOTAL = "📋 總表"
+NULLPAGE = "Null"
+SW_PLACEHOLDER = "⇄ 切換分類"   # 切換分類下拉未選檔時顯示此提示(並虛化)
+
+
+def _open_rgb(path):
+    return Image.open(path).convert("RGB")
+
+
+def scan_folder(folder):
+    p = Path(folder) if folder else None
+    if not p or not p.is_dir():
+        return []
+    return sorted(str(f) for f in p.iterdir()
+                  if f.is_file() and f.suffix.lower() in IMG_EXTS)
+
+
+def model_classes(spec):
+    """cls 類別名(prettify 過,與推論輸出一致)。先讀 model card,否則讀權重。"""
+    c = CARDS.get(spec["key"]) or {}
+    raw = c.get("classes")
+    if not raw:
+        raw = load_fm(spec["fm"])["classes"] if spec.get("fm") else load_cls(spec["path"])[1]
+    return [prettify(x) for x in raw]
+
+
 @torch.no_grad()
-def run(image, model_label, topk, conf):
-    if image is None:
-        return {}, None, "請先上傳一張顯微影像。"
-    spec = BY_LABEL.get(model_label)
-    if spec is None:
-        return {}, None, "找不到該模型(權重檔可能還在訓練中)。"
-
-    if spec["kind"] == "cls":
-        if spec.get("fm"):
-            # 病理基礎模型引擎: Phikon-v2(frozen)特徵 + LogReg(WSI 亞型/小資料 track 用,見 pick-model-arch)
-            import sys as _sys
-            _sys.path.insert(0, str(ROOT / "src"))
-            import fm_features
-            import numpy as np
-            art = load_fm(spec["fm"])
-            feat = fm_features.extract_feature(image, DEVICE, grid=art["grid"]).reshape(1, -1)
-            probs = art["clf"].predict_proba(art["scaler"].transform(feat))[0]
-            classes = art["classes"]
-            k = min(int(topk), len(classes))
-            idx = list(np.argsort(probs)[::-1][:k])
-            result = {prettify(classes[i]): float(probs[i]) for i in idx}
-            note = (f"**{spec['blurb']}**\n\n類別數:{len(classes)} · "
-                    f"引擎:🧬 Phikon-v2 FM + LogReg · 裝置:{DEVICE.type.upper()}")
-            return result, None, note
+def cls_rank(image, spec):
+    """回傳 [(類別, 機率)],含全部類別、由高到低。"""
+    if spec.get("fm"):
+        import sys as _sys
+        _sys.path.insert(0, str(ROOT / "src"))
+        import fm_features
+        art = load_fm(spec["fm"])
+        feat = fm_features.extract_feature(image, DEVICE, grid=art["grid"]).reshape(1, -1)
+        probs = art["clf"].predict_proba(art["scaler"].transform(feat))[0]
+        classes = art["classes"]
+    else:
         model, classes, tf = load_cls(spec["path"])
-        x = tf(image.convert("RGB")).unsqueeze(0).to(DEVICE)
-        probs = F.softmax(model(x), dim=1)[0]
-        k = min(int(topk), len(classes))
-        cvals, idx = probs.topk(k)
-        result = {prettify(classes[i]): float(c) for c, i in zip(cvals, idx)}
-        note = f"**{spec['blurb']}**\n\n類別數:{len(classes)} · 裝置:{DEVICE.type.upper()}"
-        return result, None, note
+        x = tf(image).unsqueeze(0).to(DEVICE)
+        probs = F.softmax(model(x), dim=1)[0].cpu().numpy()
+    order = list(np.argsort(probs)[::-1])
+    return [(prettify(classes[i]), float(probs[i])) for i in order]
 
-    # detection
+
+@torch.no_grad()
+def det_infer(image, spec, conf):
+    """回傳 (counts dict, 標註圖 RGB ndarray, 物件總數)。"""
     counts: dict = {}
     if spec.get("sahi"):
-        # 大圖密集/稀疏小目標: SAHI 切片推論(原解析度逐片偵測,小目標不被縮掉)
-        import numpy as np
         from sahi.predict import get_sliced_prediction
         from sahi.utils.cv import visualize_object_predictions
         sm = load_sahi(spec["path"])
         sm.confidence_threshold = float(conf)
-        img_np = np.array(image.convert("RGB"))
+        img_np = np.array(image)
         result = get_sliced_prediction(
             img_np, sm, slice_height=640, slice_width=640,
             overlap_height_ratio=0.2, overlap_width_ratio=0.2, verbose=0)
@@ -507,54 +594,707 @@ def run(image, model_label, topk, conf):
         annotated = visualize_object_predictions(img_np.copy(), object_prediction_list=opl)["image"]
         for o in opl:
             counts[o.category.name] = counts.get(o.category.name, 0) + 1
-        engine_note = "🔪 SAHI 切片推論(640/overlap 0.2)"
     else:
         model = load_yolo(spec["path"])
-        res = model.predict(source=image.convert("RGB"), conf=float(conf), verbose=False)[0]
+        res = model.predict(source=image, conf=float(conf), verbose=False)[0]
         annotated = res.plot()[:, :, ::-1]  # BGR -> RGB
         for c in res.boxes.cls.tolist():
             name = res.names[int(c)]
             counts[name] = counts.get(name, 0) + 1
-        engine_note = ""
-    if counts:
-        body = " · ".join(f"**{k}**: {v}" for k, v in sorted(counts.items()))
+    return counts, annotated, int(sum(counts.values()))
+
+
+# ============================================================================
+#  工作台狀態 + 檢視渲染
+# ============================================================================
+def new_state(label):
+    spec = BY_LABEL[label]
+    return {"label": label, "kind": spec["kind"], "files": [], "results": {},
+            "page": TOTAL, "view": "圖示", "page_files": [], "selected": None,
+            "view_open": False, "switch_open": False}
+
+
+def page_choices(S):
+    """回傳 [(顯示, 值)] —— 分類後分頁標籤帶數量,如『neutrophil（12）』;值為乾淨頁鍵。"""
+    files, res, n = S["files"], S["results"], len(S["files"])
+    out = [(f"{TOTAL}（{n}）" if files else TOTAL, TOTAL)]
+    if S["kind"] == "cls":
+        cnt = Counter(r["page"] for r in res.values()) if res else None
+        for k in model_classes(BY_LABEL[S["label"]]) + [NULLPAGE]:
+            out.append((f"{k}（{cnt[k]}）", k) if cnt is not None else (k, k))
+        return out
+    if res:
+        for c in sorted({c for r in res.values() for c in r["counts"]}):
+            out.append((f"{c}（{sum(1 for r in res.values() if c in r['counts'])}）", c))
+    return out
+
+
+def page_files(S):
+    files, res, page = S["files"], S["results"], S["page"]
+    if page == TOTAL:
+        return files
+    if S["kind"] == "cls":
+        return [p for p in files if res.get(p, {}).get("page") == page]
+    return [p for p in files if page in (res.get(p, {}).get("counts") or {})]
+
+
+def gallery_items(S, pf):
+    res, kind, out = S["results"], S["kind"], []
+    for p in pf:
+        r = res.get(p)
+        if r is None:
+            cap = Path(p).name
+        elif kind == "cls":
+            cap = f"{r['page']} · {r['prob'] * 100:.0f}%"
+        else:
+            cap = f"{r['total']} 物件"
+        out.append((p, cap))
+    return out
+
+
+def _file_meta(p):
+    """回傳 (日期, 類型, 大小) 字串。"""
+    pp = Path(p)
+    try:
+        st = pp.stat()
+        date = datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d")
+        sz = f"{st.st_size / 1024:.0f} KB" if st.st_size < 1048576 else f"{st.st_size / 1048576:.1f} MB"
+    except Exception:
+        date, sz = "—", "—"
+    return date, (pp.suffix.lstrip(".").upper() or "—"), sz
+
+
+def detail_table(S, pf):
+    kind, res = S["kind"], S["results"]
+    if kind == "cls":
+        headers, rows = ["檔名", "分類", "信心", "日期", "類型", "大小"], []
+        for p in pf:
+            r = res.get(p)
+            d, t, z = _file_meta(p)
+            if r:
+                conf = "手動" if r.get("manual") else f"{r['prob'] * 100:.1f}%"
+                rows.append([Path(p).name, r["page"], conf, d, t, z])
+            else:
+                rows.append([Path(p).name, "—", "—", d, t, z])
     else:
-        body = "(未偵測到物件,可調低信心門檻)"
-    note = f"**{spec['blurb']}**\n\n計數 → {body}"
-    if engine_note:
-        note += f"\n\n{engine_note}"
-    return {}, annotated, note
+        headers, rows = ["檔名", "物件總數", "主要類別", "日期", "類型", "大小"], []
+        for p in pf:
+            r = res.get(p)
+            d, t, z = _file_meta(p)
+            if r and r["counts"]:
+                rows.append([Path(p).name, str(r["total"]), max(r["counts"], key=r["counts"].get), d, t, z])
+            elif r:
+                rows.append([Path(p).name, "0", "—", d, t, z])
+            else:
+                rows.append([Path(p).name, "—", "—", d, t, z])
+    return headers, rows
+
+
+def count_summary_md(S):
+    n, res = len(S["files"]), S["results"]
+    if not S["files"]:
+        return "📂 尚未選擇資料夾。"
+    if not res:
+        return f"📂 共 **{n}** 張影像 · 尚未計算（按 ▶ 批次計算）。"
+    if S["kind"] == "cls":
+        pages = Counter(r["page"] for r in res.values())
+        nullc = pages.get(NULLPAGE, 0)
+        body = " ｜ ".join(f"{k} **{v}**" for k, v in pages.most_common(8) if k != NULLPAGE)
+        return f"已分類 **{len(res)}/{n}** · 待確認 Null **{nullc}**　{('｜ ' + body) if body else ''}"
+    agg = Counter()
+    for r in res.values():
+        for k, v in r["counts"].items():
+            agg[k] += v
+    body = " ｜ ".join(f"{k} **{v}**" for k, v in agg.most_common(12))
+    return f"已計算 **{len(res)}/{n}** 張 · 物件總計 **{sum(agg.values())}**　{('｜ ' + body) if body else ''}"
+
+
+def render(S):
+    """回傳 (page_radio, gallery, detail_df, count_md) 四個 update。"""
+    pages = page_choices(S)
+    keys = [p[1] for p in pages]
+    if S["page"] not in keys:
+        S["page"] = keys[0]
+    pf = page_files(S)
+    S["page_files"] = pf
+    if S["view"] == "詳細資料":
+        headers, rows = detail_table(S, pf)
+        gal = gr.update(visible=False)
+        df = gr.update(visible=True, headers=headers, value=rows)
+    else:  # 圖示(已移除超大圖示)
+        gal = gr.update(visible=True, columns=8, height=600, value=gallery_items(S, pf))
+        df = gr.update(visible=False)
+    pr = gr.update(choices=pages, value=S["page"])
+    cs = count_summary_md(S)
+    return pr, gal, df, cs
+
+
+# ============================================================================
+#  模型卡 / 影像詮釋文字
+# ============================================================================
+def engine_of(spec, card):
+    if spec.get("fm"):
+        return "🧬 Phikon-v2 FM + LogReg"
+    if spec.get("sahi"):
+        return "🔪 YOLOv8s + SAHI（切片推論）"
+    return card.get("model_type") or ("YOLOv8s" if spec["kind"] == "det" else "ResNet-50")
+
+
+def card_text(label):
+    spec = BY_LABEL[label]
+    card = CARDS.get(spec["key"]) or {}
+    kind = spec["kind"]
+    rows = [f"### {label}"]
+    tag = "偵測 · 計數型" if kind == "det" else "分類型"
+    rows.append(f"`{tag}` ｜ 引擎 **{engine_of(spec, card)}** ｜ 科別 **{disc_of(spec['key'])}**")
+    m = card.get("metrics") or {}
+    if kind == "cls":
+        if card.get("num_classes"):
+            rows.append(f"類別數 **{card['num_classes']}**")
+        seg = []
+        if m.get("val_acc") is not None:
+            seg.append(f"val acc **{m['val_acc']:.3f}**")
+        if m.get("macro_f1") is not None:
+            seg.append(f"macro-F1 **{m['macro_f1']:.3f}**")
+        if m.get("n_train") and m.get("n_val"):
+            seg.append(f"train/val {m['n_train']}/{m['n_val']}")
+        if seg:
+            rows.append(" ｜ ".join(seg))
+    else:
+        seg = []
+        if m.get("mAP50") is not None:
+            seg.append(f"mAP50 **{m['mAP50']:.3f}**")
+        if m.get("mAP50_95") is not None:
+            seg.append(f"mAP50-95 **{m['mAP50_95']:.3f}**")
+        if m.get("precision") is not None:
+            seg.append(f"P {m['precision']:.2f} / R {m['recall']:.2f}")
+        if seg:
+            rows.append(" ｜ ".join(seg))
+    meta_seg = [x for x in [(f"來源 {card.get('source')}" if card.get("source") else None),
+                            (f"授權 {card.get('license')}" if card.get("license") else None),
+                            (f"切分 {card.get('split_method')}" if card.get("split_method") else None)] if x]
+    if meta_seg:
+        rows.append("<small>" + " ｜ ".join(meta_seg) + "</small>")
+    blurb = card.get("experiment_summary") or spec.get("blurb") or ""
+    if blurb:
+        rows.append(blurb)
+    cav = card.get("caveats") or []
+    if cav:
+        rows.append("**⚠️ 注意**\n" + "\n".join(f"- {c}" for c in cav))
+    return "\n\n".join(rows)
+
+
+def meta_text_cls(p, r):
+    name = Path(p).name
+    if not r:
+        return f"**{name}**\n\n尚未計算此影像（按 ◉ 單張計算）。"
+    lines = [f"**{name}**", f"指派分類　**{r['page']}**" + ("　*（手動）*" if r.get("manual") else "")]
+    if r.get("prob") is not None:
+        lines.append(f"Top-1 信心　**{r['prob'] * 100:.1f}%**")
+    if r.get("ranked"):
+        lines.append("")
+        lines += [f"- {n} · {pb * 100:.1f}%" for n, pb in r["ranked"][:5]]
+    return "\n".join(lines)
+
+
+def meta_text_det(p, r):
+    name = Path(p).name
+    if not r:
+        return f"**{name}**\n\n尚未計算此影像（按 ◉ 單張計算）。"
+    body = " ｜ ".join(f"{k} **{v}**" for k, v in sorted(r["counts"].items())) or "（未偵測到物件）"
+    return f"**{name}**\n\n物件總數　**{r['total']}**\n\n{body}"
+
+
+# ============================================================================
+#  事件處理
+# ============================================================================
+def _thr_update(kind):
+    if kind == "cls":
+        return gr.update(minimum=0.0, maximum=1.0, value=0.5, step=0.01,
+                         label="信心門檻（分類）",
+                         info="Top-1 機率低於此值 → 歸入 Null 待確認")
+    return gr.update(minimum=0.05, maximum=0.9, value=0.25, step=0.05,
+                     label="偵測門檻（計數）", info="低於此信心的偵測框不計入")
+
+
+def on_disc(disc):
+    labels = labels_for(disc)
+    return gr.update(choices=model_choices(disc), value=(labels[0] if labels else None))
+
+
+def on_model(label, S):
+    S["label"] = label
+    spec = BY_LABEL[label]
+    S["kind"] = spec["kind"]
+    S["results"] = {}
+    S["page"] = TOTAL
+    S["selected"] = None
+    S["view_open"] = False
+    S["switch_open"] = False
+    is_cls = spec["kind"] == "cls"
+    pr, gal, df, cs = render(S)
+    # 換模型:重設 ⇄ 分類選項(僅分類型可用,偵測型停用)
+    return (S, card_text(label), _thr_update(spec["kind"]),
+            pr, gal, df, cs,
+            gr.update(value=SW_PLACEHOLDER, interactive=False,  # switch_dd:未選檔虛化、顯示「切換分類」
+                      choices=([SW_PLACEHOLDER] + [f"⇄ {c}" for c in model_classes(spec)] + [f"⇄ {NULLPAGE}"])
+                              if is_cls else [SW_PLACEHOLDER]),
+            None, "選一張影像檢視大圖。")
+
+
+def _native_dir():
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        path = filedialog.askdirectory(title="選擇影像資料夾")
+        try:
+            root.destroy()
+        except Exception:
+            pass
+        return path or ""
+    except Exception:
+        return ""
+
+
+def on_load_folder(path, S):
+    files = scan_folder(path)
+    S["files"], S["results"], S["page"], S["selected"] = files, {}, TOTAL, None
+    pr, gal, df, cs = render(S)
+    msg = (f"📂 已載入 `{path}` 共 **{len(files)}** 張影像。" if files
+           else f"⚠️ `{path}` 找不到影像檔（支援 jpg/png/tif/bmp/webp/gif）。")
+    return S, pr, gal, df, cs, None, msg
+
+
+def on_pick_folder(S):
+    path = _native_dir()
+    if not path:
+        pr, gal, df, cs = render(S)
+        return S, pr, gal, df, cs, gr.update(), "已取消（或系統無法開啟選擇視窗）。"
+    return on_load_folder(path, S)
+
+
+def on_view(view, S):
+    S["view"] = (view or "👁 圖示").replace("👁 ", "")
+    return (S,) + render(S)
+
+
+def on_page(page, S):
+    S["page"], S["selected"] = page, None
+    pr, gal, df, cs = render(S)
+    return S, pr, gal, df, cs, None, "選一張影像檢視大圖。"
+
+
+def on_batch(label, thr, S, progress=gr.Progress()):
+    spec = BY_LABEL[label]
+    files = S["files"]
+    if not files:
+        raise gr.Error("請先選擇含影像的資料夾。")
+    res = {}
+    for i, p in enumerate(files):
+        progress((i + 1) / len(files), desc=f"計算中 {i + 1}/{len(files)}")
+        try:
+            img = _open_rgb(p)
+        except Exception:
+            continue
+        if spec["kind"] == "cls":
+            ranked = cls_rank(img, spec)
+            top, prob = ranked[0]
+            res[p] = {"page": top if prob >= float(thr) else NULLPAGE,
+                      "prob": prob, "ranked": ranked[:6], "manual": False}
+        else:
+            counts, _, total = det_infer(img, spec, float(thr))
+            res[p] = {"counts": counts, "total": total}
+    S["results"], S["page"], S["selected"] = res, TOTAL, None
+    pr, gal, df, cs = render(S)
+    return S, pr, gal, df, cs, None, f"✅ 批次完成 **{len(res)}** 張。"
+
+
+def on_single(label, thr, S):
+    sel = S["selected"]
+    if not sel:
+        raise gr.Error("請先在下方點選一張影像（單張計算）。")
+    spec = BY_LABEL[label]
+    img = _open_rgb(sel)
+    if spec["kind"] == "cls":
+        ranked = cls_rank(img, spec)
+        top, prob = ranked[0]
+        S["results"][sel] = {"page": top if prob >= float(thr) else NULLPAGE,
+                             "prob": prob, "ranked": ranked[:6], "manual": False}
+        pv, meta = img, meta_text_cls(sel, S["results"][sel])
+    else:
+        counts, annotated, total = det_infer(img, spec, float(thr))
+        S["results"][sel] = {"counts": counts, "total": total}
+        pv, meta = annotated, meta_text_det(sel, S["results"][sel])
+    pr, gal, df, cs = render(S)
+    return S, pr, gal, df, cs, pv, meta
+
+
+def on_switch(newpage, S):
+    sel = S["selected"]
+    page = newpage.replace("⇄ ", "") if newpage else None
+    if sel and sel in S["results"] and page and page != "切換分類":
+        S["results"][sel]["page"] = page
+        S["results"][sel]["manual"] = True
+    return (S,) + render(S)
+
+
+def on_apply_thr(thr, S):
+    if S["kind"] == "cls" and S["results"]:
+        for r in S["results"].values():
+            if not r.get("manual") and r.get("ranked"):
+                top, prob = r["ranked"][0]
+                r["page"] = top if prob >= float(thr) else NULLPAGE
+    return (S,) + render(S)
+
+
+def _select_core(S, label, thr, idx):
+    pf = S["page_files"]
+    if not isinstance(idx, int) or idx < 0 or idx >= len(pf):
+        return S, gr.update(), gr.update(), gr.update()
+    p = pf[idx]
+    S["selected"] = p
+    spec = BY_LABEL[label]
+    r = S["results"].get(p)
+    if spec["kind"] == "cls":
+        sw = gr.update(interactive=(r is not None),
+                       value=(f"⇄ {r['page']}" if r else SW_PLACEHOLDER))
+        return S, sw, _open_rgb(p), meta_text_cls(p, r)
+    # det:點選即以目前門檻產生標註圖
+    counts, annotated, total = det_infer(_open_rgb(p), spec, float(thr))
+    S["results"][p] = {"counts": counts, "total": total}
+    return S, gr.update(), annotated, meta_text_det(p, S["results"][p])
+
+
+def on_select(evt: gr.SelectData, S, label, thr):
+    return _select_core(S, label, thr, evt.index)
+
+
+def on_select_df(evt: gr.SelectData, S, label, thr):
+    idx = evt.index[0] if isinstance(evt.index, (list, tuple)) else evt.index
+    return _select_core(S, label, thr, idx)
+
+
+def _safe(name):
+    return re.sub(r'[\\/:*?"<>|\s]+', "_", str(name)).strip("_") or "x"
+
+
+def on_csv(label, S):
+    res = S["results"]
+    if not res:
+        raise gr.Error("尚無計算結果可匯出。")
+    spec = BY_LABEL[label]
+    exp = ROOT / "exports"
+    exp.mkdir(exist_ok=True)
+    fn = exp / f"clinscope_{spec['key']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    with open(fn, "w", newline="", encoding="utf-8-sig") as f:
+        w = csv.writer(f)
+        if spec["kind"] == "cls":
+            w.writerow(["檔案", "指派分類", "Top-1信心(%)", "手動"])
+            for p, r in res.items():
+                w.writerow([Path(p).name, r["page"],
+                            f"{r.get('prob', 0) * 100:.2f}", "Y" if r.get("manual") else ""])
+        else:
+            allc = sorted({c for r in res.values() for c in r["counts"]})
+            w.writerow(["檔案", "物件總數"] + allc)
+            for p, r in res.items():
+                w.writerow([Path(p).name, r["total"]] + [r["counts"].get(c, 0) for c in allc])
+    return gr.update(value=str(fn), visible=True)
+
+
+def on_saveas(S):
+    page, pf = S["page"], S["page_files"]
+    if not pf:
+        raise gr.Error("目前分頁沒有檔案可另存。")
+    dest = _native_dir()
+    if not dest:
+        gr.Info("已取消另存。")
+        return
+    res, kind, n = S["results"], S["kind"], 0
+    for p in pf:
+        prefix = page if page != TOTAL else ((res.get(p, {}).get("page") or "未分類") if kind == "cls" else "全部")
+        try:
+            shutil.copy2(p, Path(dest) / f"{_safe(prefix)}_{Path(p).name}")
+            n += 1
+        except Exception:
+            pass
+    gr.Info(f"✅ 已另存 {n} 個檔案到 {dest}（檔名以分類為前綴）")
+
+
+# ============================================================================
+#  介面外觀:海軍藍 / 白 / 檸檬黃
+# ============================================================================
+THEME = gr.themes.Base(
+    primary_hue=gr.themes.colors.blue,
+    neutral_hue=gr.themes.colors.slate,
+    font=[gr.themes.GoogleFont("IBM Plex Sans"), "ui-sans-serif", "system-ui", "sans-serif"],
+    font_mono=[gr.themes.GoogleFont("IBM Plex Mono"), "ui-monospace", "monospace"],
+)
+
+CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap');
+:root{
+  --navy-900:#0B1F3A; --navy-700:#163C6B; --navy-500:#22568F; --navy-100:#E5EDF7;
+  --paper:#F4F8FD; --surface:#FFFFFF; --ink:#0B1F3A; --muted:#5B708A;
+  --lemon:#FFE14D; --lemon-soft:#FFF7C4; --line:#D8E3F0;
+}
+/* 滿版、隨視窗縮放;窄視窗時欄位自動換行堆疊 */
+.gradio-container{background:var(--paper)!important; color:var(--ink);
+  max-width:100%!important; width:100%!important; padding:10px 18px!important;}
+/* Gradio .main.fillable 預設 max-width:1536px → 解除才能真正貼齊視窗 */
+.gradio-container .main, .gradio-container .main.fillable{
+  max-width:100%!important; width:100%!important; margin:0!important;}
+footer{display:none!important;}
+
+/* 頂部品牌列 */
+.brandbar{display:flex; justify-content:space-between; align-items:center;
+  background:linear-gradient(100deg,var(--navy-900),var(--navy-700)); color:#fff;
+  padding:14px 22px; border-radius:14px; margin-bottom:14px;
+  box-shadow:0 6px 22px rgba(11,31,58,.20);}
+.brandbar .brand{display:flex; align-items:baseline; gap:12px;}
+.brandbar .logo{color:var(--lemon); font-size:22px; transform:translateY(2px);}
+.brandbar .bt{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:27px; letter-spacing:.5px;
+  color:var(--lemon)!important; text-shadow:0 1px 3px rgba(0,0,0,.30);}
+.brandbar .bsub{color:#E3EEFB; font-size:13px;}
+.brandbar .chip{background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22);
+  padding:4px 12px; border-radius:999px; font-size:12px; margin-left:8px; font-family:'IBM Plex Mono',monospace;}
+.brandbar .chip.lemon{background:var(--lemon); color:var(--navy-900); border:none; font-weight:600;}
+
+/* 三大視窗面板:明確外框 + 海軍藍標題列 */
+.panel{background:var(--surface)!important; border:2px solid var(--navy-500)!important;
+  border-radius:14px!important; padding:14px 16px 16px!important;
+  box-shadow:0 6px 20px rgba(11,31,58,.13);}
+.phead{display:flex; justify-content:space-between; align-items:center;
+  background:linear-gradient(95deg,var(--navy-900),var(--navy-700));
+  margin:-14px -16px 14px -16px; padding:9px 16px;
+  border-radius:12px 12px 0 0; border-bottom:3px solid var(--lemon);}
+.phead .ph-tag{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px; color:var(--lemon)!important;}
+.phead .ph-en{color:#9FC0E6; font-size:11px; letter-spacing:2px; margin-left:8px; font-family:'IBM Plex Mono',monospace;}
+.phead .ph-sub{color:#CFE0F2; font-size:11.5px;}
+/* 上排短下拉(檢視 / 切換分類)— 與按鈕同列、寬度短 */
+.shortdd{min-width:104px!important; max-width:150px!important; flex:0 0 auto!important;}
+.shortdd .wrap, .shortdd input{font-size:13px!important;}
+.shortdd input:disabled, .shortdd input[disabled]{opacity:.5!important; cursor:not-allowed;}
+/* 分類 + 模型 同一排 */
+.modelrow{gap:10px!important;}
+/* 分頁欄與影像格上下緊鄰;移除多餘空白讓編輯區上下緊密 */
+.tabstrip{margin-bottom:0!important;}
+.countbar{margin:2px 0 4px!important;}
+.grid{margin-top:0!important;}
+.detail{margin-top:0!important;}
+/* 隱藏詳細資料表格上方的複製/全螢幕等動作圖示與多餘空白 */
+.detail .icon-button-wrapper, .detail .icon-buttons,
+.detail button[aria-label="Fullscreen"], .detail button[aria-label="Copy"],
+.detail button[title*="ullscreen"], .detail button[title*="opy"]{display:none!important;}
+
+/* 模型卡 */
+.card{background:#F8FBFF!important; border:1px solid var(--line); border-radius:12px;
+  padding:12px 14px!important; margin-top:6px; font-size:13px; max-height:340px; overflow:auto;}
+.card h3{font-family:'Space Grotesk',sans-serif; font-size:15px; margin:.1em 0 .5em; color:var(--navy-900);}
+.card code{background:var(--navy-100); color:var(--navy-700); padding:1px 7px; border-radius:6px; font-size:12px;}
+.card small{color:var(--muted);}
+
+/* 顯示面板大圖 */
+.preview{border-radius:12px!important; overflow:hidden; background:#fff; border:1px dashed var(--line)!important;}
+.preview img{object-fit:contain!important;}
+.pmeta{font-size:13px; color:var(--ink); margin-top:8px; min-height:24px;}
+.pmeta strong{color:var(--navy-700);}
+
+/* 工具列 — ICON 緊鄰、全部靠左貼合 */
+.toolbar{gap:5px!important; flex-wrap:wrap; align-items:center; margin-bottom:4px;
+  justify-content:flex-start!important;}
+.toolbar > *{flex:0 0 auto!important; margin:0!important;}  /* 去掉 Gradio auto-margin,才能真正靠左緊鄰 */
+.tbtn{min-width:0!important; flex:0 0 auto!important; border-radius:10px!important;
+  border:1px solid var(--line)!important; background:#fff!important; color:var(--navy-700)!important;
+  font-weight:600!important; box-shadow:none!important; transition:transform .08s,box-shadow .12s;}
+.tbtn:hover{transform:translateY(-1px); box-shadow:0 4px 12px rgba(11,31,58,.12); border-color:var(--navy-500)!important;}
+.tbtn.primary{background:var(--navy-700)!important; color:#fff!important; border-color:var(--navy-700)!important;}
+.tbtn.primary:hover{background:var(--navy-900)!important;}
+.tbtn.accent{background:var(--lemon)!important; color:var(--navy-900)!important; border-color:var(--lemon)!important;}
+.tbtn.accent:hover{box-shadow:0 4px 14px rgba(255,205,0,.45);}
+.switch{min-width:200px!important; flex:0 0 auto!important;}
+
+.subbar{gap:10px!important; align-items:center; margin:4px 0;}
+.status{font-size:12px; color:var(--muted); min-height:18px;}
+.countbar{font-size:12.5px; color:var(--navy-700); background:#F2F7FE; border:1px solid var(--line);
+  border-radius:8px; padding:6px 12px!important; margin:6px 0;}
+
+/* 分頁(分類)— 仿頁籤 */
+.tabstrip{overflow-x:auto; white-space:nowrap; border-bottom:2px solid var(--line);}
+.tabstrip .wrap{flex-wrap:nowrap!important; gap:2px!important;}
+.tabstrip label{border:1.5px solid var(--navy-500)!important; background:#fff!important; border-radius:8px 8px 0 0!important;
+  padding:7px 14px!important; color:var(--navy-700)!important; font-weight:600!important; cursor:pointer;
+  box-shadow:none!important; margin:0 3px 0 0!important;}
+.tabstrip label input{display:none!important;}
+.tabstrip label:hover{background:var(--navy-100)!important; color:var(--navy-700)!important; border-color:var(--navy-700)!important;}
+.tabstrip label:has(input:checked){background:var(--navy-700)!important; color:#fff!important;
+  border-color:var(--navy-700)!important; box-shadow:inset 0 -3px 0 var(--lemon)!important;}
+
+/* 檢視切換 */
+.viewseg .wrap{gap:0!important;}
+.viewseg label{border:1px solid var(--line)!important; background:#fff!important; padding:6px 12px!important;
+  color:var(--navy-700)!important; font-size:12.5px!important; box-shadow:none!important; margin:0 -1px 0 0!important;}
+.viewseg label:has(input:checked){background:var(--navy-700)!important; color:#fff!important; border-color:var(--navy-700)!important;}
+.viewseg label input{display:none!important;}
+
+/* 影像格 — 預設至少佔半個視窗高 */
+.grid{background:#fff!important; border:1px solid var(--line)!important; border-radius:12px!important;
+  padding:6px!important; min-height:56vh!important;}
+.grid .grid-wrap, .grid .thumbnails{min-height:54vh!important;}
+.grid .thumbnail-item{border-radius:10px!important; overflow:hidden;}
+.grid .thumbnail-item.selected, .grid .selected{outline:3px solid var(--lemon)!important; outline-offset:-1px;}
+.grid .caption, .grid .caption-label{font-family:'IBM Plex Mono',monospace!important; font-size:11px!important;
+  background:var(--navy-900)!important; color:#fff!important;}
+.detail{border-radius:12px!important; min-height:56vh!important;}
+
+/* 閾值 slider 檸檬黃 */
+.thr input[type=range]{accent-color:var(--lemon);}
+
+.disc-foot{text-align:center; color:var(--muted); font-size:12px; margin-top:14px;
+  border-top:1px solid var(--line); padding-top:10px;}
+.disc-foot b{color:var(--navy-700);}
+
+@media (prefers-reduced-motion: reduce){ .tbtn{transition:none;} }
+"""
+
+
+def panel_head(tag, en, sub):
+    return (f'<div class="phead"><div><span class="ph-tag">{tag}</span>'
+            f'<span class="ph-en">{en}</span></div><span class="ph-sub">{sub}</span></div>')
+
+
+BRAND_HTML = (
+    '<div class="brandbar"><div class="brand"><span class="logo">◉</span>'
+    '<span class="bt">ClinScope</span><span class="bsub">臨床顯微辨識工作台</span></div>'
+    f'<div><span class="chip">⚙ {DEVICE.type.upper()}</span>'
+    f'<span class="chip lemon">{len(AVAILABLE)} 模型</span></div></div>')
+
+FOOTER_HTML = (
+    '<div class="disc-foot">⚠️ 研究／作品集用途,<b>非臨床診斷</b>。'
+    '每個模型僅在其資料集分布內準確;跨到不同染色法／相機／倍率的影像,準確率預期下降。</div>')
+
+# 鍵盤左右方向鍵 → 切換影像格選取(前端事件,不在輸入框時才作用)
+ARROW_JS = """
+() => {
+  if (window.__cs_keys) return;
+  window.__cs_keys = true;
+  window.__cs_idx = 0;
+  const getItems = () => {
+    const g = document.querySelector('.grid');
+    if (g && g.offsetParent !== null) {
+      const t = Array.from(g.querySelectorAll('button.thumbnail-item, .thumbnail-item'));
+      if (t.length) return {kind: 'gal', items: t};
+    }
+    return {kind: 'row', items: Array.from(document.querySelectorAll('.detail tbody tr'))};
+  };
+  document.addEventListener('click', (e) => {
+    const items = getItems().items;
+    const i = items.findIndex(it => it.contains(e.target));
+    if (i >= 0) window.__cs_idx = i;
+  }, true);
+  document.addEventListener('keydown', (e) => {
+    if (!['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+    const t = (document.activeElement || {}).tagName || '';
+    if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
+    const o = getItems();
+    if (!o.items.length) return;
+    const fwd = (e.key === 'ArrowRight' || e.key === 'ArrowDown');
+    let i = Math.max(0, Math.min(o.items.length - 1, (window.__cs_idx || 0) + (fwd ? 1 : -1)));
+    window.__cs_idx = i;
+    const it = o.items[i];
+    if (o.kind === 'row') { const c = it.querySelector('td'); (c || it).click(); }
+    else it.click();
+    it.scrollIntoView({block: 'nearest'});
+    e.preventDefault();
+  });
+}
+"""
 
 
 def build():
-    with gr.Blocks(title="ClinScope — 臨床顯微辨識") as demo:
-        gr.Markdown(
-            "# 🔬 ClinScope — 臨床顯微影像辨識\n"
-            "上傳顯微影像,選擇對應模型。**分類**模型回傳機率;**偵測**模型回傳標註圖與計數。")
+    with gr.Blocks(title="ClinScope — 臨床顯微辨識工作台") as demo:
+        gr.HTML(BRAND_HTML)
         if not AVAILABLE:
             gr.Markdown("⚠️ 找不到任何模型權重,請先完成至少一條 track 的訓練。")
             return demo
+        init_disc = DISCIPLINES[0]
+        init_label = labels_for(init_disc)[0]
+        S = gr.State(new_state(init_label))
+
+        # --- 上排:模型(左) + 顯示(右) ---
+        with gr.Row(equal_height=False):
+            with gr.Column(scale=5, elem_classes="panel"):
+                gr.HTML(panel_head("模型", "MODEL", "🟢≥.85 🟡≥.70 🟠≥.50 🔴<.50 成績分級"))
+                with gr.Row(elem_classes="modelrow"):
+                    disc_dd = gr.Dropdown(DISCIPLINES, value=init_disc, label="分類（科別）", scale=2)
+                    model_dd = gr.Dropdown(model_choices(init_disc), value=init_label, label="模型", scale=5)
+                card_md = gr.Markdown(card_text(init_label), elem_classes="card")
+                thr = gr.Slider(0.0, 1.0, value=0.5, step=0.01, label="信心門檻（分類）",
+                                info="Top-1 機率低於此值 → 歸入 Null 待確認", elem_classes="thr")
+            with gr.Column(scale=6, elem_classes="panel"):
+                gr.HTML(panel_head("顯示", "DISPLAY", "點選下方影像檢視大圖"))
+                preview_img = gr.Image(show_label=False, height=360, elem_classes="preview")
+                preview_meta = gr.Markdown("選一張影像檢視大圖。", elem_classes="pmeta")
+
+        # --- 下排:編輯(滿版) ---
         with gr.Row():
-            with gr.Column(scale=1):
-                inp = gr.Image(type="pil", label="顯微影像", height=300)
-                sel = gr.Dropdown(choices=list(BY_LABEL.keys()),
-                                  value=list(BY_LABEL.keys())[0], label="辨識模型")
-                topk = gr.Slider(1, 6, value=3, step=1, label="Top-K(分類用)")
-                conf = gr.Slider(0.05, 0.9, value=0.25, step=0.05, label="信心門檻(偵測用)")
-                btn = gr.Button("辨識", variant="primary")
-            with gr.Column(scale=1):
-                out_label = gr.Label(num_top_classes=6, label="分類結果(機率)")
-                out_img = gr.Image(label="偵測標註圖", height=300)
-                out_note = gr.Markdown()
-        btn.click(run, inputs=[inp, sel, topk, conf],
-                  outputs=[out_label, out_img, out_note])
-        gr.Markdown(
-            "> ⚠️ 研究/作品集用途,**非臨床診斷**。每個模型只在其資料集分布內準確;"
-            "跨到你自己的顯微鏡照片(不同染色法/相機/倍率)準確率預期下降。")
+            with gr.Column(elem_classes="panel"):
+                gr.HTML(panel_head("編輯", "EDIT", "批次／單張計算 · 分類分頁 · 匯出"))
+                # 上排 ICON 列:按鈕 + 兩個短下拉(檢視 / 切換分類,各自前綴 👁 / ⇄ 自我標示)
+                with gr.Row(elem_classes="toolbar"):
+                    btn_folder = gr.Button("📁 選擇資料夾", elem_classes="tbtn", scale=0)
+                    view_dd = gr.Dropdown(["👁 圖示", "👁 詳細資料"], value="👁 圖示",
+                                          show_label=False, container=False, elem_classes="shortdd")
+                    btn_batch = gr.Button("▶ 批次計算", elem_classes="tbtn primary", scale=0)
+                    btn_single = gr.Button("◉ 單張計算", elem_classes="tbtn accent", scale=0)
+                    switch_dd = gr.Dropdown([SW_PLACEHOLDER], value=SW_PLACEHOLDER, show_label=False,
+                                            container=False, interactive=False, elem_classes="shortdd")
+                    btn_apply = gr.Button("⚖️ 套用門檻", elem_classes="tbtn", scale=0)
+                    btn_csv = gr.Button("⤓ 匯出 CSV", elem_classes="tbtn", scale=0)
+                    btn_save = gr.Button("💾 另存資料夾", elem_classes="tbtn", scale=0)
+                count_md = gr.Markdown("", visible=False, elem_classes="countbar")
+                page_radio = gr.Radio([TOTAL], value=TOTAL, show_label=False,
+                                      container=False, elem_classes="tabstrip")
+                gallery = gr.Gallery(show_label=False, columns=8, height=600, object_fit="cover",
+                                     allow_preview=False, elem_classes="grid")
+                detail_df = gr.Dataframe(headers=["檔名", "分類", "信心", "日期", "類型", "大小"],
+                                         interactive=False, wrap=True, visible=False, show_label=False,
+                                         type="array", elem_classes="detail")
+                csv_out = gr.File(label="下載 CSV", visible=False)
+
+        gr.HTML(FOOTER_HTML)
+
+        MODEL_OUT = [S, card_md, thr, page_radio, gallery, detail_df, count_md,
+                     switch_dd, preview_img, preview_meta]
+        FOLDER_OUT = [S, page_radio, gallery, detail_df, count_md, preview_img, preview_meta]
+        COMPUTE_OUT = [S, page_radio, gallery, detail_df, count_md, preview_img, preview_meta]
+        PANEL_OUT = [S, page_radio, gallery, detail_df, count_md]
+        SELECT_OUT = [S, switch_dd, preview_img, preview_meta]
+
+        disc_dd.change(on_disc, [disc_dd], [model_dd]).then(on_model, [model_dd, S], MODEL_OUT)
+        model_dd.change(on_model, [model_dd, S], MODEL_OUT)
+        btn_folder.click(on_pick_folder, [S], FOLDER_OUT)
+        view_dd.change(on_view, [view_dd, S], PANEL_OUT)
+        switch_dd.input(on_switch, [switch_dd, S], PANEL_OUT)
+        page_radio.change(on_page, [page_radio, S], COMPUTE_OUT)
+        btn_batch.click(on_batch, [model_dd, thr, S], COMPUTE_OUT)
+        btn_single.click(on_single, [model_dd, thr, S], COMPUTE_OUT)
+        btn_apply.click(on_apply_thr, [thr, S], PANEL_OUT)
+        btn_csv.click(on_csv, [model_dd, S], [csv_out])
+        btn_save.click(on_saveas, [S], None)
+        gallery.select(on_select, [S, model_dd, thr], SELECT_OUT)
+        detail_df.select(on_select_df, [S, model_dd, thr], SELECT_OUT)
+        demo.load(on_model, [model_dd, S], MODEL_OUT)
+        demo.load(None, None, None, js=ARROW_JS)  # 方向鍵切換檔案(圖示 / 詳細資料 皆可)
     return demo
 
 
 if __name__ == "__main__":
-    print(f"[ClinScope] device={DEVICE.type} | available models: "
-          f"{[m['key'] for m in AVAILABLE]}")
-    build().launch()
+    # 工作台會讀「任意本機資料夾」的影像;Gradio 預設只服務 cwd/temp 內檔案,
+    # 故開放各本機磁碟根目錄(本工具僅綁 127.0.0.1 本機單人用,可接受)。
+    drives = [f"{d}:\\" for d in "CDEFGHIJKLMNOPQRSTUVWXYZ" if Path(f"{d}:\\").exists()]
+    print(f"[ClinScope] device={DEVICE.type} | {len(AVAILABLE)} models | "
+          f"disciplines={DISCIPLINES} | allowed_paths={drives}")
+    build().launch(theme=THEME, css=CSS, allowed_paths=drives)
