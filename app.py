@@ -535,6 +535,7 @@ def load_sahi(path: Path):
 IMG_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp", ".gif"}
 TOTAL = "📋 總表"
 NULLPAGE = "Null"
+ADDPAGE = "__cs_add__"          # 「＋ 新增分類」分頁的內部值;點它(前端攔截 prompt)→ 建自訂分類分頁
 SW_PLACEHOLDER = "⇄ 切換分類"   # 切換分類下拉未選檔時顯示此提示(並虛化)
 
 
@@ -612,7 +613,19 @@ def new_state(label):
     spec = BY_LABEL[label]
     return {"label": label, "kind": spec["kind"], "files": [], "results": {},
             "page": TOTAL, "view": "詳細資料", "page_files": [], "selected": None,
-            "view_open": False, "switch_open": False}
+            "custom_pages": [], "view_open": False, "switch_open": False}
+
+
+def all_classes(S):
+    """分類型可指派的分頁:模型內建類別 + Null + 使用者自訂分類。"""
+    return model_classes(BY_LABEL[S["label"]]) + [NULLPAGE] + S.get("custom_pages", [])
+
+
+def switch_choices(S):
+    """工具列「⇄ 切換分類」下拉選項(含自訂分類)。"""
+    if S["kind"] != "cls":
+        return [SW_PLACEHOLDER]
+    return [SW_PLACEHOLDER] + [f"⇄ {c}" for c in all_classes(S)]
 
 
 def page_choices(S):
@@ -621,8 +634,9 @@ def page_choices(S):
     out = [(f"{TOTAL}（{n}）" if files else TOTAL, TOTAL)]
     if S["kind"] == "cls":
         cnt = Counter(r["page"] for r in res.values()) if res else None
-        for k in model_classes(BY_LABEL[S["label"]]) + [NULLPAGE]:
+        for k in all_classes(S):
             out.append((f"{k}（{cnt[k]}）", k) if cnt is not None else (k, k))
+        out.append(("＋", ADDPAGE))   # 「新增自訂分類」分頁(前端攔截點擊→prompt)
         return out
     if res:
         for c in sorted({c for r in res.values() for c in r["counts"]}):
@@ -632,7 +646,7 @@ def page_choices(S):
 
 def page_files(S):
     files, res, page = S["files"], S["results"], S["page"]
-    if page == TOTAL:
+    if page in (TOTAL, ADDPAGE):
         return files
     if S["kind"] == "cls":
         return [p for p in files if res.get(p, {}).get("page") == page]
@@ -683,9 +697,14 @@ def detail_html_str(S):
     """詳細資料改用自訂 HTML 表格 —— 分類欄為真正的內嵌 <select> 下拉。"""
     kind, res, pf = S["kind"], S["results"], S["page_files"]
     sel_p = S.get("selected")
+    if not S["files"]:   # 尚未選資料夾 → 友善空狀態(避免一開啟整片空白)
+        return ('<div class="cs-empty-state"><div class="cs-es-ic">📂</div>'
+                '<div class="cs-es-t">尚未載入影像</div>'
+                '<div class="cs-es-s">點上方 <b>📁 選擇資料夾</b> 載入影像，再按 '
+                '<b>▶ 批次計算</b> 開始分類；可用 <b>＋</b> 分頁自訂分類。</div></div>')
     if kind == "cls":
         headers = ["檔名", "分類", "信心", "日期", "類型", "大小"]
-        classes = model_classes(BY_LABEL[S["label"]]) + [NULLPAGE]
+        classes = all_classes(S)
         rows = []
         for i, p in enumerate(pf):
             r = res.get(p)
@@ -739,8 +758,8 @@ def render(S):
     """回傳 (page_radio, gallery, detail_html, count_md) 四個 update。"""
     pages = page_choices(S)
     keys = [p[1] for p in pages]
-    if S["page"] not in keys:
-        S["page"] = keys[0]
+    if S["page"] == ADDPAGE or S["page"] not in keys:  # 「＋」永不是真正選中的分頁
+        S["page"] = TOTAL
     pf = page_files(S)
     S["page_files"] = pf
     if S["view"] == "詳細資料":
@@ -854,16 +873,15 @@ def on_model(label, S):
     S["results"] = {}
     S["page"] = TOTAL
     S["selected"] = None
+    S["custom_pages"] = []   # 換模型 = 換分類體系,清掉上一個模型的自訂分頁
     S["view_open"] = False
     S["switch_open"] = False
-    is_cls = spec["kind"] == "cls"
     pr, gal, df, cs = render(S)
     # 換模型:重設 ⇄ 分類選項(僅分類型可用,偵測型停用)
     return (S, card_text(label), _thr_update(spec["kind"]),
             pr, gal, df, cs,
             gr.update(value=SW_PLACEHOLDER, interactive=False,  # switch_dd:未選檔虛化、顯示「切換分類」
-                      choices=([SW_PLACEHOLDER] + [f"⇄ {c}" for c in model_classes(spec)] + [f"⇄ {NULLPAGE}"])
-                              if is_cls else [SW_PLACEHOLDER]),
+                      choices=switch_choices(S)),
             None, "選一張影像檢視大圖。")
 
 
@@ -907,6 +925,9 @@ def on_view(view, S):
 
 
 def on_page(page, S):
+    if page == ADDPAGE:        # 「＋」由前端 prompt 處理;後端收到就維持原分頁(不切換)
+        pr, gal, df, cs = render(S)
+        return S, pr, gal, df, cs, gr.update(), gr.update()
     S["page"], S["selected"] = page, None
     pr, gal, df, cs = render(S)
     return S, pr, gal, df, cs, None, "選一張影像檢視大圖。"
@@ -999,16 +1020,28 @@ def on_select(evt: gr.SelectData, S, label, thr):
 
 def on_bridge(cmd, S, label, thr):
     """詳細資料自訂 HTML 表的前端事件橋接:
-       {"a":"sel","i":idx} 選列(更新大圖) / {"a":"cls","i":idx,"p":類別} 內嵌下拉改分類。
-       輸出順序 = [S, detail_html, page_radio, count_md, switch_dd, preview_img, preview_meta]。"""
-    noop = (S, gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update())
+       {"a":"sel","i":idx} 選列(更新大圖) / {"a":"cls","i":idx,"p":類別} 內嵌下拉改分類 /
+       {"a":"addpage","name":名稱} 「＋」分頁新增自訂分類。
+       輸出順序 = [S, detail_html, gallery, page_radio, count_md, switch_dd, preview_img, preview_meta]。"""
+    noop = (S,) + (gr.update(),) * 7
     if not cmd:
         return noop
     try:
         obj = json.loads(cmd)
     except Exception:
         return noop
-    act, idx = obj.get("a"), obj.get("i")
+    act = obj.get("a")
+    if act == "addpage":   # 「＋」分頁:新增一個自訂分類分頁並切換過去
+        name = (obj.get("name") or "").strip()
+        cp = S.setdefault("custom_pages", [])
+        reserved = set(model_classes(BY_LABEL[S["label"]])) | {NULLPAGE, TOTAL, ADDPAGE, "＋"}
+        if name and name not in cp and name not in reserved:
+            cp.append(name)
+            S["page"], S["selected"] = name, None
+        pr, gal, dh, cs = render(S)
+        sw = gr.update(choices=switch_choices(S), value=SW_PLACEHOLDER, interactive=False)
+        return (S, dh, gal, pr, cs, sw, gr.update(), gr.update())
+    idx = obj.get("i")
     pf = S["page_files"]
     if not isinstance(idx, int) or idx < 0 or idx >= len(pf):
         return noop
@@ -1016,7 +1049,7 @@ def on_bridge(cmd, S, label, thr):
     if act == "sel":
         # 選列:不重繪表格(避免方向鍵連按時閃爍),只更新大圖 + 工具列切換下拉
         _, sw, pv, meta = _select_core(S, label, thr, idx)
-        return (S, gr.update(), gr.update(), gr.update(), sw, pv, meta)
+        return (S, gr.update(), gr.update(), gr.update(), gr.update(), sw, pv, meta)
     if act == "cls":
         page = obj.get("p")
         S["selected"] = p
@@ -1025,7 +1058,7 @@ def on_bridge(cmd, S, label, thr):
             S["results"][p]["manual"] = True
         pr, gal, dh, cs = render(S)
         sw = gr.update(value=f"⇄ {page}", interactive=True)
-        return (S, dh, pr, cs, sw, gr.update(), gr.update())
+        return (S, dh, gal, pr, cs, sw, gr.update(), gr.update())
     return noop
 
 
@@ -1056,23 +1089,44 @@ def on_csv(label, S):
     return gr.update(value=str(fn), visible=True)
 
 
+def _format_name(mode, cls, p):
+    """依使用者選的命名格式組出新檔名(分類已 _safe,原檔主檔名保留)。"""
+    stem, ext, c = p.stem, p.suffix, _safe(cls)
+    if mode == "n_c":
+        return f"{stem}_{c}{ext}"         # 檔名_分類
+    if mode == "n_pc":
+        return f"{stem} ({c}){ext}"       # 檔名 (分類)
+    return f"{c}_{stem}{ext}"             # 分類_檔名(預設)
+
+
 def on_saveas(S):
+    """按『另存資料夾』:先跳出檔名格式對話框(實際複製在 on_saveas_confirm)。"""
+    if not S["page_files"]:
+        raise gr.Error("目前分頁沒有檔案可另存。")
+    return gr.update(visible=True)
+
+
+def on_saveas_confirm(mode, S):
+    """選好檔名格式後:開資料夾選擇框 → 依格式命名複製;回傳關閉對話框的 update。"""
     page, pf = S["page"], S["page_files"]
     if not pf:
-        raise gr.Error("目前分頁沒有檔案可另存。")
+        gr.Info("目前分頁沒有檔案可另存。")
+        return gr.update(visible=False)
     dest = _native_dir()
     if not dest:
         gr.Info("已取消另存。")
-        return
+        return gr.update(visible=False)
     res, kind, n = S["results"], S["kind"], 0
     for p in pf:
-        prefix = page if page != TOTAL else ((res.get(p, {}).get("page") or "未分類") if kind == "cls" else "全部")
+        cls = page if page != TOTAL else ((res.get(p, {}).get("page") or "未分類") if kind == "cls" else "全部")
         try:
-            shutil.copy2(p, Path(dest) / f"{_safe(prefix)}_{Path(p).name}")
+            shutil.copy2(p, Path(dest) / _format_name(mode, cls, Path(p)))
             n += 1
         except Exception:
             pass
-    gr.Info(f"✅ 已另存 {n} 個檔案到 {dest}（檔名以分類為前綴）")
+    label = {"n_c": "檔名_分類", "n_pc": "檔名 (分類)"}.get(mode, "分類_檔名")
+    gr.Info(f"✅ 已另存 {n} 個檔案到 {dest}（{label}）")
+    return gr.update(visible=False)
 
 
 # ============================================================================
@@ -1116,11 +1170,11 @@ footer{display:none!important;}
   background:linear-gradient(100deg,var(--navy-900),var(--navy-700)); color:#fff;
   padding:14px 22px; border-radius:14px; margin-bottom:14px;
   box-shadow:0 6px 22px rgba(11,31,58,.20);}
-.brandbar .brand{display:flex; align-items:baseline; gap:12px;}
-.brandbar .logo{color:var(--lemon); font-size:22px; transform:translateY(2px);}
-.brandbar .bt{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:27px; letter-spacing:.5px;
+.brandbar .brand{display:flex; align-items:baseline; gap:16px;}
+.brandbar .logo{color:var(--lemon); font-size:28px; transform:translateY(2px);}
+.brandbar .bt{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:36px; letter-spacing:3px;
   color:var(--lemon)!important; text-shadow:0 1px 3px rgba(0,0,0,.30);}
-.brandbar .bsub{color:#E3EEFB; font-size:13px;}
+.brandbar .bsub{color:#E3EEFB; font-size:15px; letter-spacing:1px;}
 .brandbar .chip{background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22);
   padding:4px 12px; border-radius:999px; font-size:12px; margin-left:8px; font-family:'IBM Plex Mono',monospace;}
 .brandbar .chip.lemon{background:var(--lemon); color:var(--navy-900); border:none; font-weight:600;}
@@ -1152,9 +1206,12 @@ footer{display:none!important;}
 .grid{margin-top:-16px!important;}
 .detail{margin-top:-16px!important;}
 
-/* 模型卡 */
+/* 模型卡 — Gradio 把 elem_classes 同時掛在外層 block 與內層 .prose 上,
+   兩者都吃到 max-height+overflow 會出現「雙卷軸」→ 只讓外層 block 捲動,內層放開 */
 .card{background:#F8FBFF!important; border:1px solid var(--line); border-radius:12px;
   padding:10px 13px!important; margin-top:4px; font-size:12.5px; max-height:13vh; overflow:auto;}
+.card.prose{max-height:none!important; overflow:visible!important; padding:0!important; border:none!important;
+  background:transparent!important; margin-top:0!important; border-radius:0!important;}
 .card h3{font-family:'Space Grotesk',sans-serif; font-size:15px; margin:.1em 0 .5em; color:var(--navy-900);}
 .card code{background:var(--navy-100); color:var(--navy-700); padding:1px 7px; border-radius:6px; font-size:12px;}
 .card small{color:var(--muted);}
@@ -1231,11 +1288,38 @@ footer{display:none!important;}
 .cs-row:hover{background:var(--navy-100);}
 .cs-row.cs-sel-row{background:var(--lemon-soft)!important; box-shadow:inset 3px 0 0 var(--lemon);}
 .cs-empty{text-align:center; color:var(--muted); padding:18px!important;}
+/* 空狀態(尚未載入資料夾)— 置中、撐滿、給明確操作指引,避免一開啟整片空白 */
+.cs-empty-state{height:100%; min-height:120px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center; gap:8px; padding:20px; box-sizing:border-box;}
+.cs-empty-state .cs-es-ic{font-size:46px; line-height:1; opacity:.85;}
+.cs-empty-state .cs-es-t{font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; color:var(--navy-700);}
+.cs-empty-state .cs-es-s{font-size:13.5px; color:var(--muted); max-width:440px; line-height:1.6;}
+.cs-empty-state .cs-es-s b{color:var(--navy-700);}
 .cs-cls{width:100%; max-width:100%; font-size:12.5px; padding:2px 4px; cursor:pointer;
   border:1.5px solid var(--navy-500); border-radius:6px; background:#fff; color:var(--navy-700); font-weight:600;}
 .cs-cls:hover{border-color:var(--navy-700); background:var(--navy-100);}
 /* 隱藏 bridge 文字框 + 觸發鈕完全不佔位 */
 #cs-bridge, #cs-trigger{display:none!important;}
+
+/* 另存資料夾:檔名格式對話框(全頁遮罩 + 置中卡片) */
+.cs-modal-backdrop{position:fixed!important; inset:0!important; z-index:9999!important;
+  background:rgba(11,31,58,.45)!important; display:flex!important; align-items:center!important;
+  justify-content:center!important; padding:0!important; margin:0!important;}
+/* 尊重 Gradio visible=False 的 .hide(否則 display:flex!important 會讓遮罩關不掉) */
+.cs-modal-backdrop.hide{display:none!important;}
+.cs-modal-box{flex:0 0 auto!important; width:380px!important; max-width:92vw!important;
+  background:#fff!important; border:2px solid var(--navy-500)!important; border-radius:14px!important;
+  padding:20px 22px!important; gap:14px!important; box-shadow:0 18px 60px rgba(11,31,58,.45)!important;}
+.cs-modal-title{font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700; color:var(--navy-900);}
+.cs-modal-sub{font-size:12.5px; color:var(--muted); margin-top:2px;}
+.cs-fmt .wrap{flex-direction:column!important; gap:7px!important; flex-wrap:nowrap!important;}
+.cs-fmt label{border:1.5px solid var(--line)!important; background:#fff!important; border-radius:9px!important;
+  padding:9px 12px!important; color:var(--navy-700)!important; font-weight:600!important; cursor:pointer;
+  display:flex!important; align-items:center; gap:8px; box-shadow:none!important; margin:0!important;}
+.cs-fmt label:hover{background:var(--navy-100)!important; border-color:var(--navy-500)!important;}
+.cs-fmt label:has(input:checked){background:var(--lemon-soft)!important; border-color:var(--navy-500)!important;
+  box-shadow:inset 3px 0 0 var(--lemon)!important;}
+.cs-modal-actions{gap:10px!important; justify-content:flex-end!important;}
 
 /* 閾值 slider 檸檬黃 */
 .thr input[type=range]{accent-color:var(--lemon);}
@@ -1308,6 +1392,14 @@ ARROW_JS = """
   };
   // 點選:詳細資料列(分類下拉本身除外)→ 選列;圖示 → 記錄索引
   document.addEventListener('click', (e) => {
+    // 「＋」分頁:攔截(preventDefault 阻止 radio 選中)→ prompt 取名 → 經 bridge 新增自訂分類
+    const tab = e.target.closest ? e.target.closest('.tabstrip label') : null;
+    if (tab && tab.textContent.trim() === '＋') {
+      e.preventDefault(); e.stopPropagation();
+      const name = (window.prompt('輸入新分類名稱（自訂分頁）') || '').trim();
+      if (name) send({a: 'addpage', name: name});
+      return;
+    }
     if (e.target.closest && e.target.closest('.detail .cs-cls')) return;
     const row = e.target.closest ? e.target.closest('.detail .cs-row') : null;
     if (row) { selDetail(row); return; }
@@ -1413,6 +1505,17 @@ def build():
                 bridge_btn = gr.Button("bridge", elem_id="cs-trigger")
                 csv_out = gr.File(label="下載 CSV", visible=False)
 
+        # 另存資料夾:檔名格式對話框(覆蓋全頁、置中);按『另存』先跳此框,確認後才開資料夾選擇框
+        with gr.Column(visible=False, elem_classes="cs-modal-backdrop") as save_modal:
+            with gr.Column(elem_classes="cs-modal-box"):
+                gr.HTML('<div class="cs-modal-title">📁 另存資料夾 — 檔名格式</div>'
+                        '<div class="cs-modal-sub">選擇複製後的檔名命名方式（分類取自目前分頁／各檔指派）</div>')
+                save_fmt = gr.Radio([("分類_檔名", "c_n"), ("檔名_分類", "n_c"), ("檔名 (分類)", "n_pc")],
+                                    value="c_n", show_label=False, elem_classes="cs-fmt")
+                with gr.Row(elem_classes="cs-modal-actions"):
+                    save_cancel = gr.Button("取消", elem_classes="tbtn", scale=0)
+                    save_confirm = gr.Button("確認另存", elem_classes="tbtn accent", scale=0)
+
         gr.HTML(FOOTER_HTML)
 
         MODEL_OUT = [S, card_md, thr, page_radio, gallery, detail_html, count_md,
@@ -1421,7 +1524,7 @@ def build():
         COMPUTE_OUT = [S, page_radio, gallery, detail_html, count_md, preview_img, preview_meta]
         PANEL_OUT = [S, page_radio, gallery, detail_html, count_md]
         SELECT_OUT = [S, switch_dd, preview_img, preview_meta]
-        BRIDGE_OUT = [S, detail_html, page_radio, count_md, switch_dd, preview_img, preview_meta]
+        BRIDGE_OUT = [S, detail_html, gallery, page_radio, count_md, switch_dd, preview_img, preview_meta]
 
         disc_dd.change(on_disc, [disc_dd], [model_dd]).then(on_model, [model_dd, S], MODEL_OUT)
         model_dd.change(on_model, [model_dd, S], MODEL_OUT)
@@ -1433,7 +1536,9 @@ def build():
         btn_single.click(on_single, [model_dd, thr, S], COMPUTE_OUT)
         btn_apply.click(on_apply_thr, [thr, S], PANEL_OUT)
         btn_csv.click(on_csv, [model_dd, S], [csv_out])
-        btn_save.click(on_saveas, [S], None)
+        btn_save.click(on_saveas, [S], [save_modal])                       # 跳出檔名格式對話框
+        save_cancel.click(lambda: gr.update(visible=False), None, [save_modal])
+        save_confirm.click(on_saveas_confirm, [save_fmt, S], [save_modal])  # 確認 → 開資料夾選擇框並複製
         gallery.select(on_select, [S, model_dd, thr], SELECT_OUT)
         bridge_btn.click(on_bridge, [bridge, S, model_dd, thr], BRIDGE_OUT)  # 詳細資料 HTML 表的選列/改分類
         demo.load(on_model, [model_dd, S], MODEL_OUT)
