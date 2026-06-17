@@ -1168,13 +1168,15 @@ footer{display:none!important;}
 /* 頂部品牌列 */
 .brandbar{display:flex; justify-content:space-between; align-items:center;
   background:linear-gradient(100deg,var(--navy-900),var(--navy-700)); color:#fff;
-  padding:14px 22px; border-radius:14px; margin-bottom:14px;
+  padding:14px 22px; border-radius:14px; margin:0 -14px 14px -14px;
   box-shadow:0 6px 22px rgba(11,31,58,.20);}
-.brandbar .brand{display:flex; align-items:baseline; gap:16px;}
-.brandbar .logo{color:var(--lemon); font-size:28px; transform:translateY(2px);}
+.brandbar .brand{display:flex; align-items:center; gap:14px;}
+.brandbar .logo{color:var(--lemon); font-size:28px;}
+.brandbar .btext{display:inline-flex; flex-direction:column; align-items:stretch;}
 .brandbar .bt{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:36px; letter-spacing:3px;
-  color:var(--lemon)!important; text-shadow:0 1px 3px rgba(0,0,0,.30);}
-.brandbar .bsub{color:#E3EEFB; font-size:15px; letter-spacing:1px;}
+  color:var(--lemon)!important; text-shadow:0 1px 3px rgba(0,0,0,.30); line-height:1.05;}
+.brandbar .bsub{color:#E3EEFB; font-size:15px; letter-spacing:0;
+  text-align:justify; text-align-last:justify; margin-top:2px;}
 .brandbar .chip{background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22);
   padding:4px 12px; border-radius:999px; font-size:12px; margin-left:8px; font-family:'IBM Plex Mono',monospace;}
 .brandbar .chip.lemon{background:var(--lemon); color:var(--navy-900); border:none; font-weight:600;}
@@ -1220,6 +1222,20 @@ footer{display:none!important;}
 .preview{border-radius:12px!important; overflow:hidden; background:#fff; border:1px dashed var(--line)!important;
   height:29vh!important; min-height:140px!important;}
 .preview img{object-fit:contain!important;}
+/* 右上角「放大」(Fullscreen API)時填滿整個視窗 — 對 image-container / image-button / 整個 .preview 三種全螢幕目標都成立 */
+:fullscreen{width:100vw!important; height:100vh!important; max-height:100vh!important;
+  background:#0B1F3A!important; padding:0!important; border:none!important; border-radius:0!important;}
+:fullscreen .image-button, :fullscreen .image-frame{width:100%!important; height:100%!important; max-height:100vh!important;}
+:fullscreen img{width:100%!important; height:100%!important; max-width:100vw!important; max-height:100vh!important;
+  object-fit:contain!important;}
+/* 自製放大 lightbox(取代原生 fullscreen,保證布滿整頁) */
+.preview img{cursor:zoom-in;}
+.cs-lb{position:fixed!important; inset:0!important; z-index:100000!important; background:rgba(11,31,58,.96)!important;
+  display:none!important; align-items:center!important; justify-content:center!important; cursor:zoom-out!important;}
+.cs-lb.on{display:flex!important;}
+.cs-lb img{max-width:97vw!important; max-height:97vh!important; width:auto!important; height:auto!important;
+  object-fit:contain!important; border-radius:8px; box-shadow:0 12px 50px rgba(0,0,0,.65);}
+.cs-lb .cs-lb-hint{position:fixed; top:14px; right:18px; color:#cfe0f2; font-size:13px; opacity:.8;}
 .pmeta{font-size:13px; color:var(--ink); margin-top:8px; min-height:24px;}
 .pmeta strong{color:var(--navy-700);}
 
@@ -1231,10 +1247,12 @@ footer{display:none!important;}
   border:1px solid var(--line)!important; background:#fff!important; color:var(--navy-700)!important;
   font-weight:600!important; box-shadow:none!important; transition:transform .08s,box-shadow .12s;}
 .tbtn:hover{transform:translateY(-1px); box-shadow:0 4px 12px rgba(11,31,58,.12); border-color:var(--navy-500)!important;}
-.tbtn.primary{background:var(--navy-700)!important; color:#fff!important; border-color:var(--navy-700)!important;}
+.tbtn.primary{background:var(--navy-700)!important; color:var(--lemon)!important; border-color:var(--navy-700)!important;}
 .tbtn.primary:hover{background:var(--navy-900)!important;}
 .tbtn.accent{background:var(--lemon)!important; color:var(--navy-900)!important; border-color:var(--lemon)!important;}
 .tbtn.accent:hover{box-shadow:0 4px 14px rgba(255,205,0,.45);}
+.tbtn.navy2{background:var(--navy-500)!important; color:#fff!important; border-color:var(--navy-500)!important;}
+.tbtn.navy2:hover{background:var(--navy-700)!important;}
 .switch{min-width:200px!important; flex:0 0 auto!important;}
 
 .subbar{gap:10px!important; align-items:center; margin:4px 0;}
@@ -1252,6 +1270,9 @@ footer{display:none!important;}
 .tabstrip label:hover{background:var(--navy-100)!important; color:var(--navy-700)!important; border-color:var(--navy-700)!important;}
 .tabstrip label:has(input:checked){background:var(--navy-700)!important; color:#fff!important;
   border-color:var(--navy-700)!important; box-shadow:inset 0 -3px 0 var(--lemon)!important;}
+/* 「＋」自訂分類分頁:字放大一點 + 內容置中 */
+.tabstrip label:has(input[value="__cs_add__"]){font-size:20px!important; font-weight:700!important; line-height:1!important;
+  padding:5px 13px!important; display:inline-flex!important; align-items:center!important; justify-content:center!important;}
 
 /* 檢視切換 */
 .viewseg .wrap{gap:0!important;}
@@ -1339,7 +1360,8 @@ def panel_head(tag, en, sub):
 
 BRAND_HTML = (
     '<div class="brandbar"><div class="brand"><span class="logo">◉</span>'
-    '<span class="bt">ClinScope</span><span class="bsub">臨床顯微辨識工作台</span></div>'
+    '<span class="btext"><span class="bt">ClinScope</span>'
+    '<span class="bsub">臨床顯微辨識工作台</span></span></div>'
     f'<div><span class="chip">⚙ {DEVICE.type.upper()}</span>'
     f'<span class="chip lemon">{len(AVAILABLE)} 模型</span></div></div>')
 
@@ -1446,6 +1468,47 @@ ARROW_JS = """
     items[i].scrollIntoView({block: 'nearest'});
     e.preventDefault();
   });
+  // ===== 圖片放大 lightbox(取代原生 fullscreen,確保布滿整頁) =====
+  const lbEl = () => {
+    let el = document.querySelector('.cs-lb');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'cs-lb';
+      el.innerHTML = '<span class="cs-lb-hint">點任意處 / ESC 關閉</span><img alt="">';
+      document.body.appendChild(el);
+      el.addEventListener('click', () => el.classList.remove('on'));
+    }
+    return el;
+  };
+  window.csOpenLB = (src) => { if (!src) return; const el = lbEl(); el.querySelector('img').src = src; el.classList.add('on'); };
+  // 攔截「點圖本身」與原生「右上角放大鈕」(aria-label Fullscreen),一律改開自製 lightbox
+  // —— 在 capture 階段攔住,不讓 Gradio 的 requestFullscreen 跑(它在某些瀏覽器會失敗→只半放大卡在上方)
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest) return;
+    const btn = e.target.closest('button, a');
+    if (btn && btn.closest('.preview') && /ullscreen/i.test(btn.getAttribute('aria-label') || btn.getAttribute('title') || '')) {
+      e.preventDefault(); e.stopPropagation();
+      const img = document.querySelector('.preview img');
+      if (img && img.src) window.csOpenLB(img.src);
+      return;
+    }
+    const img = e.target.closest('.preview img');
+    if (img && img.src) { e.preventDefault(); e.stopPropagation(); window.csOpenLB(img.src); }
+  }, true);
+  // 後備:萬一原生全螢幕真的進去了,也退出改用 lightbox
+  document.addEventListener('fullscreenchange', () => {
+    const fe = document.fullscreenElement;
+    if (fe && fe.closest && fe.closest('.preview')) {
+      const img = fe.querySelector('img') || document.querySelector('.preview img');
+      const src = img && img.src;
+      if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+      if (src) window.csOpenLB(src);
+    }
+  });
+  // ESC 關閉
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { const el = document.querySelector('.cs-lb.on'); if (el) el.classList.remove('on'); }
+  });
 }
 """
 
@@ -1485,7 +1548,7 @@ def build():
                     view_dd = gr.Dropdown(["👁 詳細資料", "👁 圖示"], value="👁 詳細資料",
                                           show_label=False, container=False, elem_classes="shortdd")
                     btn_batch = gr.Button("▶ 批次計算", elem_classes="tbtn primary", scale=0)
-                    btn_single = gr.Button("◉ 單張計算", elem_classes="tbtn accent", scale=0)
+                    btn_single = gr.Button("◉ 單張計算", elem_classes="tbtn navy2", scale=0)
                     switch_dd = gr.Dropdown([SW_PLACEHOLDER], value=SW_PLACEHOLDER, show_label=False,
                                             container=False, interactive=False, elem_classes="shortdd")
                     btn_apply = gr.Button("⚖️ 套用門檻", elem_classes="tbtn", scale=0)
