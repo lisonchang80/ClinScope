@@ -1,0 +1,33 @@
+# ClinScope runtime 子集（打包用）— 僅前端 + 推論需要的依賴。
+# 對照 ../requirements.txt（含訓練/資料管線）；此檔刻意不含 kaggle/gdown/datasets/pyarrow/opencv 等 prep-only 套件。
+#
+# 預設 CPU-only torch（最易安裝、不依賴顯卡驅動）。安裝：
+#   pip install -r packaging/requirements-runtime.txt
+# 版本於 B4（乾淨 venv 凍結測試）再鎖死；目前給下限 + CPU wheel index。
+
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# --- 深度學習 runtime（CPU 版）---
+torch==2.6.0
+torchvision==0.21.0
+
+# --- 前端 ---
+gradio>=6.0
+pywebview>=5.0            # B3 原生桌面視窗（失敗自動退回瀏覽器）
+
+# --- 影像 / 數值 ---
+numpy
+pillow
+
+# --- 偵測引擎 ---
+ultralytics              # YOLOv8 det
+sahi                     # 切片推論（puma 等 SAHI track）
+
+# --- 病理 FM 引擎（Phikon-v2 frozen 特徵 + sklearn head）---
+transformers
+timm
+scikit-learn
+joblib
+
+# --- 權重 lazy download ---
+huggingface_hub

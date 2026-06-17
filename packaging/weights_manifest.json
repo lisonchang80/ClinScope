@@ -1,0 +1,542 @@
+{
+  "models/resnet50_fungi.pt": {
+    "hf_path": "models/resnet50_fungi.pt",
+    "sha256": "d7560f8aa1d72171a8d947fd4ef02afedacf2945377bd382b5b37e3b65e5fcdd",
+    "size_mb": 94.4,
+    "bytes": 94401486
+  },
+  "models/defungi_resnet50.pt": {
+    "hf_path": "models/defungi_resnet50.pt",
+    "sha256": "ccfd9c61c5903b4f4424cbea4369df5240a30360bdfdbf35d1d259fc2d37bf1c",
+    "size_mb": 94.4,
+    "bytes": 94393814
+  },
+  "models/malaria_resnet50.pt": {
+    "hf_path": "models/malaria_resnet50.pt",
+    "sha256": "bf3410b121e790e49afc8e6022ae789a560be46e00df8582ef81a48614c49bc8",
+    "size_mb": 94.4,
+    "bytes": 94369238
+  },
+  "models/parasite_egg_resnet50.pt": {
+    "hf_path": "models/parasite_egg_resnet50.pt",
+    "sha256": "7a4572ee65f18b76c6c3194fc4e075b49664655b333723b50868722653fa7ba8",
+    "size_mb": 94.4,
+    "bytes": 94444842
+  },
+  "models/pbc_resnet50.pt": {
+    "hf_path": "models/pbc_resnet50.pt",
+    "sha256": "5858f3202dcda07fac3524aef1eb0dfb8cdd33604d965a161b47173598d232aa",
+    "size_mb": 94.4,
+    "bytes": 94417158
+  },
+  "models/bonemarrow_resnet50.pt": {
+    "hf_path": "models/bonemarrow_resnet50.pt",
+    "sha256": "851965f5e24e62344067a2e5c88bab9af4e78922327cd20259f8f73a81904e4e",
+    "size_mb": 94.5,
+    "bytes": 94526114
+  },
+  "models/dibas_resnet50.pt": {
+    "hf_path": "models/dibas_resnet50.pt",
+    "sha256": "046a9ff37675c5fe59e2bec9ec4f97616564c228861653a375e3772515b5c6ca",
+    "size_mb": 94.6,
+    "bytes": 94623630
+  },
+  "models/hep2_resnet50.pt": {
+    "hf_path": "models/hep2_resnet50.pt",
+    "sha256": "8878d6936a97e63efe64e4cb98cd1fe29f90d590a869b8e0f26d248e0206ce4c",
+    "size_mb": 94.4,
+    "bytes": 94401098
+  },
+  "models/sipakmed_resnet50.pt": {
+    "hf_path": "models/sipakmed_resnet50.pt",
+    "sha256": "bfff0e1917c76528d047073bd130d86fa8f51da37d937f2820fb2350b878855f",
+    "size_mb": 94.4,
+    "bytes": 94394202
+  },
+  "models/smids_resnet50.pt": {
+    "hf_path": "models/smids_resnet50.pt",
+    "sha256": "1d98543a913a36503d104dcc5dfb3b11b4717f95c57f3c94ae63c5613b733126",
+    "size_mb": 94.4,
+    "bytes": 94376782
+  },
+  "reports/yolo/bccd/weights/best.pt": {
+    "hf_path": "reports/yolo/bccd/weights/best.pt",
+    "sha256": "1403682e3ab508fcdb6712c6311eb11dcec46e577bc823ba9a0dd4f6e2d90b48",
+    "size_mb": 22.5,
+    "bytes": 22505955
+  },
+  "models/lc25000_resnet50.pt": {
+    "hf_path": "models/lc25000_resnet50.pt",
+    "sha256": "b51ef9ff19c2379c8b2281febae7e80eb892fcf4943ee5e3e6a5bd19e629e340",
+    "size_mb": 94.4,
+    "bytes": 94393814
+  },
+  "models/breakhis_resnet50.pt": {
+    "hf_path": "models/breakhis_resnet50.pt",
+    "sha256": "f698641ec634b0117001a896f97a6bad7ca604d06bd381a85f3d5870fa5f810e",
+    "size_mb": 94.4,
+    "bytes": 94370534
+  },
+  "models/nct_crc_resnet50.pt": {
+    "hf_path": "models/nct_crc_resnet50.pt",
+    "sha256": "a74e3a51e1496bc21e2eedd04b070ab3d51c340c4c6bcfe0f0ed255330b22ec5",
+    "size_mb": 94.4,
+    "bytes": 94426646
+  },
+  "models/pcam_resnet50.pt": {
+    "hf_path": "models/pcam_resnet50.pt",
+    "sha256": "a69830adbc1a8512791fa15434f33cc88f189c2d64b04aec497ccec509e7a399",
+    "size_mb": 94.4,
+    "bytes": 94368266
+  },
+  "models/mhist_resnet50.pt": {
+    "hf_path": "models/mhist_resnet50.pt",
+    "sha256": "c6240ffb27d9439bf7cc4be4c56cd84add28ad060df816d85201bdc96fa64cfd",
+    "size_mb": 94.4,
+    "bytes": 94368590
+  },
+  "models/thyroid_cyto_resnet50.pt": {
+    "hf_path": "models/thyroid_cyto_resnet50.pt",
+    "sha256": "d244b1d2496943d63f7fbc29596a6aced5cb48116288d38635a587e1748aafd5",
+    "size_mb": 94.4,
+    "bytes": 94402978
+  },
+  "reports/yolo/mitosis/weights/best.pt": {
+    "hf_path": "reports/yolo/mitosis/weights/best.pt",
+    "sha256": "c9dfe812fd1870c9f67bd35009802cd4bf4bbb961b6019bae72e92678fcd2ef9",
+    "size_mb": 22.5,
+    "bytes": 22521955
+  },
+  "models/husem_resnet50.pt": {
+    "hf_path": "models/husem_resnet50.pt",
+    "sha256": "ca1f6933a7bc1bea1131fcd3867cf478db288a4262cc613fc3ce90f4baaa7f34",
+    "size_mb": 94.4,
+    "bytes": 94384974
+  },
+  "models/rbc_morphology_resnet50.pt": {
+    "hf_path": "models/rbc_morphology_resnet50.pt",
+    "sha256": "038a2385342060fd677c04d10816fbe6910d7b25adef5e6f54ca1a9bf5fd6030",
+    "size_mb": 94.4,
+    "bytes": 94445490
+  },
+  "models/cnmc_leukemia_resnet50.pt": {
+    "hf_path": "models/cnmc_leukemia_resnet50.pt",
+    "sha256": "d7859884a76a57692faafb22e6354f4397ce57375b881a93f92dbe98017a8b1a",
+    "size_mb": 94.4,
+    "bytes": 94371246
+  },
+  "models/mpidb_species_resnet50.pt": {
+    "hf_path": "models/mpidb_species_resnet50.pt",
+    "sha256": "1ba8d875ccd831431c7cebacf89058ac4ab96677b9cdbe6aa44b5089da4a2d01",
+    "size_mb": 94.4,
+    "bytes": 94385946
+  },
+  "models/erythrocytes_idb_resnet50.pt": {
+    "hf_path": "models/erythrocytes_idb_resnet50.pt",
+    "sha256": "6b0bbbeb77ae33fdad85be2daf544f0f64993c0e890944b1268f1fcb56037906",
+    "size_mb": 94.4,
+    "bytes": 94380410
+  },
+  "reports/yolo/pannuke/weights/best.pt": {
+    "hf_path": "reports/yolo/pannuke/weights/best.pt",
+    "sha256": "ed8f44edebc6216d29500e794775315407926559b2ff3d9514a5cef5059d96aa",
+    "size_mb": 22.5,
+    "bytes": 22476003
+  },
+  "models/univali_leukocyte_resnet50.pt": {
+    "hf_path": "models/univali_leukocyte_resnet50.pt",
+    "sha256": "828c647e3f36255e75728f9f8bcd4e43995c4b3fc3180cae79c67ce9a840ab61",
+    "size_mb": 94.5,
+    "bytes": 94471166
+  },
+  "models/bach_resnet50.pt": {
+    "hf_path": "models/bach_resnet50.pt",
+    "sha256": "dc3bbeb49cceafedb55668354f11af9139a9b878d23edc1998bfa36d9e62609e",
+    "size_mb": 94.4,
+    "bytes": 94384650
+  },
+  "models/pathotiroid_resnet50.pt": {
+    "hf_path": "models/pathotiroid_resnet50.pt",
+    "sha256": "cd2d71ff56e1daf99a45f643c190544acfeba45b125b5e28d5f26050c458ec44",
+    "size_mb": 94.4,
+    "bytes": 94370534
+  },
+  "reports/yolo/urine/weights/best.pt": {
+    "hf_path": "reports/yolo/urine/weights/best.pt",
+    "sha256": "6a56c9d7806b89e5e44da352a6bb8605f0af8bec9497e16deddc906c141b36b1",
+    "size_mb": 22.5,
+    "bytes": 22510883
+  },
+  "models/mll23_resnet50.pt": {
+    "hf_path": "models/mll23_resnet50.pt",
+    "sha256": "36cbe3907edb8eaa780f05c6d1450d739b1ebf22b15359e4bd3a0ccf3de2b70c",
+    "size_mb": 94.5,
+    "bytes": 94500110
+  },
+  "models/rouleaux_resnet50.pt": {
+    "hf_path": "models/rouleaux_resnet50.pt",
+    "sha256": "7ee1e719e1edbc1be0d02a1c20159c8be4efbbf5c5eadf313b77e30c93ad82e6",
+    "size_mb": 94.4,
+    "bytes": 94369562
+  },
+  "models/mk11_resnet50.pt": {
+    "hf_path": "models/mk11_resnet50.pt",
+    "sha256": "25e90ea284da945aefd6800cbd7d4a8d0202e73b98ccee14761940b91b29e9a7",
+    "size_mb": 94.4,
+    "bytes": 94442122
+  },
+  "reports/yolo/tryp/weights/best.pt": {
+    "hf_path": "reports/yolo/tryp/weights/best.pt",
+    "sha256": "515d78b4d13d517fa2897d4f17fa301024b60c628801033695b4b4b41ffa8299",
+    "size_mb": 22.5,
+    "bytes": 22519331
+  },
+  "models/patchgastric_resnet50.pt": {
+    "hf_path": "models/patchgastric_resnet50.pt",
+    "sha256": "e0f27b71e5892bddc412c4a14a367034ed01025fc6a494d199c934dcda1fb1f0",
+    "size_mb": 94.4,
+    "bytes": 94387242
+  },
+  "models/ipdbrain_resnet50.pt": {
+    "hf_path": "models/ipdbrain_resnet50.pt",
+    "sha256": "85abbdffd18590851284fa8d2e91a0f6e08c8dfd8950ea0a37461c246112c62a",
+    "size_mb": 94.4,
+    "bytes": 94377754
+  },
+  "models/blood_protozoa_resnet50.pt": {
+    "hf_path": "models/blood_protozoa_resnet50.pt",
+    "sha256": "a4d55773ce1e6ddaa328e7ad353530f605377fa49eb6b5383d84f063d8c20dc2",
+    "size_mb": 94.4,
+    "bytes": 94379762
+  },
+  "models/chromosome_resnet50.pt": {
+    "hf_path": "models/chromosome_resnet50.pt",
+    "sha256": "300c8735b5043e02ea519d1a600c0b23cc2b6a40cc89c89233bff3a76971365c",
+    "size_mb": 94.6,
+    "bytes": 94550754
+  },
+  "models/her2ihc_resnet50.pt": {
+    "hf_path": "models/her2ihc_resnet50.pt",
+    "sha256": "afe82a9c256433854c423743fd97aa7a28f4ccd457b4c12cbfa59a2a97954e7d",
+    "size_mb": 94.4,
+    "bytes": 94385622
+  },
+  "reports/yolo/parasitobank/weights/best.pt": {
+    "hf_path": "reports/yolo/parasitobank/weights/best.pt",
+    "sha256": "347fb40c344a0ebf6099022332587853b65f5e9d4b066d10ec4b91b25b52a6e2",
+    "size_mb": 22.5,
+    "bytes": 22529955
+  },
+  "reports/yolo/bbbc041/weights/best.pt": {
+    "hf_path": "reports/yolo/bbbc041/weights/best.pt",
+    "sha256": "90ca0ff33e9be971e4bec500e93d2cf843c50177439098cb7354cdfa7659a817",
+    "size_mb": 22.5,
+    "bytes": 22502627
+  },
+  "reports/yolo/mrose/weights/best.pt": {
+    "hf_path": "reports/yolo/mrose/weights/best.pt",
+    "sha256": "3215024bcad69ce0be35e1e0dbe22f2ce95ab5be58475a2fa0c9972be9035b6e",
+    "size_mb": 22.5,
+    "bytes": 22522787
+  },
+  "reports/yolo/dataset19/weights/best.pt": {
+    "hf_path": "reports/yolo/dataset19/weights/best.pt",
+    "sha256": "558205092e95dcbc2b63c2a80e5efe5fac4cecaee843e864a690e96bc0d0a391",
+    "size_mb": 22.5,
+    "bytes": 22522851
+  },
+  "reports/yolo/leishmania/weights/best.pt": {
+    "hf_path": "reports/yolo/leishmania/weights/best.pt",
+    "sha256": "162a1697d1b0b368c07aa74c8716ef2d95092727de4ffc4e58761d379a4eb0e8",
+    "size_mb": 22.5,
+    "bytes": 22503779
+  },
+  "reports/yolo/giardia/weights/best.pt": {
+    "hf_path": "reports/yolo/giardia/weights/best.pt",
+    "sha256": "892236576b57b768603dd812dd84924bf21c5e3c0239bf5d7388cb4385c4a3ee",
+    "size_mb": 22.5,
+    "bytes": 22509539
+  },
+  "models/kupbc13_resnet50.pt": {
+    "hf_path": "models/kupbc13_resnet50.pt",
+    "sha256": "aa57d5c1fe375ea6e00fdf55977f99bc5a4d2661420f1448bd10cdbcba5fcecd",
+    "size_mb": 94.5,
+    "bytes": 94459606
+  },
+  "models/mdsbm27_resnet50.pt": {
+    "hf_path": "models/mdsbm27_resnet50.pt",
+    "sha256": "b2b89f5c73e504d99ce016f451c513e8c1f14d4bebf6668411d387c3e30c68c2",
+    "size_mb": 94.6,
+    "bytes": 94591190
+  },
+  "models/sicap_resnet50.pt": {
+    "hf_path": "models/sicap_resnet50.pt",
+    "sha256": "e9ad41a4a1a274f0d05442bf8fc1bfceb992d5e88915e9a2b72261c59a46b113",
+    "size_mb": 94.4,
+    "bytes": 94384974
+  },
+  "reports/yolo/sbsd/weights/best.pt": {
+    "hf_path": "reports/yolo/sbsd/weights/best.pt",
+    "sha256": "4957467ceab0f7c875c6d0ba394e04ba6ebd0fb23e6922bb639310fc61cea20b",
+    "size_mb": 22.5,
+    "bytes": 22507363
+  },
+  "reports/yolo/evisan/weights/best.pt": {
+    "hf_path": "reports/yolo/evisan/weights/best.pt",
+    "sha256": "7f4935ad9c32514f04b71796918b90e38eec4a61dda66f117b0f81823ababa10",
+    "size_mb": 22.5,
+    "bytes": 22506723
+  },
+  "reports/yolo/bcg/weights/best.pt": {
+    "hf_path": "reports/yolo/bcg/weights/best.pt",
+    "sha256": "715d28790e7d5ff5b9f555af960b25cda05507008680e9b9382e0a850e44afb9",
+    "size_mb": 22.5,
+    "bytes": 22503331
+  },
+  "reports/yolo/puma/weights/best.pt": {
+    "hf_path": "reports/yolo/puma/weights/best.pt",
+    "sha256": "bb9eb4918bf9ba4e8b0976d70c55ccaf306a17c1f2a9c0925fa9c6a5199ad86f",
+    "size_mb": 22.5,
+    "bytes": 22531747
+  },
+  "reports/yolo/tb_det/weights/best.pt": {
+    "hf_path": "reports/yolo/tb_det/weights/best.pt",
+    "sha256": "de4aff6ffefb1a2efc3183d9eb0ee6444a97b052b8da63c9dba29df2fd2d59e4",
+    "size_mb": 22.5,
+    "bytes": 22505123
+  },
+  "models/tb_cls_resnet50.pt": {
+    "hf_path": "models/tb_cls_resnet50.pt",
+    "sha256": "fa40fb48a26647ceac7aaa9832f70e34a583dfc8721de600b41964cdabba3e50",
+    "size_mb": 94.4,
+    "bytes": 94368914
+  },
+  "reports/yolo/nuinsseg/weights/best.pt": {
+    "hf_path": "reports/yolo/nuinsseg/weights/best.pt",
+    "sha256": "5083b1b85bdf7093af4513822e1ba52d8155a7f7c57b25bd3514e2a4cd8d3db0",
+    "size_mb": 22.5,
+    "bytes": 22521571
+  },
+  "models/effusion_resnet50.pt": {
+    "hf_path": "models/effusion_resnet50.pt",
+    "sha256": "1e67638d88ad9b05ce7c4ce0c3fef885e827f3e3caa5d1a376bdfa28f47afd99",
+    "size_mb": 94.4,
+    "bytes": 94369562
+  },
+  "models/msi_resnet50.pt": {
+    "hf_path": "models/msi_resnet50.pt",
+    "sha256": "10a706c4c92448f0c2082f1fb1d9d2225e4e0111c6a963618041a8b7525ab5cd",
+    "size_mb": 94.4,
+    "bytes": 94367942
+  },
+  "models/orchid_resnet50.pt": {
+    "hf_path": "models/orchid_resnet50.pt",
+    "sha256": "f8a494624f299c18ab829a6383839af74ce930f1779aea0616f63fcadc6ea6b3",
+    "size_mb": 94.4,
+    "bytes": 94393490
+  },
+  "reports/yolo/kidney/weights/best.pt": {
+    "hf_path": "reports/yolo/kidney/weights/best.pt",
+    "sha256": "730a40eaa10b23e0adfe2a9ed44162384fe95fc996ded28ef6c5d80bab12da09",
+    "size_mb": 22.5,
+    "bytes": 22524451
+  },
+  "models/mihic_resnet50.pt": {
+    "hf_path": "models/mihic_resnet50.pt",
+    "sha256": "a852f6a5931acea2032c23ecd7b2acb9b6921c5cb30ee2b3ffb939043f0aec23",
+    "size_mb": 94.4,
+    "bytes": 94409614
+  },
+  "reports/yolo/tvmi3k/weights/best.pt": {
+    "hf_path": "reports/yolo/tvmi3k/weights/best.pt",
+    "sha256": "1a3d4aa2599e8b9c31ab530245f091c2c10d25cf1c9a2c969435dd708682d5b7",
+    "size_mb": 22.5,
+    "bytes": 22498083
+  },
+  "reports/yolo/koh/weights/best.pt": {
+    "hf_path": "reports/yolo/koh/weights/best.pt",
+    "sha256": "4b319814cb3a1ba14dc2cd178c39efb896b5b74f99b5180b240c4f6a76d13b7c",
+    "size_mb": 22.5,
+    "bytes": 22508643
+  },
+  "models/tcga_resnet50.pt": {
+    "hf_path": "models/tcga_resnet50.pt",
+    "sha256": "b40be1c8d4db33c58a9e1aad7e7a24c10a2272e575878090f511ca8f86213cb0",
+    "size_mb": 94.4,
+    "bytes": 94368266
+  },
+  "models/placenta_resnet50.pt": {
+    "hf_path": "models/placenta_resnet50.pt",
+    "sha256": "4560c68ed40d39e3988ef5a3dce9286ffbf1a6e996d96751e056d005459537f2",
+    "size_mb": 94.4,
+    "bytes": 94426970
+  },
+  "models/tanzania_resnet50.pt": {
+    "hf_path": "models/tanzania_resnet50.pt",
+    "sha256": "a4dd19ef30bf95b62627e309b5499753d8a8d34c907a73dd9f858971805b5926",
+    "size_mb": 94.4,
+    "bytes": 94386010
+  },
+  "reports/yolo/riva/weights/best.pt": {
+    "hf_path": "reports/yolo/riva/weights/best.pt",
+    "sha256": "ce982033a5e654c367106dbe0eb56e1e12a6d95fe4fab159c077ba8bb2378dd9",
+    "size_mb": 22.5,
+    "bytes": 22524259
+  },
+  "models/csf_resnet50.pt": {
+    "hf_path": "models/csf_resnet50.pt",
+    "sha256": "60bddb7dfbe0a585e3fe90c07fe420b3c67aa13e1ab6bde32330ab66ad87f920",
+    "size_mb": 94.5,
+    "bytes": 94483014
+  },
+  "models/ivcm_resnet50.pt": {
+    "hf_path": "models/ivcm_resnet50.pt",
+    "sha256": "2fb187204ad32ee963fa694c59214bbfaf35ff74ebbb06adb88d9e9acfd4801c",
+    "size_mb": 94.4,
+    "bytes": 94384650
+  },
+  "reports/yolo/cryonuseg/weights/best.pt": {
+    "hf_path": "reports/yolo/cryonuseg/weights/best.pt",
+    "sha256": "4e00cbbd9108af2676d9c036b2e2b8bce17ebf31edf02ee036f136d540ed0746",
+    "size_mb": 22.5,
+    "bytes": 22524451
+  },
+  "models/blastocyst_resnet50.pt": {
+    "hf_path": "models/blastocyst_resnet50.pt",
+    "sha256": "a968a057555a9266dd991deb0918d514e32dc700cca0b90bf9d855dbaa4ede39",
+    "size_mb": 94.4,
+    "bytes": 94394786
+  },
+  "models/thalassemia_resnet50.pt": {
+    "hf_path": "models/thalassemia_resnet50.pt",
+    "sha256": "82326aeb93b258ecf46e1d1f1cdddf2f31dc13d9282cae338007c34fdfd219d3",
+    "size_mb": 94.4,
+    "bytes": 94428006
+  },
+  "models/osteosarcoma_resnet50.pt": {
+    "hf_path": "models/osteosarcoma_resnet50.pt",
+    "sha256": "5432b0ed0258e2995caa873bf2cb37d0ea43676a7bbe4392a90991ef4fa05766",
+    "size_mb": 94.4,
+    "bytes": 94379050
+  },
+  "models/breast_idc_resnet50.pt": {
+    "hf_path": "models/breast_idc_resnet50.pt",
+    "sha256": "f98ce08fe2663a50b2caac8d75396cb4e8994b7ba52d335bb66f3fc03fc856f7",
+    "size_mb": 94.4,
+    "bytes": 94378402
+  },
+  "models/sperm_dfi_resnet50.pt": {
+    "hf_path": "models/sperm_dfi_resnet50.pt",
+    "sha256": "c557394c1295c777ce4fa25801bbdd802627d815259fb10c624dd69b9159d682",
+    "size_mb": 94.4,
+    "bytes": 94386270
+  },
+  "models/ebhi_seg_resnet50.pt": {
+    "hf_path": "models/ebhi_seg_resnet50.pt",
+    "sha256": "f93d6eebf8debe6b56eeb4ec095f0604e537a59c457d9952db98fafe4ed31d4e",
+    "size_mb": 94.4,
+    "bytes": 94402394
+  },
+  "reports/yolo/autokary2022/weights/best.pt": {
+    "hf_path": "reports/yolo/autokary2022/weights/best.pt",
+    "sha256": "e29f998f0ad8b903e0c2c70b2c758d8a0b2475973d7174c95575a0c336142233",
+    "size_mb": 22.5,
+    "bytes": 22526627
+  },
+  "reports/yolo/tcruzi_chagas/weights/best.pt": {
+    "hf_path": "reports/yolo/tcruzi_chagas/weights/best.pt",
+    "sha256": "6f2d6a281d9896f505b4c98b0daf3c02505e267bc855b4fd076873de2f2552d6",
+    "size_mb": 22.5,
+    "bytes": 22507171
+  },
+  "models/ubc_ocean_resnet50.pt": {
+    "hf_path": "models/ubc_ocean_resnet50.pt",
+    "sha256": "9d9cde1c55683d61e62635d9e9554778ec80643ca7ca9ac8ab1a11274db35817",
+    "size_mb": 94.4,
+    "bytes": 94394462
+  },
+  "models/ubc_ocean_fmprobe.joblib": {
+    "hf_path": "models/ubc_ocean_fmprobe.joblib",
+    "sha256": "f6ea2dd71a56ce9330ff84d47fffaf969a85cd066b940232f1ed98056778b7aa",
+    "size_mb": 0.0,
+    "bytes": 46495
+  },
+  "models/bracs_resnet50.pt": {
+    "hf_path": "models/bracs_resnet50.pt",
+    "sha256": "6b5a6f7c6db29b37dbb461f7e938d45bb80febd89f2762ad9d684aebe2e37918",
+    "size_mb": 94.4,
+    "bytes": 94409614
+  },
+  "reports/yolo/segpc/weights/best.pt": {
+    "hf_path": "reports/yolo/segpc/weights/best.pt",
+    "sha256": "217e61055656f8a5db2a987485a4845f9eb157c78a5dcec30885be696b4cebcd",
+    "size_mb": 22.5,
+    "bytes": 22507491
+  },
+  "models/hmu_gc_resnet50.pt": {
+    "hf_path": "models/hmu_gc_resnet50.pt",
+    "sha256": "8a3a13ed77bd4af27c4d445a98ace2fcc30100e78058959c9371de5188c0c0df",
+    "size_mb": 94.4,
+    "bytes": 94418130
+  },
+  "models/glomeruli_char_resnet50.pt": {
+    "hf_path": "models/glomeruli_char_resnet50.pt",
+    "sha256": "84546fc9d918584b4a75a11b77b7f86df08143e7a982b3127a49595a619b0199",
+    "size_mb": 94.4,
+    "bytes": 94371570
+  },
+  "models/vet_egg_resnet50.pt": {
+    "hf_path": "models/vet_egg_resnet50.pt",
+    "sha256": "d100d8bd07a880925ff97bc80e30a10be7477ac398125d018188edbaf744c6ad",
+    "size_mb": 94.4,
+    "bytes": 94402070
+  },
+  "models/openfungi_resnet50.pt": {
+    "hf_path": "models/openfungi_resnet50.pt",
+    "sha256": "47b3c852893fc7094a385e444648e9b20e7755f9bf9e4b1a26cc68c4d369e9be",
+    "size_mb": 94.4,
+    "bytes": 94402782
+  },
+  "reports/yolo/ufsc/weights/best.pt": {
+    "hf_path": "reports/yolo/ufsc/weights/best.pt",
+    "sha256": "24d59e87bd31f9e861ffa0a56a92e50a116d49735424e579ae01bfe0cdbb24f4",
+    "size_mb": 22.5,
+    "bytes": 22527459
+  },
+  "models/parasites_resnet50.pt": {
+    "hf_path": "models/parasites_resnet50.pt",
+    "sha256": "159f1e2315927e487ec115e575d11fadf903901c979f4158edb92bacb5522034",
+    "size_mb": 94.4,
+    "bytes": 94419166
+  },
+  "reports/yolo/oral_cyto/weights/best.pt": {
+    "hf_path": "reports/yolo/oral_cyto/weights/best.pt",
+    "sha256": "ec401fbf27c3e16c5045ba8f5981c04b89cd8be8d01e289b0a5c98000faee6a3",
+    "size_mb": 22.5,
+    "bytes": 22517923
+  },
+  "reports/yolo/uti_urine/weights/best.pt": {
+    "hf_path": "reports/yolo/uti_urine/weights/best.pt",
+    "sha256": "634e5223ac6e77e8268ab6edcd062354ea5fb44b6ccd26504f86bd1f4a28d38d",
+    "size_mb": 22.5,
+    "bytes": 22507363
+  },
+  "reports/yolo/balf/weights/best.pt": {
+    "hf_path": "reports/yolo/balf/weights/best.pt",
+    "sha256": "1d44f5c591a8c3f8139c19d9bcd17f509edafdc3ba8b7e946d3eafd0c077cc7f",
+    "size_mb": 22.5,
+    "bytes": 22510051
+  },
+  "reports/yolo/midog/weights/best.pt": {
+    "hf_path": "reports/yolo/midog/weights/best.pt",
+    "sha256": "a54c3a4ec786a0a7a6880cb846608ce097aabfeb5282f85fe2e2cbb2a8169b62",
+    "size_mb": 22.5,
+    "bytes": 22472227
+  },
+  "models/caishi_resnet50.pt": {
+    "hf_path": "models/caishi_resnet50.pt",
+    "sha256": "15eba4e52d9a37e2c271e2f3f0ca8c679619ddf82b0ac03cc7afabdc1c69d1eb",
+    "size_mb": 94.4,
+    "bytes": 94368914
+  }
+}

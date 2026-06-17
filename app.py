@@ -42,6 +42,9 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 ROOT = Path(__file__).resolve().parent
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+_sys.path.insert(0, str(ROOT / "src"))
+import weights as W          # 權重 lazy-download resolver(本機有→passthrough;缺→抓 HF) 見 docs/DEPLOY_PLAN.md
+
 # --- model registry: one entry per track -----------------------------------
 REGISTRY = [
     {"key": "fungi", "kind": "cls",
@@ -408,7 +411,7 @@ REGISTRY = [
      "blurb": "組織病理(子宮頸腺體 AIS,別於既有 pap/RIVA 子宮頸「細胞學」):子宮頸腺癌原位 H&E 組織病理二分類 — 正常腺體 Normal / 腺癌原位 Abnormal(AIS)。ResNet-50 val_acc 0.982 / macro-F1 0.982(Abnormal precision 1.00、recall 0.97;Normal recall 1.00)。AIS 是子宮頸腺癌前驅病變,組織學上易與良性腺體混淆,自動篩檢有臨床意義。train 1905 / val 337(Normal 1011 + Abnormal 1231 圖)。⚠️ 子宮頸器官與既有 pap/riva 重疊,但本 track 是腺體「組織病理」AIS(任務/模態不同於細胞學抹片);2 類、單中心來源,跨域(他院切片/染色)恐顯著掉分(同 README 跨域 60-80% 老坑)。來源 figshare 24548953(CASIHI / MIaMIA-Open-Data, CC-BY-4.0)。"},
 ]
 
-AVAILABLE = [m for m in REGISTRY if m["path"].exists()]
+AVAILABLE = [m for m in REGISTRY if m["path"].exists() or W.is_downloadable(m)]
 BY_LABEL = {m["label"]: m for m in AVAILABLE}
 
 # --- model cards: discipline / classes / metrics / caveats -----------------
@@ -476,7 +479,7 @@ _fm_cache: dict = {}
 def load_fm(rel):
     """載入 FM-probe 產物(Phikon-v2 frozen 特徵 + LogReg head),見 src/train_fm_probe.py。"""
     import joblib
-    p = str((ROOT / rel)) if not Path(rel).is_absolute() else rel
+    p = str(W.ensure_file(rel))     # 本機有→原路徑;缺→抓 HF 到快取
     if p not in _fm_cache:
         _fm_cache[p] = joblib.load(p)
     return _fm_cache[p]
@@ -556,7 +559,7 @@ def model_classes(spec):
     c = CARDS.get(spec["key"]) or {}
     raw = c.get("classes")
     if not raw:
-        raw = load_fm(spec["fm"])["classes"] if spec.get("fm") else load_cls(spec["path"])[1]
+        raw = load_fm(spec["fm"])["classes"] if spec.get("fm") else load_cls(W.ensure_local(spec))[1]
     return [prettify(x) for x in raw]
 
 
@@ -572,7 +575,7 @@ def cls_rank(image, spec):
         probs = art["clf"].predict_proba(art["scaler"].transform(feat))[0]
         classes = art["classes"]
     else:
-        model, classes, tf = load_cls(spec["path"])
+        model, classes, tf = load_cls(W.ensure_local(spec))
         x = tf(image).unsqueeze(0).to(DEVICE)
         probs = F.softmax(model(x), dim=1)[0].cpu().numpy()
     order = list(np.argsort(probs)[::-1])
@@ -586,7 +589,7 @@ def det_infer(image, spec, conf):
     if spec.get("sahi"):
         from sahi.predict import get_sliced_prediction
         from sahi.utils.cv import visualize_object_predictions
-        sm = load_sahi(spec["path"])
+        sm = load_sahi(W.ensure_local(spec))
         sm.confidence_threshold = float(conf)
         img_np = np.array(image)
         result = get_sliced_prediction(
@@ -597,7 +600,7 @@ def det_infer(image, spec, conf):
         for o in opl:
             counts[o.category.name] = counts.get(o.category.name, 0) + 1
     else:
-        model = load_yolo(spec["path"])
+        model = load_yolo(W.ensure_local(spec))
         res = model.predict(source=image, conf=float(conf), verbose=False)[0]
         annotated = res.plot()[:, :, ::-1]  # BGR -> RGB
         for c in res.boxes.cls.tolist():
