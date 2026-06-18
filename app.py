@@ -417,6 +417,10 @@ REGISTRY = [
      "label": "🐕 犬貓糞檢腸道寄生蟲偵測 9 類 (TF-Test VetPet 明場, YOLO)",
      "path": ROOT / "reports" / "yolo" / "cats_dogs_gi_parasites" / "weights" / "best.pt",
      "blurb": "獸醫寄生蟲(本平台首條獸醫腸道寄生蟲『偵測』track,別於既有蟲卵分類):犬貓糞便抹片(TF-Test VetPet 暫時染色)腸道寄生蟲偵測 9 類 — 貓 3 類(cat-p1~3)＋犬 6 類(dog-p1~6)。⚠️ 來源僅公開遮罩、未公開物種拉丁名與『像素值↔物種』對應,且貓/犬為兩個各自編號的資料集 → 為免把不同種誤併,採來源代碼分命名空間(論文稱貓 3 種/犬 5 種＋糞便雜質)。由語意分割遮罩連通元件轉 bbox、官方 train/test 切分。YOLOv8s val mAP50 0.869 / mAP50-95 0.763(P 0.94 / R 0.84;cat-p1~3 與 dog-p1/p4/p5 達 0.95~0.99)。⚠️ dog-p6 最稀有(僅 30 框)mAP50 0.13 學不起、dog-p3 mAP50-95 0.49 偏低;同類相鄰遮罩可能併框。對應犬貓糞檢自動化寄生蟲篩檢。來源 GitHub LIDS-Datasets(Comput Biol Med 2023, #107203)。"},
+    {"key": "ude_diatoms", "kind": "cls",
+     "label": "🔬 淡水矽藻種別 101 類 (法醫／環境, ResNet)",
+     "path": ROOT / "models" / "ude_diatoms_resnet50.pt",
+     "blurb": "法醫／環境(本平台首條矽藻 track,別於既有臨床醫檢):淡水矽藻 diatom 物種細粒度分類 101 種(UDE Diatoms in the Wild,focus-stacked 光學顯微)。應用於溺水鑑定(肺/骨髓矽藻檢出)與水質生態監測。ResNet-50 val_acc 0.728 / weighted-F1 0.725 / **macro-F1 0.520**。⚠️ 重度長尾(Achnanthidium minutissimum ~15.5k 獨大、用 sqrt class-weight)→ macro 比 weighted 低 0.20、稀有與形態相近種偏弱,12 類 val<5 樣本指標不可信;101 細粒度種本就難(發表 SOTA 亦未飽和)。**玻片級分組 split(slide-disjoint)無洩漏**:train 61143 / val 6451、span 319 玻片,全 101 類 train/val 皆覆蓋。來源 Zenodo 10410655(CC0)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists() or W.is_downloadable(m)]

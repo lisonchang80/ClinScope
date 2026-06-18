@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 90,
+  "n_models": 91,
   "cards": [
     {
       "key": "fungi",
@@ -1343,6 +1343,21 @@
         "precision": 0.9399,
         "recall": 0.8348,
         "epochs": 80
+      },
+      "status": "registered"
+    },
+    {
+      "key": "ude_diatoms",
+      "name_zh": "淡水矽藻種別101類",
+      "name_en": "",
+      "task": "classification",
+      "discipline": "法醫／環境",
+      "metrics": {
+        "val_acc": 0.7284,
+        "n_train": null,
+        "n_val": 6451,
+        "macro_f1": 0.5201,
+        "weighted_f1": 0.7248
       },
       "status": "registered"
     }
