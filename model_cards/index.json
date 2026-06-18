@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 91,
+  "n_models": 92,
   "cards": [
     {
       "key": "fungi",
@@ -1358,6 +1358,21 @@
         "n_val": 6451,
         "macro_f1": 0.5201,
         "weighted_f1": 0.7248
+      },
+      "status": "registered"
+    },
+    {
+      "key": "pollen73s",
+      "name_zh": "花粉粒種別73類",
+      "name_en": "",
+      "task": "classification",
+      "discipline": "法醫／環境",
+      "metrics": {
+        "val_acc": 0.9501,
+        "n_train": null,
+        "n_val": 361,
+        "macro_f1": 0.9489,
+        "weighted_f1": 0.9505
       },
       "status": "registered"
     }

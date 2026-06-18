@@ -421,6 +421,10 @@ REGISTRY = [
      "label": "🔬 淡水矽藻種別 101 類 (法醫／環境, ResNet)",
      "path": ROOT / "models" / "ude_diatoms_resnet50.pt",
      "blurb": "法醫／環境(本平台首條矽藻 track,別於既有臨床醫檢):淡水矽藻 diatom 物種細粒度分類 101 種(UDE Diatoms in the Wild,focus-stacked 光學顯微)。應用於溺水鑑定(肺/骨髓矽藻檢出)與水質生態監測。ResNet-50 val_acc 0.728 / weighted-F1 0.725 / **macro-F1 0.520**。⚠️ 重度長尾(Achnanthidium minutissimum ~15.5k 獨大、用 sqrt class-weight)→ macro 比 weighted 低 0.20、稀有與形態相近種偏弱,12 類 val<5 樣本指標不可信;101 細粒度種本就難(發表 SOTA 亦未飽和)。**玻片級分組 split(slide-disjoint)無洩漏**:train 61143 / val 6451、span 319 玻片,全 101 類 train/val 皆覆蓋。來源 Zenodo 10410655(CC0)。"},
+    {"key": "pollen73s", "kind": "cls",
+     "label": "🌼 花粉粒種別 73 類 (孢粉學/法醫, ResNet)",
+     "path": ROOT / "models" / "pollen73s_resnet50.pt",
+     "blurb": "法醫／環境(本平台首條花粉/孢粉學 track):花粉粒 pollen grain 物種分類 73 種(POLLEN73S,巴西 Cerrado 植物相,光學顯微)。應用於法醫孢粉學(物證地緣連結)、空氣過敏原監測、蜂蜜植物溯源(melissopalynology)。ResNet-50 val_acc 0.950 / macro-F1 0.949(資料平衡、macro≈weighted)。⚠️ 小資料(~35 張/類、val 僅 ~5/類)→ 單類指標噪音大、跨採集泛化未驗;隨機 split(花粉粒影像無玻片/來源 id 可供分組)。來源 figshare 23307950(CC-BY-4.0)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists() or W.is_downloadable(m)]
