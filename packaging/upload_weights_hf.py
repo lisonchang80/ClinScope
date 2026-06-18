@@ -36,21 +36,33 @@ def main() -> None:
     create_repo(REPO_ID, repo_type="model", private=False, exist_ok=True)
     print(f"repo ready: https://huggingface.co/{REPO_ID}")
 
+    # 已在 Hub 的檔（每檔 upload_file 是原子 commit，出現在清單＝完整）→ 可續傳、不重傳
+    try:
+        existing = set(api.list_repo_files(REPO_ID, repo_type="model"))
+    except Exception:
+        existing = set()
+
     # manifest 先傳，讓 repo 自帶一份對照
     api.upload_file(path_or_fileobj=str(MAN_PATH), path_in_repo="weights_manifest.json",
                     repo_id=REPO_ID, repo_type="model")
 
-    done = 0
-    for rel, m in man.items():
+    done = skipped = 0
+    n = len(man)
+    for i, (rel, m) in enumerate(man.items(), 1):
         fp = ROOT / rel
         if not fp.exists():
             print(f"  ⚠️ 略過(本機缺): {rel}")
             continue
-        print(f"  ↑ [{done + 1}/{len(man)}] {rel}  ({m['size_mb']} MB)", flush=True)
+        if m["hf_path"] in existing:
+            skipped += 1
+            print(f"  ✓ [{i}/{n}] 已在 Hub，跳過: {rel}", flush=True)
+            continue
+        print(f"  ↑ [{i}/{n}] {rel}  ({m['size_mb']} MB)", flush=True)
         api.upload_file(path_or_fileobj=str(fp), path_in_repo=m["hf_path"],
                         repo_id=REPO_ID, repo_type="model")
         done += 1
-    print(f"done: uploaded {done} files -> https://huggingface.co/{REPO_ID}")
+    print(f"done: uploaded {done} new, skipped {skipped} existing "
+          f"-> https://huggingface.co/{REPO_ID}")
 
 
 if __name__ == "__main__":

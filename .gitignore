@@ -13,6 +13,13 @@ __pycache__/
 *.pyc
 *.egg-info/
 
+# packaging build artifacts (PyInstaller / 乾淨 CPU build venv) — .spec 本身要進版控
+.venv-build/
+/build/
+/dist/
+packaging/build/
+packaging/dist/
+
 # os
 Thumbs.db
 .DS_Store
