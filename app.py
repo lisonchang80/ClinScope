@@ -16,6 +16,7 @@ from pathlib import Path
 import csv
 import html as _html
 import json
+import os
 import re
 import shutil
 from collections import Counter
@@ -1633,13 +1634,24 @@ def build():
 def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **overrides):
     """建構並啟動工作台。供 `python app.py`(__main__)與 packaging/run_desktop.py
     (pywebview 桌面視窗,需 prevent_thread_lock=True)共用,避免啟動參數兩處重複。"""
-    # 工作台會讀「任意本機資料夾」的影像;Gradio 預設只服務 cwd/temp 內檔案,
-    # 故開放各本機磁碟根目錄(本工具僅綁 127.0.0.1 本機單人用,可接受)。
-    drives = [f"{d}:\\" for d in "CDEFGHIJKLMNOPQRSTUVWXYZ" if Path(f"{d}:\\").exists()]
+    # allowed_paths:工作台會服務本機資料夾內影像,預設開放各磁碟根(本機單人用)。
+    # 公開站可用環境變數 CLINSCOPE_ALLOWED_PATHS(分號分隔)收緊,例如只開 D:\ 不曝 C:\Users。
+    env_paths = os.environ.get("CLINSCOPE_ALLOWED_PATHS", "").strip()
+    if env_paths:
+        allowed = [p.strip() for p in env_paths.split(";")
+                   if p.strip() and Path(p.strip()).exists()]
+    else:
+        allowed = [f"{d}:\\" for d in "CDEFGHIJKLMNOPQRSTUVWXYZ" if Path(f"{d}:\\").exists()]
+    # auth:預設無(本機單人直用);公開站設 CLINSCOPE_AUTH_USER + CLINSCOPE_AUTH_PASS
+    # 即啟用 Gradio 內建「帳號+密碼」登入(密碼只走環境變數,不寫進原始碼/版控)。
+    _u, _p = os.environ.get("CLINSCOPE_AUTH_USER"), os.environ.get("CLINSCOPE_AUTH_PASS")
+    auth = (_u, _p) if (_u and _p) else None
     print(f"[ClinScope] device={DEVICE.type} | {len(AVAILABLE)} models | "
-          f"disciplines={DISCIPLINES} | allowed_paths={drives}")
-    kw = dict(theme=THEME, css=CSS, allowed_paths=drives,
+          f"disciplines={DISCIPLINES} | allowed_paths={allowed} | auth={'on' if auth else 'off'}")
+    kw = dict(theme=THEME, css=CSS, allowed_paths=allowed,
               prevent_thread_lock=prevent_thread_lock, inbrowser=inbrowser)
+    if auth:
+        kw["auth"] = auth
     if server_port:
         kw["server_port"] = server_port
     kw.update(overrides)
