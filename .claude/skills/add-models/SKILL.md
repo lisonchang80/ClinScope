@@ -146,3 +146,5 @@ push 已預先授權直接推;失敗(remote 領先)先 `git pull --rebase` 再 p
 ## 收尾總結
 
 停止時輸出一張表:每個目標候選的最終 status(registered / failed / skipped)、成績、掛上的 caveat、失敗原因;以及「N 目標 → 實際 registered M、前端現有模型總數」。
+
+> 註:本 skill 只更新**本機開發版**(app.py REGISTRY + README + model_cards)。模型一變,**桌面安裝版 `ClinScope-Setup.exe` 與雲端 HF 權重就過時** → 要發佈給使用者時跑 [[repackage]](重生 manifest→上傳 HF→PyInstaller→ISCC)。
