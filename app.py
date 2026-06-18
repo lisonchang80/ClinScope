@@ -39,7 +39,10 @@ for _s in (_sys.stdout, _sys.stderr):
         pass
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-ROOT = Path(__file__).resolve().parent
+if getattr(_sys, "frozen", False):     # PyInstaller 凍結:資料/模組都在 _MEIPASS(_internal)
+    ROOT = Path(getattr(_sys, "_MEIPASS", Path(_sys.executable).resolve().parent))
+else:
+    ROOT = Path(__file__).resolve().parent
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 _sys.path.insert(0, str(ROOT / "src"))
@@ -476,10 +479,10 @@ _sahi_cache: dict = {}
 _fm_cache: dict = {}
 
 
-def load_fm(rel):
+def load_fm(rel, progress=None):
     """載入 FM-probe 產物(Phikon-v2 frozen 特徵 + LogReg head),見 src/train_fm_probe.py。"""
     import joblib
-    p = str(W.ensure_file(rel))     # 本機有→原路徑;缺→抓 HF 到快取
+    p = str(W.ensure_file(rel, progress=progress))     # 本機有→原路徑;缺→抓 HF 到快取(可帶進度)
     if p not in _fm_cache:
         _fm_cache[p] = joblib.load(p)
     return _fm_cache[p]
@@ -564,18 +567,18 @@ def model_classes(spec):
 
 
 @torch.no_grad()
-def cls_rank(image, spec):
+def cls_rank(image, spec, progress=None):
     """回傳 [(類別, 機率)],含全部類別、由高到低。"""
     if spec.get("fm"):
         import sys as _sys
         _sys.path.insert(0, str(ROOT / "src"))
         import fm_features
-        art = load_fm(spec["fm"])
+        art = load_fm(spec["fm"], progress)
         feat = fm_features.extract_feature(image, DEVICE, grid=art["grid"]).reshape(1, -1)
         probs = art["clf"].predict_proba(art["scaler"].transform(feat))[0]
         classes = art["classes"]
     else:
-        model, classes, tf = load_cls(W.ensure_local(spec))
+        model, classes, tf = load_cls(W.ensure_local(spec, progress=progress))
         x = tf(image).unsqueeze(0).to(DEVICE)
         probs = F.softmax(model(x), dim=1)[0].cpu().numpy()
     order = list(np.argsort(probs)[::-1])
@@ -583,13 +586,13 @@ def cls_rank(image, spec):
 
 
 @torch.no_grad()
-def det_infer(image, spec, conf):
+def det_infer(image, spec, conf, progress=None):
     """回傳 (counts dict, 標註圖 RGB ndarray, 物件總數)。"""
     counts: dict = {}
     if spec.get("sahi"):
         from sahi.predict import get_sliced_prediction
         from sahi.utils.cv import visualize_object_predictions
-        sm = load_sahi(W.ensure_local(spec))
+        sm = load_sahi(W.ensure_local(spec, progress=progress))
         sm.confidence_threshold = float(conf)
         img_np = np.array(image)
         result = get_sliced_prediction(
@@ -600,7 +603,7 @@ def det_infer(image, spec, conf):
         for o in opl:
             counts[o.category.name] = counts.get(o.category.name, 0) + 1
     else:
-        model = load_yolo(W.ensure_local(spec))
+        model = load_yolo(W.ensure_local(spec, progress=progress))
         res = model.predict(source=image, conf=float(conf), verbose=False)[0]
         annotated = res.plot()[:, :, ::-1]  # BGR -> RGB
         for c in res.boxes.cls.tolist():
@@ -864,6 +867,15 @@ def _thr_update(kind):
                      label="偵測門檻（計數）", info="低於此信心的偵測框不計入")
 
 
+def _dl_banner(spec) -> str:
+    """模型權重未下載時的提示橫幅(packaged 安裝才會出現;dev 權重齊全→空字串)。"""
+    mb = W.pending_size_mb(spec)
+    if mb <= 0:
+        return ""
+    return (f"> ⬇ **此模型權重尚未下載（約 {mb:g} MB）。** "
+            f"按 **▶批次計算** 或點選影像時會自動從雲端下載並快取，之後免再下載。\n\n")
+
+
 def on_disc(disc):
     labels = labels_for(disc)
     return gr.update(choices=model_choices(disc), value=(labels[0] if labels else None))
@@ -881,7 +893,7 @@ def on_model(label, S):
     S["switch_open"] = False
     pr, gal, df, cs = render(S)
     # 換模型:重設 ⇄ 分類選項(僅分類型可用,偵測型停用)
-    return (S, card_text(label), _thr_update(spec["kind"]),
+    return (S, _dl_banner(spec) + card_text(label), _thr_update(spec["kind"]),
             pr, gal, df, cs,
             gr.update(value=SW_PLACEHOLDER, interactive=False,  # switch_dd:未選檔虛化、顯示「切換分類」
                       choices=switch_choices(S)),
@@ -941,6 +953,8 @@ def on_batch(label, thr, S, progress=gr.Progress()):
     files = S["files"]
     if not files:
         raise gr.Error("請先選擇含影像的資料夾。")
+    for rel in W.pending_rels(spec):    # 首次用此模型:先下載權重(顯示進度),再開始計算
+        W.ensure_file(rel, progress=progress)
     res = {}
     for i, p in enumerate(files):
         progress((i + 1) / len(files), desc=f"計算中 {i + 1}/{len(files)}")
@@ -961,11 +975,13 @@ def on_batch(label, thr, S, progress=gr.Progress()):
     return S, pr, gal, df, cs, None, f"✅ 批次完成 **{len(res)}** 張。"
 
 
-def on_single(label, thr, S):
+def on_single(label, thr, S, progress=gr.Progress()):
     sel = S["selected"]
     if not sel:
         raise gr.Error("請先在下方點選一張影像（單張計算）。")
     spec = BY_LABEL[label]
+    for rel in W.pending_rels(spec):    # 首次用此模型:先下載權重(顯示進度)
+        W.ensure_file(rel, progress=progress)
     img = _open_rgb(sel)
     if spec["kind"] == "cls":
         ranked = cls_rank(img, spec)
@@ -999,7 +1015,7 @@ def on_apply_thr(thr, S):
     return (S,) + render(S)
 
 
-def _select_core(S, label, thr, idx):
+def _select_core(S, label, thr, idx, progress=None):
     pf = S["page_files"]
     if not isinstance(idx, int) or idx < 0 or idx >= len(pf):
         return S, gr.update(), gr.update(), gr.update()
@@ -1011,17 +1027,19 @@ def _select_core(S, label, thr, idx):
         sw = gr.update(interactive=(r is not None),
                        value=(f"⇄ {r['page']}" if r else SW_PLACEHOLDER))
         return S, sw, _open_rgb(p), meta_text_cls(p, r)
-    # det:點選即以目前門檻產生標註圖
+    # det:點選即以目前門檻產生標註圖(首次用此模型先下載權重)
+    for rel in W.pending_rels(spec):
+        W.ensure_file(rel, progress=progress)
     counts, annotated, total = det_infer(_open_rgb(p), spec, float(thr))
     S["results"][p] = {"counts": counts, "total": total}
     return S, gr.update(), annotated, meta_text_det(p, S["results"][p])
 
 
-def on_select(evt: gr.SelectData, S, label, thr):
-    return _select_core(S, label, thr, evt.index)
+def on_select(evt: gr.SelectData, S, label, thr, progress=gr.Progress()):
+    return _select_core(S, label, thr, evt.index, progress=progress)
 
 
-def on_bridge(cmd, S, label, thr):
+def on_bridge(cmd, S, label, thr, progress=gr.Progress()):
     """詳細資料自訂 HTML 表的前端事件橋接:
        {"a":"sel","i":idx} 選列(更新大圖) / {"a":"cls","i":idx,"p":類別} 內嵌下拉改分類 /
        {"a":"addpage","name":名稱} 「＋」分頁新增自訂分類。
@@ -1051,7 +1069,7 @@ def on_bridge(cmd, S, label, thr):
     p = pf[idx]
     if act == "sel":
         # 選列:不重繪表格(避免方向鍵連按時閃爍),只更新大圖 + 工具列切換下拉
-        _, sw, pv, meta = _select_core(S, label, thr, idx)
+        _, sw, pv, meta = _select_core(S, label, thr, idx, progress=progress)
         return (S, gr.update(), gr.update(), gr.update(), gr.update(), sw, pv, meta)
     if act == "cls":
         page = obj.get("p")
@@ -1612,10 +1630,21 @@ def build():
     return demo
 
 
-if __name__ == "__main__":
+def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **overrides):
+    """建構並啟動工作台。供 `python app.py`(__main__)與 packaging/run_desktop.py
+    (pywebview 桌面視窗,需 prevent_thread_lock=True)共用,避免啟動參數兩處重複。"""
     # 工作台會讀「任意本機資料夾」的影像;Gradio 預設只服務 cwd/temp 內檔案,
     # 故開放各本機磁碟根目錄(本工具僅綁 127.0.0.1 本機單人用,可接受)。
     drives = [f"{d}:\\" for d in "CDEFGHIJKLMNOPQRSTUVWXYZ" if Path(f"{d}:\\").exists()]
     print(f"[ClinScope] device={DEVICE.type} | {len(AVAILABLE)} models | "
           f"disciplines={DISCIPLINES} | allowed_paths={drives}")
-    build().launch(theme=THEME, css=CSS, allowed_paths=drives)
+    kw = dict(theme=THEME, css=CSS, allowed_paths=drives,
+              prevent_thread_lock=prevent_thread_lock, inbrowser=inbrowser)
+    if server_port:
+        kw["server_port"] = server_port
+    kw.update(overrides)
+    return build().launch(**kw)
+
+
+if __name__ == "__main__":
+    launch_app()

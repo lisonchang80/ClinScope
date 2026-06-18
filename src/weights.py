@@ -14,9 +14,13 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent          # repo / 安裝根目錄
+if getattr(sys, "frozen", False):     # PyInstaller 凍結:資料/模組都在 _MEIPASS(_internal)
+    ROOT = Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
+else:
+    ROOT = Path(__file__).resolve().parent.parent      # repo / 開發根目錄
 REPO_ID = os.environ.get("CLINSCOPE_WEIGHTS_REPO", "tinghaochang/clinscope-weights")
 
 # 快取放在（可能唯讀的）安裝目錄之外
@@ -54,6 +58,16 @@ def spec_rels(spec: dict) -> list:
     return rels
 
 
+def runtime_rels(spec: dict) -> list:
+    """推論時『實際會載入』的檔：FM 模型只用 joblib，其餘用主 .pt。
+    （spec_rels 列全部以決定 availability；下載/提示用這個較精準的子集，避免下無用檔。）"""
+    if spec.get("fm"):
+        return [_norm_rel(spec["fm"])]
+    if spec.get("path") is not None:
+        return [_norm_rel(spec["path"])]
+    return []
+
+
 def is_downloadable(spec: dict) -> bool:
     """spec 需要的每個檔都『本機已有』或『manifest 有登錄』時為 True（決定是否列入 AVAILABLE）。"""
     rels = spec_rels(spec)
@@ -66,6 +80,22 @@ def is_downloadable(spec: dict) -> bool:
             continue
         return False
     return True
+
+
+def pending_rels(spec: dict) -> list:
+    """spec 推論所需、但本機與快取都還沒有、且 manifest 可下載的檔（rel 列）。空＝已就緒。"""
+    out = []
+    for rel in runtime_rels(spec):
+        if (ROOT / rel).exists() or (CACHE_DIR / rel).exists():
+            continue
+        if rel in MANIFEST:
+            out.append(rel)
+    return out
+
+
+def pending_size_mb(spec: dict) -> float:
+    """spec 尚未下載檔的總大小（MB，四捨五入 1 位）。"""
+    return round(sum(float(MANIFEST.get(r, {}).get("size_mb", 0)) for r in pending_rels(spec)), 1)
 
 
 def _sha256(path: Path, buf: int = 1 << 20) -> str:
