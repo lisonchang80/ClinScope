@@ -96,10 +96,11 @@ scouted ──► downloading ──► prepared ──► training ──► tr
 
 所有背景任務一律 `run_in_background: true` + `python -u`(即時進度、被砍也留 log),靠完成通知接續。單模型的下載/切分/訓練指令細節全照 `add-dataset-track`。
 
-⚠️ **背景任務啟動/停止的兩個坑(本機實測)**:
+⚠️ **背景任務啟動/停止的幾個坑(本機實測)**:
 - **別用 `nohup … &` 再配 run_in_background**:雙重背景會讓外層 shell 一結束就把子程序砍掉(訓練啟動到一半就死)。直接把 `python -u …` 當 run_in_background 指令,**不要加 `&`/`nohup`**,工具自己會跨回合保活。
 - **停 driver 要砍整棵樹**:`TaskStop`(或砍 bash wrapper)**只結束 wrapper,python 訓練子程序會變孤兒繼續佔 GPU**(nvidia-smi 仍 80%+)。driver 是 `train_driver.py → 子 train_resnet/train_yolo → 一堆 multiprocessing dataloader workers` 的巢狀樹,要用 `taskkill /F /T /PID <driver_pid>` 砍**整棵**(`/T`),並保留 `app.py` 前端 PID;砍完用 nvidia-smi 確認真的回到 baseline 再 relaunch,否則兩個訓練搶 GPU 會 OOM/變慢。
 - **大圖密集小核 det 訓練**(如 2048px、每圖數十~百核)**驗證階段 val NMS/VRAM 會偶發爆炸**(某 epoch 78s、某 epoch 60min,VRAM 近滿時更明顯)→ **batch 降載**(如 12→8)釋出 VRAM 餘裕即正常;這類 track 排佇列**殿後**,鬧脾氣才不擋其他。
+- **⚠️ run_in_background 長訓練在「使用者離線 / agent 閒置」空檔會被靜默砍**(round-8 矽藻×2 + pollen×1,各跑 20-44 分就消失;**非重開機**——detached 的 cloudflared 同期都活著、非 TDR、且**無完成通知**)。活躍期跑得完(YOLO #1 28 分正常完成+通知),離線久就死、時間點不固定(跟 epoch 長×活躍視窗有關,非固定 44 分)。對策:**長且無人看管的 cls/det 訓練→走 wscript-detached(像公開站 server,撐過閒置,但要自己 poll log/best.pt)或把 epochs 切短**;否則靠逐 epoch best-ckpt,死了用 `data/_pipeline/eval_resnet.py --data-dir <split> --ckpt <pt> --report-dir reports/<key>` 在收斂點補報表回填(round-8 三條都這樣**無損**救回:cls val 常 ep9-13 達峰/過擬,被砍沒損失成績)。短訓練(<~15 分、小資料)用 run_in_background 仍 OK。詳見 [[reference-background-sleep]]。
 
 ## 品質政策(已定案:全收錄 + 自動標 caveat)
 
