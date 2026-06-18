@@ -24,6 +24,7 @@ BATCH7 = {"cryonuseg", "blastocyst", "thalassemia", "osteosarcoma", "breast_idc"
           "hmu_gc", "glomeruli_char", "vet_egg"}
 BATCH8 = {"openfungi", "ufsc", "parasites", "oral_cyto"}
 BATCH9 = {"uti_urine", "balf", "midog", "caishi"}
+BATCH10 = {"cats_dogs_gi_parasites", "ude_diatoms", "pollen73s"}  # round-8 (2026-06-18)
 
 # 來源(blurb 未必含, 這裡 curated; 找不到再退回 blurb 解析)
 SOURCE = {
@@ -61,6 +62,9 @@ SOURCE = {
     "balf": "Zenodo 14871206 (PW-BALFC bronchoalveolar lavage)",
     "midog": "Zenodo 4643381 (MIDOG 2021 cross-scanner mitosis)",
     "caishi": "figshare 24548953 (CASIHI / MIaMIA-Open-Data cervical AIS, CC-BY-4.0)",
+    "cats_dogs_gi_parasites": "GitHub LIDS-Datasets/{cats,dogs}-parasites (Comput Biol Med 2023 #107203; mask->bbox)",
+    "ude_diatoms": "Zenodo 10410655 (UDE Diatoms in the Wild 2024, CC0)",
+    "pollen73s": "figshare 23307950 (POLLEN73S pollen grains, CC-BY-4.0)",
 }
 
 DISCIPLINE_KW = ["微生物", "黴菌", "寄生蟲", "血液/骨髓", "血液腫瘤", "血液", "組織病理", "細胞學",
@@ -206,7 +210,8 @@ def main():
             "split_method": split_method(e["blurb"]),
             "weights": e["weights"],
             "status": "registered" if os.path.exists(weights_abs) else "pending",
-            "batch": ("batch-9 (2026-06-15)" if key in BATCH9
+            "batch": ("batch-10 (2026-06-18)" if key in BATCH10
+                      else "batch-9 (2026-06-15)" if key in BATCH9
                       else "batch-8 (2026-06-15)" if key in BATCH8
                       else "batch-7 (2026-06-14)" if key in BATCH7
                       else "batch-6 (2026-06-14)" if key in BATCH6 else "batch 1-5"),

@@ -1,6 +1,6 @@
 {
   "platform": "ClinScope",
-  "n_models": 89,
+  "n_models": 90,
   "cards": [
     {
       "key": "fungi",
@@ -1328,6 +1328,21 @@
         "n_val": 337,
         "macro_f1": 0.9821,
         "weighted_f1": 0.9822
+      },
+      "status": "registered"
+    },
+    {
+      "key": "cats_dogs_gi_parasites",
+      "name_zh": "犬貓糞檢腸道寄生蟲偵測9類",
+      "name_en": "",
+      "task": "detection",
+      "discipline": "寄生蟲",
+      "metrics": {
+        "mAP50": 0.8686,
+        "mAP50_95": 0.7633,
+        "precision": 0.9399,
+        "recall": 0.8348,
+        "epochs": 80
       },
       "status": "registered"
     }

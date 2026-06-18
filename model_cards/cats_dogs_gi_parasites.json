@@ -1,0 +1,30 @@
+{
+  "key": "cats_dogs_gi_parasites",
+  "abbr": "cats_dogs_gi_parasites",
+  "name": {
+    "display": "犬貓糞檢腸道寄生蟲偵測 9 類 (TF-Test VetPet 明場, YOLO)",
+    "zh": "犬貓糞檢腸道寄生蟲偵測9類",
+    "en": ""
+  },
+  "discipline": "寄生蟲",
+  "task": "detection",
+  "model_type": "YOLOv8s",
+  "metrics": {
+    "mAP50": 0.8686,
+    "mAP50_95": 0.7633,
+    "precision": 0.9399,
+    "recall": 0.8348,
+    "epochs": 80
+  },
+  "experiment_summary": "獸醫寄生蟲(本平台首條獸醫腸道寄生蟲『偵測』track,別於既有蟲卵分類):犬貓糞便抹片(TF-Test VetPet 暫時染色)腸道寄生蟲偵測 9 類 — 貓 3 類(cat-p1~3)＋犬 6 類(dog-p1~6)。",
+  "caveats": [
+    "⚠️ 來源僅公開遮罩、未公開物種拉丁名與『像素值↔物種』對應,且貓/犬為兩個各自編號的資料集 → 為免把不同種誤併,採來源代碼分命名空間(論文稱貓 3 種/犬 5 種＋糞便雜質)。由語意分割遮罩連通元件轉 bbox、官方 train/test 切分。YOLOv8s val mAP50 0.869 / mAP50-95 0.763(P 0.94 / R 0.84;cat-p1~3 與 dog-p1/p4/p5 達 0.95~0.99)。",
+    "⚠️ dog-p6 最稀有(僅 30 框)mAP50 0.13 學不起、dog-p3 mAP50-95 0.49 偏低;同類相鄰遮罩可能併框。對應犬貓糞檢自動化寄生蟲篩檢。來源 GitHub LIDS-Datasets(Comput Biol Med 2023, #107203)。"
+  ],
+  "source": "GitHub LIDS-Datasets/{cats,dogs}-parasites (Comput Biol Med 2023 #107203; mask->bbox)",
+  "license": null,
+  "split_method": "official split",
+  "weights": "reports/yolo/cats_dogs_gi_parasites/weights/best.pt",
+  "status": "registered",
+  "batch": "batch-10 (2026-06-18)"
+}

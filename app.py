@@ -413,6 +413,10 @@ REGISTRY = [
      "label": "🔬 子宮頸腺癌原位 AIS 組織病理 2 類 (H&E, ResNet)",
      "path": ROOT / "models" / "caishi_resnet50.pt",
      "blurb": "組織病理(子宮頸腺體 AIS,別於既有 pap/RIVA 子宮頸「細胞學」):子宮頸腺癌原位 H&E 組織病理二分類 — 正常腺體 Normal / 腺癌原位 Abnormal(AIS)。ResNet-50 val_acc 0.982 / macro-F1 0.982(Abnormal precision 1.00、recall 0.97;Normal recall 1.00)。AIS 是子宮頸腺癌前驅病變,組織學上易與良性腺體混淆,自動篩檢有臨床意義。train 1905 / val 337(Normal 1011 + Abnormal 1231 圖)。⚠️ 子宮頸器官與既有 pap/riva 重疊,但本 track 是腺體「組織病理」AIS(任務/模態不同於細胞學抹片);2 類、單中心來源,跨域(他院切片/染色)恐顯著掉分(同 README 跨域 60-80% 老坑)。來源 figshare 24548953(CASIHI / MIaMIA-Open-Data, CC-BY-4.0)。"},
+    {"key": "cats_dogs_gi_parasites", "kind": "det",
+     "label": "🐕 犬貓糞檢腸道寄生蟲偵測 9 類 (TF-Test VetPet 明場, YOLO)",
+     "path": ROOT / "reports" / "yolo" / "cats_dogs_gi_parasites" / "weights" / "best.pt",
+     "blurb": "獸醫寄生蟲(本平台首條獸醫腸道寄生蟲『偵測』track,別於既有蟲卵分類):犬貓糞便抹片(TF-Test VetPet 暫時染色)腸道寄生蟲偵測 9 類 — 貓 3 類(cat-p1~3)＋犬 6 類(dog-p1~6)。⚠️ 來源僅公開遮罩、未公開物種拉丁名與『像素值↔物種』對應,且貓/犬為兩個各自編號的資料集 → 為免把不同種誤併,採來源代碼分命名空間(論文稱貓 3 種/犬 5 種＋糞便雜質)。由語意分割遮罩連通元件轉 bbox、官方 train/test 切分。YOLOv8s val mAP50 0.869 / mAP50-95 0.763(P 0.94 / R 0.84;cat-p1~3 與 dog-p1/p4/p5 達 0.95~0.99)。⚠️ dog-p6 最稀有(僅 30 框)mAP50 0.13 學不起、dog-p3 mAP50-95 0.49 偏低;同類相鄰遮罩可能併框。對應犬貓糞檢自動化寄生蟲篩檢。來源 GitHub LIDS-Datasets(Comput Biol Med 2023, #107203)。"},
 ]
 
 AVAILABLE = [m for m in REGISTRY if m["path"].exists() or W.is_downloadable(m)]
