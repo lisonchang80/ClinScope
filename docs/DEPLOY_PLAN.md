@@ -27,10 +27,10 @@
 | # | 里程碑 | 內容 | 狀態 |
 |---|---|---|---|
 | B1 | runtime 子集 + CPU torch | `packaging/requirements-runtime.txt` ✅；乾淨 CPU-only venv 凍結驗證留待 B4 | 🟢 大致完成 |
-| B2 | HF 權重 + lazy download | resolver `src/weights.py` ✅ + `weights_manifest.json`(90 檔/6.25GB) ✅ + app.py 接線 ✅ + 端到端推論驗證 ✅ ｜ **待**:HF 上傳(`--yes`) + 下載進度 UI | 🟡 進行中 |
-| B3 | pywebview 原生視窗 | 啟動後開桌面視窗指向 127.0.0.1:7860，失敗退回瀏覽器 | — |
-| B4 | PyInstaller 凍結 | spec 收 gradio/ultralytics/transformers/torch；無 Python 環境雙擊驗證 | — |
-| B5 | Inno Setup 安裝程式 | 包 dist、開始選單/桌面捷徑、解除安裝、快取目錄 → `ClinScope-Setup.exe` | — |
+| B2 | HF 權重 + lazy download | resolver `src/weights.py` ✅ + `weights_manifest.json`(90 檔/6.25GB) ✅ + app.py 接線 ✅ + 端到端推論 ✅ + HF 上傳(90 檔 live、public 無 token 可下載驗過)✅ + **下載進度 UI**(選模型顯示未下載橫幅、計算/點圖時 `gr.Progress` 顯示「下載…」;缺席模擬已驗下載+sha)✅ | 🟢 完成 |
+| B3 | pywebview 原生視窗 | `packaging/run_desktop.py`:背景起 Gradio→等埠就緒→pywebview 開窗;失敗退回瀏覽器;app.py 抽 `launch_app()` 共用。smoke 驗過(伺服器+HTTP 200);視窗 render 待打包後目視 | 🟢 完成 |
+| B4 | PyInstaller 凍結 | `clinscope.spec` + `build_exe.ps1` ✅;**已建出 `dist/ClinScope/ClinScope.exe`(onedir ~1.9GB,CPU torch)**;app.py/weights.py 加凍結守衛(`sys.frozen`→`_MEIPASS`);smoke 驗過:凍結 exe 起伺服器+HTTP 200、**載入 89 模型 + manifest 90 檔、lazy-download 路徑活**。⚠️ pywebview 視窗 render 與「凍結內實際下載權重」未目視 | 🟢 完成 |
+| B5 | Inno Setup 安裝程式 | `clinscope.iss` ✅ + 已裝 Inno Setup 6.7.3(`%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe`)+ **已編出 `packaging/dist/ClinScope-Setup.exe`(321 MB,lzma2 從 1.9GB 壓縮)**。每使用者安裝免 admin、開始選單+桌面捷徑、解除安裝保留模型快取。⚠️ 未實際跑安裝→啟動→下載權重全鏈路目視 | 🟢 完成 |
 
 ### 接線點（已從程式碼確認）
 - `REGISTRY`（app.py:46）每條 `key/kind/label/path/blurb`，FM 另帶 `fm`(joblib)。
@@ -54,5 +54,9 @@
 
 ## 打包腳本（packaging/）
 - `gen_weights_manifest.py` — 掃本機權重產 `weights_manifest.json`（rel → hf_path/sha256/size）。
-- `upload_weights_hf.py` — 推權重 + manifest 到公開 HF repo（需 `--yes` 才真上傳）。
+- `upload_weights_hf.py` — 推權重 + manifest 到公開 HF repo（需 `--yes` 才真上傳；先查 `list_repo_files` **跳過 Hub 上已存在的檔 → 可續傳**，中斷重跑只補沒傳完的）。
 - `requirements-runtime.txt` — runtime 子集（CPU torch wheel index）。
+- `run_desktop.py` — 桌面啟動器(B3):背景起 Gradio→等埠→pywebview 開窗,退路瀏覽器;`CLINSCOPE_DESKTOP_SMOKE=1` 無頭驗證。
+- `clinscope.spec` — PyInstaller 規格(B4):collect_all 各重套件 + 帶專案資料/模組。
+- `build_exe.ps1` — B4 一鍵建置:衍生乾淨 CPU venv→裝 runtime+pyinstaller→`pyinstaller clinscope.spec`。
+- `clinscope.iss` — Inno Setup 6 腳本(B5):打包 dist 成每使用者安裝程式 `ClinScope-Setup.exe`(需 ISCC.exe 編譯)。
