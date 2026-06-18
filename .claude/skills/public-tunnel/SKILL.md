@@ -21,6 +21,7 @@ description: 維護/部署 ClinScope 公開網址 clinscope.tinghaochang.com(Clo
 | 要做的事 | 怎麼做 |
 |---|---|
 | **502 Bad gateway / Host Error**(多在換網路、睡醒後) | 雙擊 `packaging/autostart/restart_tunnel.bat`(只重啟 tunnel,不動 server)。根因:cloudflared 連線卡舊網路,origin `localhost:7860` 本機仍 200。 |
+| **改了 app.py 要套用到公開站**(版面/CSS/JS/模型) | 雙擊 `packaging/autostart/restart_server.bat`(只重啟 7860 server、不動 tunnel;新 server 起來 cloudflared 自動恢復轉送)。**在 session 內由 Claude 重啟需 detached**:wscript 跑「純 ASCII」VBS(`sh.Run "cmd /c set GRADIO_SERVER_PORT=7860&& ...python -u app.py", 0, False`)——VBS 含中文存成 UTF-8 會被 wscript 當 ANSI 解析失敗而靜默不啟動。 |
 | **手動開公開站** | 雙擊 `packaging/autostart/start_public.bat`(可見視窗,好看 log) |
 | **停掉公開站** | 工作管理員結束 `python.exe`(佔 7860 那個)+ `cloudflared.exe`;或刪 Startup 的 `.vbs` 取消開機自啟 |
 | **確認本機健康** | PowerShell:`Get-NetTCPConnection -LocalPort 7860 -State Listen`、`Get-Process cloudflared`、`Invoke-WebRequest http://127.0.0.1:7860`(應 200) |
