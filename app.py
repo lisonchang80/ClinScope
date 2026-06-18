@@ -1187,11 +1187,22 @@ CSS = """
 .editrow > .column, .editrow .panel{min-height:0!important; height:100%!important;}
 footer{display:none!important;}
 
-/* 頂部品牌列 */
+/* 頂部品牌列 — 外層 gr.HTML(.brandwrap)的 .prose 內距歸零,讓品牌列填滿欄寬、
+   與下方面板列等寬(不再靠負邊距硬撐,手機/桌機都對齊) */
+.brandwrap, .brandwrap.prose, .brandwrap .html-container{padding:0!important; margin:0!important;
+  border:none!important; background:transparent!important;}
 .brandbar{display:flex; justify-content:space-between; align-items:center;
   background:linear-gradient(100deg,var(--navy-900),var(--navy-700)); color:#fff;
-  padding:14px 22px; border-radius:14px; margin:0 -14px 14px -14px;
+  padding:14px 22px; border-radius:14px; margin:0 0 14px 0;
   box-shadow:0 6px 22px rgba(11,31,58,.20);}
+/* 右側:下載鈕 + 徽章一組(可換行) */
+.brandbar .bmeta{display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+.brandbar .bmeta .chip{margin:0;}
+.brandbar .dlbtn{display:inline-flex; align-items:center; gap:5px; text-decoration:none; cursor:pointer;
+  background:var(--lemon); color:var(--navy-900)!important; border:none; border-radius:999px;
+  padding:6px 14px; font-size:13px; font-weight:700; font-family:'Space Grotesk',sans-serif;
+  box-shadow:0 2px 8px rgba(255,205,0,.35); transition:transform .08s,box-shadow .12s;}
+.brandbar .dlbtn:hover{transform:translateY(-1px); box-shadow:0 5px 16px rgba(255,205,0,.55);}
 .brandbar .brand{display:flex; align-items:center; gap:14px;}
 .brandbar .logo{color:var(--lemon); font-size:28px;}
 .brandbar .btext{display:inline-flex; flex-direction:column; align-items:stretch;}
@@ -1417,11 +1428,21 @@ def panel_head(tag, en, sub):
             f'<span class="ph-en">{en}</span></div><span class="ph-sub">{sub}</span></div>')
 
 
+# 桌面安裝版下載:經本機 server 自己的 /gradio_api/file= 路由提供(同網域、走 tunnel、Access 後可下載),
+# 不另外上傳外部。錨定 __file__ 不依賴 CWD;URL-encode 空白;檔案不存在(如尚未打包)則不顯示按鈕。
+from urllib.parse import quote as _urlquote
+_SETUP_EXE = Path(__file__).resolve().parent / "packaging" / "dist" / "ClinScope-Setup.exe"
+SETUP_DL_URL = ("/gradio_api/file=" + _urlquote(_SETUP_EXE.as_posix())) if _SETUP_EXE.exists() else None
+
+_DL_BTN = (f'<a class="dlbtn" href="{SETUP_DL_URL}" download="ClinScope-Setup.exe" '
+           f'title="下載 Windows 桌面安裝版(約 320 MB;安裝後選模型才下載權重)">⬇ 下載桌面版</a>'
+           ) if SETUP_DL_URL else ''
 BRAND_HTML = (
     '<div class="brandbar"><div class="brand"><span class="logo">◉</span>'
     '<span class="btext"><span class="bt">ClinScope</span>'
     '<span class="bsub">臨床顯微辨識工作台</span></span></div>'
-    f'<div><span class="chip">⚙ {DEVICE.type.upper()}</span>'
+    f'<div class="bmeta">{_DL_BTN}'
+    f'<span class="chip">⚙ {DEVICE.type.upper()}</span>'
     f'<span class="chip lemon">{len(AVAILABLE)} 模型</span></div></div>')
 
 FOOTER_HTML = (
@@ -1599,7 +1620,7 @@ ARROW_JS = """
 
 def build():
     with gr.Blocks(title="ClinScope — 臨床顯微辨識工作台") as demo:
-        gr.HTML(BRAND_HTML)
+        gr.HTML(BRAND_HTML, elem_classes="brandwrap")
         if not AVAILABLE:
             gr.Markdown("⚠️ 找不到任何模型權重,請先完成至少一條 track 的訓練。")
             return demo
