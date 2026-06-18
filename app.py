@@ -1237,6 +1237,9 @@ footer{display:none!important;}
 .card.prose{max-height:none!important; overflow:visible!important; padding:0!important; border:none!important;
   background:transparent!important; margin-top:0!important; border-radius:0!important;}
 .card h3{font-family:'Space Grotesk',sans-serif; font-size:15px; margin:.1em 0 .5em; color:var(--navy-900);}
+/* 卡片內文用墨色、粗體海軍藍 — Gradio prose 預設偏淡(手機上幾乎看不見),強制提高對比 */
+.card.prose, .card.prose p, .card.prose li{color:var(--ink)!important;}
+.card.prose strong, .card.prose b{color:var(--navy-700)!important; font-weight:700;}
 .card code{background:var(--navy-100); color:var(--navy-700); padding:1px 7px; border-radius:6px; font-size:12px;}
 .card small{color:var(--muted);}
 
@@ -1372,6 +1375,40 @@ footer{display:none!important;}
 .disc-foot b{color:var(--navy-700);}
 
 @media (prefers-reduced-motion: reduce){ .tbtn{transition:none;} }
+
+/* ── 手機 / 窄視窗(≤768px):桌機是「鎖視窗高度、捲動移進面板內」,手機放不下 →
+      釋放高度鎖,回到正常整頁捲動;品牌列換行避免徽章壓字;固定 vh 高度全部解開 ── */
+@media (max-width:768px){
+  /* 解開整頁 100vh + overflow:hidden,改回文件自然捲動 */
+  .gradio-container{height:auto!important; overflow:visible!important; padding:6px 10px!important;}
+  .gradio-container .main, .gradio-container .main.fillable{height:auto!important; min-height:0!important; overflow:visible!important;}
+  .main.fillable > .wrap,
+  .main.fillable > .wrap > .contain,
+  .main.fillable > .wrap > .contain > .column{height:auto!important; overflow:visible!important; flex:0 0 auto!important;}
+  .main.fillable > .wrap > .contain > .column{gap:12px!important;}
+  .toprow, .editrow{flex:0 0 auto!important;}
+  .editrow > .column, .editrow .panel{height:auto!important; min-height:0!important;}
+
+  /* 品牌列:標題縮小、允許換行,徽章落到下一行不再壓住下方面板;去掉負 margin 免水平溢出 */
+  .brandbar{flex-wrap:wrap; gap:8px; padding:12px 16px; margin:0 0 12px 0;}
+  .brandbar .bt{font-size:25px; letter-spacing:2px;}
+  .brandbar .bsub{font-size:12px;}
+  .brandbar .chip{margin:0 6px 0 0;}
+
+  /* 模型卡不再被 13vh 裁切 → 整段資訊可見;預覽改固定高、整頁捲動帶過 */
+  .card{max-height:none!important; overflow:visible!important;}
+  .preview{height:240px!important; min-height:180px!important;}
+
+  /* 影像格 / 詳細表:不再吃滿剩餘高度(手機沒有「剩餘高度」),改依內容、上限 60vh 內捲 */
+  .grid, .detail{flex:0 0 auto!important; height:auto!important; max-height:60vh!important; overflow:auto!important;}
+  .cs-dt-wrap{max-height:58vh;}
+  .grid{margin-top:-12px!important;}
+  .detail{margin-top:-12px!important;}
+
+  /* 工具列:窄螢幕按鈕換行、平均分配寬度 */
+  .toolbar{gap:6px!important;}
+  .toolbar .tbtn{flex:1 1 auto!important; justify-content:center;}
+}
 """
 
 
@@ -1531,6 +1568,31 @@ ARROW_JS = """
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { const el = document.querySelector('.cs-lb.on'); if (el) el.classList.remove('on'); }
   });
+  // ===== 手機 / 窄視窗:解除整頁 100vh 高度鎖,回到自然整頁捲動 =====
+  // 桌機鎖在 root container(height:100vh; overflow:hidden),捲動移進面板內;窄視窗放不下。
+  // Gradio 6 會把使用者 CSS 選擇器加上 `.contain ` 前綴 → @media 改不到 root container/main/wrap/contain
+  // (它們是 .contain 的祖先),只能用 JS 直接設 inline style;setProperty 帶 'important' 才蓋得過 stylesheet !important。
+  const csResponsive = () => {
+    const narrow = window.matchMedia('(max-width:768px)').matches;
+    const chain = ['.gradio-container', '.main', '.wrap', '.contain', '.contain > .column'];
+    const props = ['height', 'max-height', 'min-height', 'overflow'];
+    chain.forEach((sel) => document.querySelectorAll(sel).forEach((el) => {
+      if (narrow) {
+        el.style.setProperty('height', 'auto', 'important');
+        el.style.setProperty('max-height', 'none', 'important');
+        el.style.setProperty('min-height', '0', 'important');
+        el.style.setProperty('overflow', 'visible', 'important');
+      } else {
+        props.forEach((p) => el.style.removeProperty(p));  // 還原桌機鎖(交回 stylesheet)
+      }
+    }));
+    [document.documentElement, document.body].forEach((el) => {
+      if (narrow) { el.style.setProperty('height', 'auto', 'important'); el.style.setProperty('overflow-y', 'auto', 'important'); }
+      else { el.style.removeProperty('height'); el.style.removeProperty('overflow-y'); }
+    });
+  };
+  csResponsive();
+  window.addEventListener('resize', () => { clearTimeout(window.__cs_rsz); window.__cs_rsz = setTimeout(csResponsive, 150); });
 }
 """
 
