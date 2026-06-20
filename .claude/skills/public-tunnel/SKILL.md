@@ -21,11 +21,12 @@ description: 維護/部署 ClinScope 公開網址 clinscope.tinghaochang.com(Clo
 | 要做的事 | 怎麼做 |
 |---|---|
 | **502 Bad gateway / Host Error**(多在換網路、睡醒後) | 雙擊 `packaging/autostart/restart_tunnel.bat`(只重啟 tunnel,不動 server)。根因:cloudflared 連線卡舊網路,origin `localhost:7860` 本機仍 200。 |
+| **錯誤 1033 / Cloudflare 隧道錯誤頁**(≠502):DNS 指向 Cloudflare 但**沒有 cloudflared 連上** | 跟 502 不同——**通常 server(7860)+ tunnel 兩個程序都不在了**。先用「確認本機健康」那列看是哪個沒了;最穩是整組重啟:`wscript "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\clinscope_public.vbs"`(detached 一次拉起 server+tunnel),等 ~30s 模型載完 → 本機 200、公開站導 Access 登入即恢復。常見於**長閒置後兩程序一起被系統回收**(經查可無重開機),或**訓練暫停 tunnel 後沒以 detached 正確重啟**。 |
 | **改了 app.py 要套用到公開站**(版面/CSS/JS/模型) | 雙擊 `packaging/autostart/restart_server.bat`(只重啟 7860 server、不動 tunnel;新 server 起來 cloudflared 自動恢復轉送)。**在 session 內由 Claude 重啟需 detached**:wscript 跑「純 ASCII」VBS(`sh.Run "cmd /c set GRADIO_SERVER_PORT=7860&& ...python -u app.py", 0, False`)——VBS 含中文存成 UTF-8 會被 wscript 當 ANSI 解析失敗而靜默不啟動。 |
 | **手動開公開站** | 雙擊 `packaging/autostart/start_public.bat`(可見視窗,好看 log) |
 | **停掉公開站** | 工作管理員結束 `python.exe`(佔 7860 那個)+ `cloudflared.exe`;或刪 Startup 的 `.vbs` 取消開機自啟 |
 | **確認本機健康** | PowerShell:`Get-NetTCPConnection -LocalPort 7860 -State Listen`、`Get-Process cloudflared`、`Invoke-WebRequest http://127.0.0.1:7860`(應 200) |
-| **確認 Access 守門** | `curl.exe -s -o NUL -w "%{http_code}" https://clinscope.tinghaochang.com` → **302**=正常(導向 Access 登入頁);**200 直接進站**=Access 失效要查;**502**=回源斷(見上一列) |
+| **確認 Access 守門** | `curl.exe -s -o NUL -w "%{http_code}" https://clinscope.tinghaochang.com` → **302**=正常(導向 Access 登入頁);**200 直接進站**=Access 失效要查;**502**=回源斷(cloudflared 在跑但連不到 7860);**530 + 錯誤 1033**=cloudflared 沒連上(見上方 1033 列,多半 server+tunnel 都死) |
 | **改誰能登入** | one.dash.cloudflare.com → Access controls → Policies → 編輯 `任何登入者`:`Everyone`=任何真人 /  改 `Emails` 白名單=限特定人 |
 | **改登入方式** | Access controls → Applications → `clinscope` → Authentication 區(關/開 IdP;只勾 Google = 登入頁只剩 Google) |
 | **收緊檔案曝險** | 自啟腳本/啟動環境設 `CLINSCOPE_ALLOWED_PATHS=D:\`(只服務 D 槽、不曝 C:\Users);`app.py` `launch_app()` 已支援。亦可設 `CLINSCOPE_AUTH_USER/PASS` 改用 Gradio 密碼(但 Access 已是更強的邊緣驗證) |
@@ -39,3 +40,4 @@ description: 維護/部署 ClinScope 公開網址 clinscope.tinghaochang.com(Clo
 - **登入 ≠ 不間斷**:固定網址只解決「找得到」,真正可連要本機開著 + server + cloudflared 都在跑。
 - **路徑有空格**:一律用完整路徑字串 `"C:\Program Files (x86)\cloudflared\cloudflared.exe"`;啟動用 `wscript` 跑 `.vbs`(`WScript.Shell.Run ..., 0, False`)可得「隱藏 + detached、撐過 session/Claude 關閉」。
 - **detached vs 背景任務**:用 run_in_background 起的 server/tunnel 會隨 session 結束被砍;要常駐請走 `.vbs`(wscript)那條。
+- **長閒置會整組掛掉(2026-06-19 實測)**:出現**錯誤 1033** 時查到 server(7860)+ cloudflared **兩個程序都不在**,且**自開機起未重開機**(排除 Windows Update)→ 長時間無人使用的空檔被系統回收。`502` 只死 tunnel(server 還在),`1033` 是連 server 都沒了——**先分清楚是哪個**(健康檢查那列),再決定只重 tunnel 還是跑 Startup VBS 整組拉起。最穩的「整組常駐」恢復一律走 `wscript` 跑 Startup 的 `clinscope_public.vbs`。
