@@ -10,7 +10,7 @@ description: 維護/部署 ClinScope 公開網址 clinscope.tinghaochang.com(Clo
 完整架構與決策見 `docs/DEPLOY_PLAN.md`(Track A);本 skill 給**維運速查 + 坑**。
 
 ## 現況關鍵值
-- 網域 `tinghaochang.com`(Cloudflare Registrar);tunnel 名 `clinscope`(UUID 見 `~/.cloudflared/config.yml`)。
+- 網域 `tinghaochang.com`(Cloudflare Registrar);tunnel 名 `tinghaochang-sites`(原名 `clinscope`,2026-07-04 後台改名;UUID `e90e134d…` 見 `~/.cloudflared/config.yml`,自啟/重啟腳本一律用 UUID 跑、改名免疫)。
 - Access app `clinscope`,destination=`clinscope.tinghaochang.com`(**單一主機名,非整域**),policy `任何登入者`=Everyone,登入=**Google OAuth IdP**(任何 Google 真人可進、擋 bot)。
 - 公開站跑 **GPU 開發版**(dev venv `python app.py`,非 CPU 安裝版),權重走本機 repo 免下載。
 - 開機自啟:`%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\clinscope_public.vbs`(隱藏、detached,起 server+tunnel)。
@@ -30,7 +30,7 @@ description: 維護/部署 ClinScope 公開網址 clinscope.tinghaochang.com(Clo
 | **改誰能登入** | one.dash.cloudflare.com → Access controls → Policies → 編輯 `任何登入者`:`Everyone`=任何真人 /  改 `Emails` 白名單=限特定人 |
 | **改登入方式** | Access controls → Applications → `clinscope` → Authentication 區(關/開 IdP;只勾 Google = 登入頁只剩 Google) |
 | **收緊檔案曝險** | 自啟腳本/啟動環境設 `CLINSCOPE_ALLOWED_PATHS=D:\`(只服務 D 槽、不曝 C:\Users);`app.py` `launch_app()` 已支援。亦可設 `CLINSCOPE_AUTH_USER/PASS` 改用 Gradio 密碼(但 Access 已是更強的邊緣驗證) |
-| **再掛別專案子網域** | `cloudflared tunnel route dns clinscope x.tinghaochang.com` + `config.yml` ingress 加一條(或開新 tunnel) + **另建一個 Access app**(Access 綁單一主機名,不會自動涵蓋新子網域) |
+| **再掛別專案子網域** | `cloudflared tunnel route dns tinghaochang-sites x.tinghaochang.com` + `config.yml` ingress 加一條(或開新 tunnel) + **另建一個 Access app**(Access 綁單一主機名,不會自動涵蓋新子網域) |
 
 ## 坑(都實際踩過)
 - **無 admin → 不能 `cloudflared service install`**(裝 Windows 服務要系統管理員)→ 改 Startup 資料夾 `.vbs` 登入自啟(detached、隱藏視窗)。

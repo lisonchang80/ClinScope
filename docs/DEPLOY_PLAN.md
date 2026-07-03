@@ -10,7 +10,7 @@
 | # | 步驟 | 誰 | 狀態 |
 |---|---|---|---|
 | A0 | 買網域（Cloudflare Registrar，DNS 自動在 CF） | 使用者 | ✅ 已購 **tinghaochang.com** |
-| A1 | 裝 `cloudflared`(winget 2026.5.2)、`tunnel login`、建 named tunnel `clinscope` (UUID e90e134d…) | Claude | ✅ |
+| A1 | 裝 `cloudflared`(winget 2026.5.2)、`tunnel login`、建 named tunnel `clinscope` (UUID e90e134d…；2026-07-04 已改名 `tinghaochang-sites`，腳本一律用 UUID 跑) | Claude | ✅ |
 | A2 | `clinscope.tinghaochang.com → http://localhost:7860`（`~/.cloudflared/config.yml` + DNS CNAME route） | Claude | ✅ |
 | A3 | **登入自動啟動**（無 admin→不能用 service；改 Startup 資料夾 `clinscope_public.vbs` 隱藏起 GPU server+tunnel） | Claude | ✅ |
 | A4 | Cloudflare Access（Self-hosted app `clinscope`、policy `任何登入者`=Everyone、登入方式 = Google OAuth IdP → 任何 Google 真人可進、擋 bot；**僅保護 `clinscope` 單一子網域,非整個 tinghaochang.com**） | Claude/使用者 | ✅ |

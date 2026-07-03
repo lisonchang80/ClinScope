@@ -10,7 +10,8 @@ echo Stopping old cloudflared (stale network connections) ...
 taskkill /IM cloudflared.exe /F >nul 2>&1
 timeout /t 2 /nobreak >nul
 echo Starting fresh tunnel on the current network ...
-start "ClinScope Tunnel" "C:\Program Files (x86)\cloudflared\cloudflared.exe" tunnel run clinscope
+REM Run by UUID (not name) so renaming the tunnel can never break this script.
+start "Shared Tunnel (tinghaochang-sites)" "C:\Program Files (x86)\cloudflared\cloudflared.exe" tunnel run e90e134d-5254-4976-8c7e-7e85a21ece98
 echo.
 echo Done. Wait ~10s, then reload https://clinscope.tinghaochang.com
 echo (Keep this window open; closing it stops the tunnel.)
