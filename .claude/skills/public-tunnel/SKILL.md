@@ -33,6 +33,7 @@ description: 維護/部署 ClinScope 公開網址 clinscope.tinghaochang.com(Clo
 | **再掛別專案子網域** | `cloudflared tunnel route dns tinghaochang-sites x.tinghaochang.com` + `config.yml` ingress 加一條(或開新 tunnel) + **另建一個 Access app**(Access 綁單一主機名,不會自動涵蓋新子網域) |
 
 ## 坑(都實際踩過)
+- **改 tunnel 顯示名(2026-07-04 實戰:clinscope→tinghaochang-sites)**:cloudflared CLI **沒有 rename**;後台對 locally-managed tunnel 只有 Configure=**Migrate(不可逆,勿按)**/Delete。正解=已登入 dash 分頁用 fetch 打 `PATCH /api/v4/accounts/<acct>/cfd_tunnel/<uuid>` body `{name}`,**必帶 header `x-cross-site-security: dash`**(不帶回 HTML 403)。一切(DNS/config.yml/憑證)綁 UUID→改名零斷線;**但 `tunnel run <名字>` 的腳本會壞**——改名前先把所有自啟/重啟腳本換成 `tunnel run <UUID>`(本 repo 已全改 UUID)。
 - **無 admin → 不能 `cloudflared service install`**(裝 Windows 服務要系統管理員)→ 改 Startup 資料夾 `.vbs` 登入自啟(detached、隱藏視窗)。
 - **換網路必斷**:WiFi 切換 / 熱點↔WiFi / 睡眠喚醒後,cloudflared 卡在舊網路連線 → 502(本機 server 其實沒事)。重啟 tunnel 即解;重開機走自啟是全新連線不受影響。這是「把服務掛在會換網路的筆電」的先天限制。
 - **Access 只綁單一主機名**:`clinscope` app 只保護 `clinscope.tinghaochang.com`,apex 與其他子網域不受影響(要保護得另建 app,或用萬用 `*.tinghaochang.com`)。
