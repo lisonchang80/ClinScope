@@ -1,7 +1,37 @@
 # ClinScope
 
-臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：92 個模型、跨醫檢 ~17 科、十多種成像模態、**ResNet／病理基礎模型(Phikon-v2) 分類 + YOLO(可選 SAHI 切片) 偵測**多引擎。
+臨床顯微影像辨識平台 —— 把多種醫檢顯微辨識任務收進**同一個前端**：92 個模型、跨醫檢 ~18 科、十多種成像模態、**ResNet／病理基礎模型(Phikon-v2) 分類 + YOLO(可選 SAHI 切片) 偵測**多引擎。
 自學 / 作品集性質，**非臨床診斷工具**。（原名 FungiScope，從純真菌 PoC 擴充而來。）
+
+## 系統架構
+
+雙軌發佈：**線上版**把外網流量經 Cloudflare Access（Google 登入、主要擋自動化機器人）轉進本機 GPU 主機的 Gradio 工作台，由 92 張 `model_cards` 識別卡驅動多引擎模型；**離線版**是桌面安裝檔（`ClinScope-Setup.exe`），選好要用的模型才從 Hugging Face Hub 下載對應權重。真正做 GPU 推論的都是本機那台顯示卡電腦，Cloudflare 只負責把外網轉進來。
+
+```mermaid
+flowchart TB
+    B["瀏覽器<br/>任何 Google 帳號"]
+    D["桌面離線版<br/>ClinScope-Setup.exe"]
+    HF["Hugging Face Hub<br/>選模型才下載權重"]
+
+    subgraph CF["Cloudflare · clinscope.tinghaochang.com"]
+        A["Access（Google 登入）"]
+    end
+
+    subgraph HOST["本機 GPU 主機 · 登入自啟、GPU 推論"]
+        G["Gradio 工作台 :7860<br/>三視窗資料夾批次"]
+        C["model_cards 識別卡 ×92"]
+        W["權重：ResNet ／ YOLO＋SAHI ／ 病理FM"]
+    end
+
+    B --> A --> G
+    G --> C
+    G --> W
+    HF --> D
+```
+
+- **使用者端**：線上瀏覽器（任何 Google 帳號登入）、桌面離線安裝版。
+- **外部服務**：Hugging Face Hub（離線版按需下載權重）、Cloudflare（轉送 + Access 登入關卡）。
+- **本機服務**：Gradio 三視窗批次工作台、`model_cards` 識別卡（自動生成整個 UI 與選單）、三引擎權重（ResNet 分類、YOLO＋可選 SAHI 切片偵測、病理基礎模型抽特徵）。
 
 ## 現實定位（先讀這段）
 
