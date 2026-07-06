@@ -23,3 +23,8 @@ packaging/dist/
 # os
 Thumbs.db
 .DS_Store
+
+# public-site secrets
+packaging/autostart/env.local.bat
+identity_debug.log
+model_filter.json

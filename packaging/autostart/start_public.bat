@@ -12,6 +12,10 @@ REM ============================================================
 chcp 65001 >nul
 set GRADIO_SERVER_PORT=7860
 set PYTHONIOENCODING=utf-8
+REM Public site: browser-side upload instead of server-side native folder picker.
+set CLINSCOPE_PUBLIC=1
+REM Load in-app Google login secrets (git-ignored). No-op if the file is absent.
+if exist "%~dp0env.local.bat" call "%~dp0env.local.bat"
 
 echo [1/2] Starting GPU inference server on 127.0.0.1:7860 ...
 start "ClinScope Server" "D:\Claude code\ClinScope\.venv\Scripts\python.exe" -u "D:\Claude code\ClinScope\app.py"

@@ -11,6 +11,10 @@ for /f "tokens=5" %%p in ('netstat -ano ^| findstr ":7860" ^| findstr LISTENING'
 timeout /t 1 /nobreak >nul
 echo Starting fresh GPU server (venv) ...
 set GRADIO_SERVER_PORT=7860
+REM Public site: browser-side upload instead of server-side native folder picker.
+set CLINSCOPE_PUBLIC=1
+REM Load in-app Google login secrets (git-ignored). No-op if the file is absent.
+if exist "%~dp0env.local.bat" call "%~dp0env.local.bat"
 start "ClinScope Server" "D:\Claude code\ClinScope\.venv\Scripts\python.exe" -u "D:\Claude code\ClinScope\app.py"
 echo.
 echo Done. Wait ~20s for models to load, then reload the site.
