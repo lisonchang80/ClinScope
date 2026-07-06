@@ -5,33 +5,37 @@
 
 ## 系統架構
 
-雙軌發佈：**線上版**把外網流量經 Cloudflare Access（Google 登入、主要擋自動化機器人）轉進本機 GPU 主機的 Gradio 工作台，由 92 張 `model_cards` 識別卡驅動多引擎模型；**離線版**是桌面安裝檔（`ClinScope-Setup.exe`），選好要用的模型才從 Hugging Face Hub 下載對應權重。真正做 GPU 推論的都是本機那台顯示卡電腦，Cloudflare 只負責把外網轉進來。
+雙軌發佈。**線上版**（2026-07-06 互動大改）現在公開、可**匿名唯讀瀏覽**（Cloudflare Access 改 Bypass、不再強制登入）；要管理時由**站內 Google Sign-In**（ID-token）認證——登入 email 等於站主（`OWNER_EMAIL`）才能上傳、批次／單張推論、調 `⚙` 模型篩選門檻與匯出，其餘皆訪客唯讀（後端 `_guard_owner` 縱深防禦、繞過 UI 也擋）；本機 GPU 主機的 Gradio 工作台由 92 張 `model_cards` 識別卡驅動多引擎模型。**離線版**是桌面安裝檔（`ClinScope-Setup.exe`），選好要用的模型才從 Hugging Face Hub 下載對應權重。真正做 GPU 推論的都是本機那台顯示卡電腦，Cloudflare 只負責把外網轉進來。
 
 ```mermaid
 flowchart TB
-    B["瀏覽器<br/>任何 Google 帳號"]
+    B["瀏覽器<br/>匿名唯讀・站主可管理"]
+    GL["站內 Google 登入<br/>站主 = OWNER_EMAIL"]
     D["桌面離線版<br/>ClinScope-Setup.exe"]
     HF["Hugging Face Hub<br/>選模型才下載權重"]
 
     subgraph CF["Cloudflare · clinscope.tinghaochang.com"]
-        A["Access（Google 登入）"]
+        A["Access：Bypass（公開・匿名可唯讀）"]
     end
 
     subgraph HOST["本機 GPU 主機 · 登入自啟、GPU 推論"]
         G["Gradio 工作台 :7860<br/>三視窗資料夾批次"]
+        OWN["站主控管 _guard_owner<br/>上傳・批次・⚙ 模型篩選"]
         C["model_cards 識別卡 ×92"]
         W["權重：ResNet ／ YOLO＋SAHI ／ 病理FM"]
     end
 
+    GL -. 站主登入 .-> B
     B --> A --> G
+    G --> OWN
     G --> C
     G --> W
     HF --> D
 ```
 
-- **使用者端**：線上瀏覽器（任何 Google 帳號登入）、桌面離線安裝版。
-- **外部服務**：Hugging Face Hub（離線版按需下載權重）、Cloudflare（轉送 + Access 登入關卡）。
-- **本機服務**：Gradio 三視窗批次工作台、`model_cards` 識別卡（自動生成整個 UI 與選單）、三引擎權重（ResNet 分類、YOLO＋可選 SAHI 切片偵測、病理基礎模型抽特徵）。
+- **使用者端**：線上瀏覽器（公開匿名唯讀；站主登入後可管理）、桌面離線安裝版。
+- **外部服務**：站內 Google 登入（ID-token，辨識站主）、Hugging Face Hub（離線版按需下載權重）、Cloudflare（轉送；Access 已改 Bypass 公開、不再擋登入）。
+- **本機服務**：Gradio 三視窗批次工作台、站主控管（`_guard_owner` ＋ `⚙` 模型篩選 `model_filter.json`、套用到所有訪客）、`model_cards` 識別卡（自動生成整個 UI 與選單）、三引擎權重（ResNet 分類、YOLO＋可選 SAHI 切片偵測、病理基礎模型抽特徵）。
 
 ## 現實定位（先讀這段）
 
