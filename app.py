@@ -19,6 +19,7 @@ import json
 import os
 import re
 import shutil
+import tempfile
 from collections import Counter
 from datetime import datetime
 
@@ -463,10 +464,6 @@ DISCIPLINES = [d for d in _DISC_ORDER if d in _DISC_PRESENT] + \
               sorted(d for d in _DISC_PRESENT if d not in _DISC_ORDER)
 
 
-def labels_for(disc: str):
-    return [m["label"] for m in AVAILABLE if disc_of(m["key"]) == disc]
-
-
 def _model_score(key: str):
     c = CARDS.get(key) or {}
     m = c.get("metrics") or {}
@@ -481,10 +478,60 @@ def _score_tier(key: str) -> str:
     return "🟢" if s >= 0.85 else "🟡" if s >= 0.70 else "🟠" if s >= 0.50 else "🔴"
 
 
+# ── 模型篩選(公開站站主可調,持久化 → 套用到所有訪客):分數門檻 + 手動隱藏清單 ──
+# 預設只顯示成績 ≥ 0.85 的模型。桌面/dev(非 PUBLIC)不套用篩選,一律全部顯示。
+MODEL_FILTER_FILE = ROOT / "model_filter.json"
+
+
+def _load_model_filter():
+    d = {"min_score": 0.85, "hidden": []}
+    try:
+        if MODEL_FILTER_FILE.exists():
+            j = json.loads(MODEL_FILTER_FILE.read_text(encoding="utf-8"))
+            if "min_score" in j and (j["min_score"] is None or isinstance(j["min_score"], (int, float))):
+                d["min_score"] = j["min_score"]
+            if isinstance(j.get("hidden"), list):
+                d["hidden"] = [str(x) for x in j["hidden"]]
+    except Exception:
+        pass
+    return d
+
+
+MODEL_FILTER = _load_model_filter()
+
+
+def _save_model_filter():
+    try:
+        MODEL_FILTER_FILE.write_text(json.dumps(MODEL_FILTER, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _visible_model(key: str) -> bool:
+    if not PUBLIC:                                   # 桌面/dev:不篩選,全顯示
+        return True
+    if key in MODEL_FILTER.get("hidden", []):        # 站主手動隱藏
+        return False
+    ms = MODEL_FILTER.get("min_score")
+    if not ms:                                       # None / 0 = 全部顯示
+        return True
+    s = _model_score(key)
+    return True if s is None else (s >= ms)          # 無分數(⚪)不因門檻被藏,交由手動隱藏
+
+
+def labels_for(disc: str):
+    return [m["label"] for m in AVAILABLE if disc_of(m["key"]) == disc and _visible_model(m["key"])]
+
+
+def visible_disciplines():
+    return [d for d in DISCIPLINES
+            if any(disc_of(m["key"]) == d and _visible_model(m["key"]) for m in AVAILABLE)]
+
+
 def model_choices(disc: str):
     """模型下拉:(顯示, 值) 元組;顯示前綴成績色點,值為原始 label(BY_LABEL 鍵)。"""
     return [(f"{_score_tier(m['key'])} {m['label']}", m["label"])
-            for m in AVAILABLE if disc_of(m["key"]) == disc]
+            for m in AVAILABLE if disc_of(m["key"]) == disc and _visible_model(m["key"])]
 
 _cls_cache: dict = {}
 _yolo_cache: dict = {}
@@ -556,6 +603,179 @@ TOTAL = "📋 總表"
 NULLPAGE = "Null"
 ADDPAGE = "__cs_add__"          # 「＋ 新增分類」分頁的內部值;點它(前端攔截 prompt)→ 建自訂分類分頁
 SW_PLACEHOLDER = "⇄ 切換分類"   # 切換分類下拉未選檔時顯示此提示(並虛化)
+# 預設範例:公開站啟動時載入這夾影像、用此模型預先分類,當作「有內容」的預設畫面(空狀態→現成 demo)。
+SAMPLE_DIR = Path(os.environ.get("CLINSCOPE_SAMPLE_DIR", r"D:\ClinScope_測試\06_真菌OpenFungi_fungi_50"))
+SAMPLE_MODEL_KEY = os.environ.get("CLINSCOPE_SAMPLE_MODEL", "fungi")   # 黴菌 → 真菌 Fungi — OpenFungi (LPCB 培養)
+SAMPLE = {"label": None, "files": [], "results": {}}   # 啟動時由 _precompute_sample 填
+# 公開站(CLINSCOPE_PUBLIC=1):server 跑在遠端本機,伺服器端原生選夾(tkinter)會彈在 server 那台、
+# 訪客瀏覽器看不到且阻塞請求 → 改用瀏覽器端「分批上傳」(繞過 Cloudflare 單次 ~100MB 上限)。
+# 本機桌面/dev 不設此旗標,保留原生選夾。
+PUBLIC = bool(os.environ.get("CLINSCOPE_PUBLIC", "").strip())
+# Gradio 上傳暫存根目錄:分批上傳後,前端回傳的伺服器路徑必須落在此目錄內才接受(擋路徑注入)。
+_GRADIO_TMP = Path(os.environ.get("GRADIO_TEMP_DIR") or (Path(tempfile.gettempdir()) / "gradio")).resolve()
+# 公開站身分:僅登入 email == OWNER_EMAIL 為「站主」(可操作),其餘(含匿名)為訪客(唯讀)。
+OWNER_EMAIL = os.environ.get("CLINSCOPE_OWNER_EMAIL", "lisonchang80@gmail.com").strip().lower()
+_ID_LOG = Path(__file__).resolve().parent / "identity_debug.log"   # 記錄真流量看到的 email,便於確認(可日後移除)
+
+# ── 站內 Google 登入(取代 CF Access,讓路人可匿名唯讀瀏覽)────────────────────────
+# 前端 Google Sign-In → ID token(JWT)→ 後端驗簽/audience/issuer → 簽 itsdangerous cookie 記 email。
+# 需設 CLINSCOPE_GOOGLE_CLIENT_ID 才啟用;未設則回退為「CF Access 標頭判斷」(部署過渡期安全)。
+GOOGLE_CLIENT_ID = os.environ.get("CLINSCOPE_GOOGLE_CLIENT_ID", "").strip()
+SESSION_SECRET = os.environ.get("CLINSCOPE_SESSION_SECRET", "dev-insecure-change-me")
+COOKIE_NAME = "cs_session"
+SESSION_MAX_AGE = 60 * 60 * 24 * 30      # 30 天
+AUTH_ENABLED = bool(PUBLIC and GOOGLE_CLIENT_ID)   # 站內 Google 登入是否啟用(啟用才 mount 路由 + 顯示登入鈕)
+_SER = None
+
+
+def _serializer():
+    global _SER
+    if _SER is None:
+        from itsdangerous import URLSafeTimedSerializer
+        _SER = URLSafeTimedSerializer(SESSION_SECRET, salt="clinscope-session")
+    return _SER
+
+
+def make_session(email):
+    return _serializer().dumps({"email": email})
+
+
+def read_session(token):
+    try:
+        data = _serializer().loads(token, max_age=SESSION_MAX_AGE)
+        return (data.get("email") or "").strip().lower() or None
+    except Exception:
+        return None
+
+
+def verify_google_credential(credential):
+    """驗證 Google Sign-In 回傳的 ID token,回傳 claims(email/sub/...)。無 client id 則報錯。"""
+    if not GOOGLE_CLIENT_ID:
+        raise ValueError("CLINSCOPE_GOOGLE_CLIENT_ID 未設定")
+    from google.auth.transport import requests as g_requests
+    from google.oauth2 import id_token as gid
+    info = gid.verify_oauth2_token(credential, g_requests.Request(), GOOGLE_CLIENT_ID,
+                                   clock_skew_in_seconds=30)   # 容忍時鐘差,免「used too early」
+    if info.get("iss") not in ("accounts.google.com", "https://accounts.google.com"):
+        raise ValueError("invalid issuer")
+    return info
+
+
+def _cookie_email(request):
+    """從簽章 cookie 讀回登入 email(站內 Google 登入);無/失效回 None。"""
+    try:
+        cookies = getattr(request, "cookies", None)
+        if not cookies:
+            raw = getattr(getattr(request, "request", None), "cookies", None)
+            cookies = raw or {}
+        if not cookies:                    # 後備:自己解析 Cookie 標頭
+            h = getattr(request, "headers", None)
+            ck = h.get("cookie") if (h and hasattr(h, "get")) else None
+            cookies = {}
+            if ck:
+                for part in ck.split(";"):
+                    if "=" in part:
+                        k, v = part.strip().split("=", 1)
+                        cookies[k] = v
+        tok = cookies.get(COOKIE_NAME) if cookies else None
+        return read_session(tok) if tok else None
+    except Exception:
+        return None
+
+
+def _req_email(request):
+    """讀 Cloudflare Access 認證後注入的登入 email 標頭(過渡/後備用);無則 None。"""
+    try:
+        h = getattr(request, "headers", None)
+        if h is None:
+            return None
+        v = None
+        if hasattr(h, "get"):
+            v = h.get("cf-access-authenticated-user-email") or h.get("Cf-Access-Authenticated-User-Email")
+        if not v and hasattr(h, "items"):
+            for k, vv in h.items():
+                if str(k).lower() == "cf-access-authenticated-user-email":
+                    v = vv
+                    break
+        return v.strip().lower() if v else None
+    except Exception:
+        return None
+
+
+def _identity_email(request):
+    """目前登入 email:站內 Google cookie 優先,其次 CF Access 標頭(過渡);皆無=匿名。"""
+    return _cookie_email(request) or _req_email(request)
+
+
+def _is_owner(request):
+    """公開站:僅登入 email == OWNER_EMAIL 才是站主(fail-closed —— 匿名/不符一律訪客)。
+    桌面/dev(非 PUBLIC)或設 CLINSCOPE_FORCE_OWNER 時一律站主。"""
+    if not PUBLIC:
+        return True
+    if os.environ.get("CLINSCOPE_FORCE_OWNER", "").strip():
+        return True
+    return _identity_email(request) == OWNER_EMAIL
+
+
+def _add_auth_routes(fastapi_app):
+    """掛在 Gradio 底層 FastAPI 上的登入/登出端點(站內 Google 登入)。"""
+    from fastapi import Request
+    from fastapi.responses import JSONResponse
+    cookie_secure = os.environ.get("CLINSCOPE_COOKIE_SECURE", "1") == "1"
+
+    @fastapi_app.post("/auth/google")
+    async def _auth_google(request: Request):
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+        try:
+            info = verify_google_credential((body or {}).get("credential", ""))
+        except Exception as e:
+            return JSONResponse({"error": f"invalid credential: {e}"}, status_code=401)
+        email = (info.get("email") or "").strip().lower()
+        resp = JSONResponse({"email": email, "owner": email == OWNER_EMAIL})
+        resp.set_cookie(COOKIE_NAME, make_session(email), max_age=SESSION_MAX_AGE,
+                        httponly=True, samesite="lax", secure=cookie_secure, path="/")
+        return resp
+
+    @fastapi_app.post("/auth/logout")
+    async def _auth_logout():
+        resp = JSONResponse({"ok": True})
+        resp.delete_cookie(COOKIE_NAME, path="/")
+        return resp
+
+
+def _guard_owner(request):
+    """後端縱深防禦:非站主直接呼叫寫入/計算端點時擋下(UI 虛化只是第一層)。"""
+    if not _is_owner(request):
+        raise gr.Error("僅站主可執行此操作（您目前為訪客／唯讀）。")
+
+
+def on_identity(request: gr.Request):
+    """載入時判定身分 → 身分列(含登入/登出鈕)+ 開/關(虛化)可操作按鈕。公開站專用。"""
+    owner = _is_owner(request)
+    email = _identity_email(request)
+    try:
+        with open(_ID_LOG, "a", encoding="utf-8") as f:
+            f.write(f"{datetime.now():%Y-%m-%d %H:%M:%S}\temail={email}\towner={owner}\tauth={AUTH_ENABLED}\n")
+    except Exception:
+        pass
+    logout_btn = '<button class="cs-authbtn" id="cs-logout">登出</button>' if AUTH_ENABLED else ''
+    if owner:
+        bar = ('<div class="cs-idbar cs-owner">✅ 已登入站主 <b>' + _html.escape(email or OWNER_EMAIL)
+               + '</b> · 可完整操作' + logout_btn + '</div>')
+    elif email:      # 已登入但非站主
+        bar = ('<div class="cs-idbar cs-guest">👁 訪客（唯讀）· 目前登入 <b>' + _html.escape(email)
+               + '</b>，非站主' + logout_btn + '</div>')
+    else:            # 匿名
+        login = '<span class="cs-gbtn" id="cs-gbtn"></span>' if AUTH_ENABLED else ''
+        tail = ('　站主登入 ' + login) if AUTH_ENABLED else ''
+        bar = ('<div class="cs-idbar cs-guest">👁 訪客模式（唯讀）· 僅站主可操作按鈕' + tail + '</div>')
+    en = gr.update(interactive=owner)
+    vis = gr.update(visible=owner)
+    # 對應輸出:identity_html, btn_folder, btn_batch, btn_single, btn_apply, btn_csv, btn_save, mode_chk, btn_filter
+    return bar, en, en, en, en, en, en, vis, vis
 
 
 def _open_rgb(path):
@@ -719,7 +939,7 @@ def detail_html_str(S):
     if not S["files"]:   # 尚未選資料夾 → 友善空狀態(避免一開啟整片空白)
         return ('<div class="cs-empty-state"><div class="cs-es-ic">📂</div>'
                 '<div class="cs-es-t">尚未載入影像</div>'
-                '<div class="cs-es-s">點上方 <b>📁 選擇資料夾</b> 載入影像，再按 '
+                f'<div class="cs-es-s">點上方 <b>📁 {"上傳影像" if PUBLIC else "選擇資料夾"}</b> 載入影像，再按 '
                 '<b>▶ 批次計算</b> 開始分類；可用 <b>＋</b> 分頁自訂分類。</div></div>')
     if kind == "cls":
         headers = ["檔名", "分類", "信心", "日期", "類型", "大小"]
@@ -947,6 +1167,78 @@ def on_pick_folder(S):
     return on_load_folder(path, S)
 
 
+def on_uploaded_paths(paths_json, S, request: gr.Request = None):
+    """公開站分批上傳:前端已把整夾影像切成多個 <90MB 批次逐批上傳到 Gradio 暫存夾,
+    再把「已上傳的伺服器路徑」JSON 陣列送來這裡。**只接受落在 Gradio 上傳暫存根內、且真的是檔案的
+    影像路徑**(擋路徑注入 —— 否則訪客可塞任意 server 路徑,經 allowed_paths 各磁碟根被讀出)。"""
+    _guard_owner(request)   # 縱深防禦:訪客即使繞過虛化按鈕也不能上傳
+    try:
+        raw = json.loads(paths_json) if paths_json else []
+    except Exception:
+        raw = []
+    imgs = []
+    for p in raw:
+        if not isinstance(p, str):
+            continue
+        try:
+            rp = Path(p).resolve()
+        except Exception:
+            continue
+        if rp.suffix.lower() not in IMG_EXTS:
+            continue
+        try:
+            inside = rp.is_relative_to(_GRADIO_TMP)
+        except Exception:
+            inside = False
+        if inside and rp.is_file():
+            imgs.append(str(rp))
+    imgs = sorted(imgs)
+    S["files"], S["results"], S["page"], S["selected"] = imgs, {}, TOTAL, None
+    S["upseq"] = S.get("upseq", 0) + 1          # 單調遞增:前端上傳進度層據此判定「已完成」並收起
+    pr, gal, df, cs = render(S)
+    msg = (f"📂 已載入 **{len(imgs)}** 張影像。按 ▶ 批次計算 開始分類。" if imgs
+           else "⚠️ 這批檔案裡找不到有效影像（支援 jpg/png/tif/bmp/webp/gif）。")
+    return S, pr, gal, df, cs, None, msg, f"done:{S['upseq']}:{len(imgs)}"
+
+
+def _precompute_sample():
+    """啟動時把預設範例夾影像用 SAMPLE_MODEL_KEY 模型預先分類好,存進全域 SAMPLE。
+    只在公開站 + 資料夾存在 + 模型可用時做;失敗不影響啟動(退回空狀態)。"""
+    try:
+        if not (PUBLIC and SAMPLE_DIR.is_dir()):
+            return
+        spec = next((m for m in AVAILABLE if m["key"] == SAMPLE_MODEL_KEY and m.get("kind") == "cls"), None)
+        files = scan_folder(str(SAMPLE_DIR))
+        if not spec or not files:
+            return
+        for rel in W.pending_rels(spec):
+            W.ensure_file(rel)
+        res = {}
+        for p in files:
+            try:
+                ranked = cls_rank(_open_rgb(p), spec)
+                top, prob = ranked[0]
+                res[p] = {"page": top if prob >= 0.5 else NULLPAGE,
+                          "prob": prob, "ranked": ranked[:6], "manual": False}
+            except Exception:
+                continue
+        SAMPLE["label"], SAMPLE["files"], SAMPLE["results"] = spec["label"], files, res
+        print(f"[ClinScope] sample preloaded: {len(res)}/{len(files)} imgs via {spec['key']}")
+    except Exception as e:
+        print(f"[ClinScope] sample preload skipped: {e}")
+
+
+def on_load_sample(S):
+    """把預先分類好的範例載入目前 session(當作預設畫面)。無範例→維持空狀態。"""
+    if not SAMPLE["files"]:
+        return (S,) + render(S) + (None, gr.update())
+    S["files"] = list(SAMPLE["files"])
+    S["results"] = {k: dict(v) for k, v in SAMPLE["results"].items()}
+    S["page"], S["selected"] = TOTAL, None
+    pr, gal, df, cs = render(S)
+    return S, pr, gal, df, cs, None, "📂 範例:OpenFungi 絲狀黴菌 50 張(已預先分類,可直接瀏覽)。"
+
+
 def on_view(view, S):
     S["view"] = (view or "👁 圖示").replace("👁 ", "")
     return (S,) + render(S)
@@ -961,7 +1253,8 @@ def on_page(page, S):
     return S, pr, gal, df, cs, None, "選一張影像檢視大圖。"
 
 
-def on_batch(label, thr, S, progress=gr.Progress()):
+def on_batch(label, thr, S, progress=gr.Progress(), request: gr.Request = None):
+    _guard_owner(request)
     spec = BY_LABEL[label]
     files = S["files"]
     if not files:
@@ -988,7 +1281,8 @@ def on_batch(label, thr, S, progress=gr.Progress()):
     return S, pr, gal, df, cs, None, f"✅ 批次完成 **{len(res)}** 張。"
 
 
-def on_single(label, thr, S, progress=gr.Progress()):
+def on_single(label, thr, S, progress=gr.Progress(), request: gr.Request = None):
+    _guard_owner(request)
     sel = S["selected"]
     if not sel:
         raise gr.Error("請先在下方點選一張影像（單張計算）。")
@@ -1100,7 +1394,8 @@ def _safe(name):
     return re.sub(r'[\\/:*?"<>|\s]+', "_", str(name)).strip("_") or "x"
 
 
-def on_csv(label, S):
+def on_csv(label, S, request: gr.Request = None):
+    _guard_owner(request)
     res = S["results"]
     if not res:
         raise gr.Error("尚無計算結果可匯出。")
@@ -1163,6 +1458,101 @@ def on_saveas_confirm(mode, S):
     return gr.update(visible=False)
 
 
+def on_saveas_confirm_zip(mode, S, request: gr.Request = None):
+    """公開站:選好檔名格式後 → 依格式命名打包成 zip 供瀏覽器下載(取代寫入 server 硬碟,
+    因為遠端訪客本來就不該、也無法寫檔到 server)。回傳(關對話框, 顯示可下載的 zip)。"""
+    if not _is_owner(request):
+        gr.Info("僅站主可打包下載。")
+        return gr.update(visible=False), gr.update()
+    import zipfile
+    page, pf = S["page"], S["page_files"]
+    if not pf:
+        gr.Info("目前分頁沒有檔案可下載。")
+        return gr.update(visible=False), gr.update()
+    res, kind = S["results"], S["kind"]
+    exp = ROOT / "exports"
+    exp.mkdir(exist_ok=True)
+    zpath = exp / f"clinscope_{_safe(page)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+    used, n = {}, 0
+    with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
+        for p in pf:
+            cls = page if page != TOTAL else ((res.get(p, {}).get("page") or "未分類") if kind == "cls" else "全部")
+            arc = _format_name(mode, cls, Path(p))
+            k = arc.lower()
+            if k in used:                       # 同名衝突:加序號避免壓縮包內互相覆蓋
+                used[k] += 1
+                arc = f"{Path(arc).stem}_{used[k]}{Path(arc).suffix}"
+            else:
+                used[k] = 0
+            try:
+                z.write(p, arcname=arc)
+                n += 1
+            except Exception:
+                pass
+    label = {"n_c": "檔名_分類", "n_pc": "檔名 (分類)"}.get(mode, "分類_檔名")
+    gr.Info(f"✅ 已打包 {n} 個檔案（{label}），開始下載。")
+    return gr.update(visible=False), gr.update(value=str(zpath), visible=True)
+
+
+# ── 站主「本地模式」切換:公開站跑在站主本機,站主人在機器旁時可改用伺服器端原生選夾/另存 ──
+def _save_modal_title(is_local):
+    t = "📁 另存資料夾" if is_local else "📦 打包下載 ZIP"
+    verb = "複製" if is_local else "打包"
+    return (f'<div class="cs-modal-title">{t} — 檔名格式</div>'
+            f'<div class="cs-modal-sub">選擇{verb}後的檔名命名方式（分類取自目前分頁／各檔指派）</div>')
+
+
+def on_mode_change(is_local, S, request: gr.Request = None):
+    """站主切公開/本地模式 → 改資料夾鈕與另存鈕的標籤 + 前端旗標(#cs-mode) + 對話框標題。"""
+    if not _is_owner(request):
+        return S, gr.update(), gr.update(), gr.update(), gr.update()
+    S["localmode"] = bool(is_local)
+    folder_lbl = "📁 選擇資料夾" if is_local else "📁 上傳影像"
+    save_lbl = "💾 另存資料夾" if is_local else "💾 打包下載 ZIP"
+    flag = "local" if is_local else "public"
+    return S, gr.update(value=folder_lbl), gr.update(value=save_lbl), flag, _save_modal_title(is_local)
+
+
+def on_pick_folder_pub(S, request: gr.Request = None):
+    """公開站的資料夾鈕:僅『站主 + 本地模式』走伺服器端原生選夾;否則 no-op
+    (公開模式的上傳由前端 UPLOAD_JS 攔截處理,不會走到這裡)。"""
+    if PUBLIC and S.get("localmode") and _is_owner(request):
+        return on_pick_folder(S)
+    pr, gal, df, cs = render(S)
+    return S, pr, gal, df, cs, gr.update(), gr.update()
+
+
+def on_saveas_confirm_dispatch(fmt, S, request: gr.Request = None):
+    """公開站確認另存:本地模式(站主)→ 原生另存資料夾;否則 → 打包下載 ZIP。"""
+    if S.get("localmode") and _is_owner(request):
+        return on_saveas_confirm(fmt, S), gr.update()   # 原生另存回單值,補 zip_out 佔位
+    return on_saveas_confirm_zip(fmt, S, request)
+
+
+def on_open_filter(request: gr.Request = None):
+    """站主點篩選 icon → 開篩選對話框(訪客不會有此鈕,仍加身分保險)。"""
+    return gr.update(visible=_is_owner(request))
+
+
+def on_save_filter(min_score, hidden_keys, S, request: gr.Request = None):
+    """站主儲存模型篩選:寫入持久化設定 → 重建科別/模型下拉(套用到所有訪客);回傳關對話框+更新兩下拉。"""
+    if not _is_owner(request):
+        gr.Info("僅站主可調整模型篩選。")
+        return gr.update(visible=False), gr.update(), gr.update()
+    pct = float(min_score or 0)                              # slider 0–100(%)
+    MODEL_FILTER["min_score"] = None if pct <= 0 else pct / 100.0
+    MODEL_FILTER["hidden"] = [str(k) for k in (hidden_keys or [])]
+    _save_model_filter()
+    vd = visible_disciplines() or DISCIPLINES
+    disc0 = vd[0]
+    labels = labels_for(disc0) or [m["label"] for m in AVAILABLE if disc_of(m["key"]) == disc0]
+    gr.Info(f"✅ 已更新篩選:門檻 {('≥ ' + str(int(MODEL_FILTER['min_score']*100)) + '%') if MODEL_FILTER['min_score'] else '全部'}"
+            f"、隱藏 {len(MODEL_FILTER['hidden'])} 個。")
+    return (gr.update(visible=False),
+            gr.update(choices=vd, value=disc0),
+            gr.update(choices=model_choices(disc0), value=(labels[0] if labels else None)))
+
+
 # ============================================================================
 #  介面外觀:海軍藍 / 白 / 檸檬黃
 # ============================================================================
@@ -1198,6 +1588,16 @@ CSS = """
 .editrow{flex:1 1 0!important; min-height:0!important; align-items:stretch!important;}  /* 下排吃滿剩餘高度;stretch 讓面板撐滿(否則 unequal-height 只取內容高) */
 .editrow > .column, .editrow .panel{min-height:0!important; height:100%!important;}
 footer{display:none!important;}
+/* 公開站身分列:站主(綠)/訪客(琥珀) */
+#cs-identity:empty{display:none!important;}
+.cs-idbar{font-size:12.5px;font-weight:600;padding:5px 12px;border-radius:8px;margin:2px 0 0;
+  display:inline-block;border:1px solid var(--line)}
+.cs-idbar.cs-owner{background:#E7F6EC;color:#1B7A3D;border-color:#B7E3C6}
+.cs-idbar.cs-guest{background:var(--lemon-soft);color:#7A5B00;border-color:#F0DC8A}
+.cs-authbtn{margin-left:10px;padding:2px 12px;border-radius:7px;border:1px solid currentColor;
+  background:transparent;color:inherit;font-weight:700;font-size:12px;cursor:pointer;vertical-align:middle}
+.cs-authbtn:hover{background:rgba(0,0,0,.06)}
+.cs-gbtn{display:inline-block;vertical-align:middle;margin-left:4px}
 
 /* 頂部品牌列 — 外層 gr.HTML(.brandwrap)的 .prose 內距歸零,讓品牌列填滿欄寬、
    與下方面板列等寬(不再靠負邊距硬撐,手機/桌機都對齊) */
@@ -1368,7 +1768,20 @@ footer{display:none!important;}
   border:1.5px solid var(--navy-500); border-radius:6px; background:#fff; color:var(--navy-700); font-weight:600;}
 .cs-cls:hover{border-color:var(--navy-700); background:var(--navy-100);}
 /* 隱藏 bridge 文字框 + 觸發鈕完全不佔位 */
-#cs-bridge, #cs-trigger{display:none!important;}
+#cs-bridge, #cs-trigger, #cs-upstatus, #cs-uppaths, #cs-uppaths-btn, #cs-mode{display:none!important;}
+/* 站主本地模式切換:絕對定位到「推論」標題列右側(標題副標讓出右側空間,不被蓋到) */
+.cs-infer{position:relative!important;}
+.cs-infer .phead .ph-sub{padding-right:132px!important;}
+.cs-infer .cs-modechk{position:absolute!important;top:6px;right:16px;z-index:6;
+  width:auto!important;min-width:0!important;flex:0 0 auto!important;margin:0!important;}
+.cs-infer .cs-modechk label{gap:5px!important;white-space:nowrap;font-size:12px!important;color:var(--lemon)!important;}
+/* 模型篩選 icon:絕對定位到「模型」標題列右側(成績圖例讓出右側空間) */
+.cs-model{position:relative!important;}
+.cs-model .phead .ph-sub{padding-right:82px!important;}
+.cs-model .cs-filterbtn{position:absolute!important;top:5px;right:14px;z-index:6;width:auto!important;
+  min-width:0!important;flex:0 0 auto!important;margin:0!important;padding:2px 10px!important;
+  font-size:12px!important;background:var(--lemon)!important;color:var(--navy-900)!important;
+  border:none!important;border-radius:7px!important;font-weight:700!important;}
 
 /* 另存資料夾:檔名格式對話框(全頁遮罩 + 置中卡片) */
 .cs-modal-backdrop{position:fixed!important; inset:0!important; z-index:9999!important;
@@ -1630,22 +2043,234 @@ ARROW_JS = """
 """
 
 
+# 公開站「自動分批上傳」:純前端把整夾影像切成多個 < BATCH_MB 的批次,逐批以 XHR 上傳到
+# Gradio 暫存夾(每批各自是一個 < ~100MB 的請求 → 繞過 Cloudflare 單次上限),XHR upload.onprogress
+# 給「真實百分比」進度條;全部上傳完把伺服器路徑 JSON 寫進 #cs-uppaths、點 #cs-uppaths-btn 交後端;
+# 後端寫回 #cs-upstatus 的 token 變化 → 收起。任何批次失敗/中斷都轉成可關閉的提示,絕不靜默卡死。
+BATCH_MB = 90    # 每批上限(< Cloudflare 單次 ~100MB,留邊際)
+BATCH_N = 300    # 每批檔數上限(避免單一 multipart 過大/過慢)
+UPLOAD_JS = ("""
+() => {
+  if (window.__cs_up_init) return;
+  window.__cs_up_init = true;
+  const BATCH_MB = __BATCH_MB__, BATCH_N = __BATCH_N__;
+  const IMG_RE = /\\.(jpe?g|png|bmp|tiff?|webp|gif)$/i;
+  const st = document.createElement('style');
+  st.textContent = `
+    #cs-uploading{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;background:rgba(11,31,58,.5);backdrop-filter:blur(2px)}
+    #cs-uploading.on{display:flex}
+    #cs-uploading .cs-up-card{background:#fff;border:2px solid #163C6B;border-radius:14px;padding:22px 28px;min-width:320px;max-width:86vw;text-align:center;box-shadow:0 12px 44px rgba(0,0,0,.32)}
+    #cs-uploading.err .cs-up-card{border-color:#C0392B}
+    #cs-uploading .cs-up-t{font-size:15px;font-weight:700;color:#0B1F3A;margin-bottom:14px}
+    #cs-uploading .cs-up-track{height:10px;border-radius:6px;background:#E5EDF7;overflow:hidden;position:relative}
+    #cs-uploading.err .cs-up-track{display:none}
+    #cs-uploading .cs-up-bar{position:absolute;left:-42%;width:42%;height:100%;border-radius:6px;background:linear-gradient(90deg,#22568F,#FFE14D);animation:cs-up-slide 1.1s ease-in-out infinite}
+    #cs-uploading.det .cs-up-bar{left:0;animation:none;transition:width .2s ease}
+    @keyframes cs-up-slide{0%{left:-42%}100%{left:100%}}
+    #cs-uploading .cs-up-sub{font-size:12px;color:#5B708A;margin-top:12px;line-height:1.55}
+    #cs-uploading .cs-up-x{display:none;margin-top:14px;font-size:12px;font-weight:700;color:#163C6B;cursor:pointer;text-decoration:underline}
+    #cs-uploading.err .cs-up-x{display:inline-block}
+  `;
+  document.head.appendChild(st);
+  const ov = document.createElement('div');
+  ov.id = 'cs-uploading';
+  ov.innerHTML = '<div class="cs-up-card"><div class="cs-up-t" id="cs-up-t">⏳ 上傳影像中…</div>'
+    + '<div class="cs-up-track"><div class="cs-up-bar" id="cs-up-bar"></div></div>'
+    + '<div class="cs-up-sub" id="cs-up-sub">準備上傳…</div>'
+    + '<div class="cs-up-x" id="cs-up-x">關閉</div></div>';
+  document.body.appendChild(ov);
+  const titleEl = () => document.getElementById('cs-up-t');
+  const barEl = () => document.getElementById('cs-up-bar');
+  const sub = () => document.getElementById('cs-up-sub');
+  const statusEl = () => document.querySelector('#cs-upstatus textarea, #cs-upstatus input');
+  let base = '', poll = null, busy = false;
+  const setNative = (el, val) => {
+    const proto = el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+    const d = Object.getOwnPropertyDescriptor(proto, 'value');
+    if (d && d.set) d.set.call(el, val); else el.value = val;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  const hide = () => { ov.classList.remove('on', 'err', 'det'); clearInterval(poll); poll = null; busy = false; };
+  document.getElementById('cs-up-x').addEventListener('click', hide);
+  const fail = (msg) => {            // 失敗/中斷 → 可關閉提示,絕不靜默卡住
+    clearInterval(poll); poll = null; busy = false;
+    ov.classList.add('on', 'err'); ov.classList.remove('det');
+    if (titleEl()) titleEl().textContent = '⚠️ 上傳未完成';
+    if (sub()) sub().innerHTML = msg;
+  };
+  const showPrep = (n, mb) => {      // 選好夾:先出遮罩(不定量動畫),消除靜默空窗
+    ov.classList.remove('err', 'det');
+    if (titleEl()) titleEl().textContent = '⏳ 上傳影像中…';
+    if (sub()) sub().textContent = '準備上傳 ' + n + ' 張影像（約 ' + mb.toFixed(0) + ' MB）…';
+    ov.classList.add('on');
+  };
+  const setProgress = (frac, bi, nb) => {   // 真實百分比
+    ov.classList.add('det');
+    const pct = Math.max(1, Math.min(99, Math.round(frac * 100)));
+    if (barEl()) barEl().style.width = pct + '%';
+    if (sub()) sub().textContent = '上傳中 ' + pct + '%（第 ' + bi + '/' + nb + ' 批）…雲端上行可能較慢，請稍候';
+  };
+  // 單批:XHR multipart POST 到 Gradio 上傳端點(相對路徑 → 經 tunnel + Access + 帶 cookie)
+  const xhrUpload = (files, onprog) => new Promise((resolve, reject) => {
+    const fd = new FormData();
+    for (const f of files) fd.append('files', f, f.webkitRelativePath || f.name);
+    const x = new XMLHttpRequest();
+    x.open('POST', '/gradio_api/upload');
+    x.upload.onprogress = (e) => { if (e.lengthComputable) onprog(e.loaded); };
+    x.onload = () => {
+      if (x.status >= 200 && x.status < 300) { try { resolve(JSON.parse(x.responseText)); } catch (_) { resolve([]); } }
+      else reject({ status: x.status });
+    };
+    x.onerror = () => reject({ status: 0 });
+    x.send(fd);
+  });
+  const startUpload = async (allFiles) => {
+    if (busy) return; busy = true;
+    const imgs = allFiles.filter((f) => IMG_RE.test(f.name));
+    const total = imgs.reduce((s, f) => s + (f.size || 0), 0);
+    showPrep(imgs.length, total / 1048576);
+    if (!imgs.length) { fail('這個資料夾裡沒有支援的影像檔（jpg/png/tif/bmp/webp/gif）。'); return; }
+    // 貪婪打包:每批 < BATCH_MB 且 < BATCH_N 檔;單檔超大就自成一批
+    const MAXB = BATCH_MB * 1048576, batches = []; let cur = [], cb = 0;
+    for (const f of imgs) {
+      if (cur.length && (cb + (f.size || 0) > MAXB || cur.length >= BATCH_N)) { batches.push(cur); cur = []; cb = 0; }
+      cur.push(f); cb += (f.size || 0);
+    }
+    if (cur.length) batches.push(cur);
+    // token 輪詢:後端把路徑收下、寫回 #cs-upstatus token 變化 → 完成(依失敗數決定收起或提示)
+    const el = statusEl(); base = el ? el.value : '';
+    clearInterval(poll);
+    poll = setInterval(() => {
+      const e2 = statusEl();
+      if (e2 && e2.value && e2.value !== base) {
+        const nf = window.__cs_up_failed || 0;
+        if (nf > 0) { ov.classList.add('err'); ov.classList.remove('det');
+          if (titleEl()) titleEl().textContent = '⚠️ 部分批次未上傳';
+          if (sub()) sub().innerHTML = '已載入成功上傳的影像，但有 <b>' + nf + '</b> 批失敗（可能太大或中斷）。可稍後重試遺漏的部分。';
+          clearInterval(poll); poll = null; busy = false;
+        } else hide();
+      }
+    }, 300);
+    let sent = 0, failed = 0; const paths = [];
+    for (let i = 0; i < batches.length; i++) {
+      const bBytes = batches[i].reduce((s, f) => s + (f.size || 0), 0);
+      try {
+        const res = await xhrUpload(batches[i], (loaded) => setProgress((sent + loaded) / (total || 1), i + 1, batches.length));
+        if (Array.isArray(res)) for (const p of res) paths.push(p);
+      } catch (err) { failed++; }
+      sent += bBytes; setProgress(sent / (total || 1), i + 1, batches.length);
+    }
+    if (!paths.length) {              // 全數失敗
+      fail('上傳失敗' + (failed ? '（' + failed + ' 批皆未成功）' : '') + '。可能檔案太大或網路中斷，請減少張數後再試。');
+      return;
+    }
+    // 交後端:路徑 JSON → textbox → 點隱藏鈕(其 .click 帶當下 textbox 值送後端)
+    window.__cs_up_failed = failed;
+    if (sub()) sub().textContent = '伺服器處理中…';
+    const tb = document.querySelector('#cs-uppaths textarea, #cs-uppaths input');
+    const btn = document.querySelector('#cs-uppaths-btn button') || document.getElementById('cs-uppaths-btn');
+    if (tb && btn) { setNative(tb, JSON.stringify(paths)); btn.click(); }
+    else fail('內部錯誤：找不到上傳橋接元件。');
+  };
+  // 自建 directory input(不靠 Gradio 內建上傳,自己控制分批)
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.multiple = true;
+  try { inp.webkitdirectory = true; } catch (_) {}
+  inp.setAttribute('webkitdirectory', ''); inp.style.display = 'none';
+  document.body.appendChild(inp);
+  inp.addEventListener('change', () => { const fs = Array.from(inp.files || []); inp.value = ''; if (fs.length) startUpload(fs); });
+  // 「📁 上傳影像」鈕 → 開瀏覽器資料夾選擇器並分批上傳。
+  // 但站主切到「本地模式」時(#cs-mode=local)不攔截 → 交給 Gradio 後端 on_pick_folder_pub 走伺服器端原生選夾。
+  document.addEventListener('click', (e) => {
+    if (e.target.closest && e.target.closest('#cs-upload')) {
+      const m = document.querySelector('#cs-mode textarea, #cs-mode input');
+      if (m && m.value === 'local') return;   // 本地模式:放行給後端原生選夾
+      e.preventDefault(); e.stopPropagation(); inp.click();
+    }
+  }, true);
+}
+""").replace("__BATCH_MB__", str(BATCH_MB)).replace("__BATCH_N__", str(BATCH_N))
+
+
+# 站內 Google 登入前端:載入 GSI SDK → 匿名時把官方 Google 按鈕 render 進身分列的 #cs-gbtn;
+# 拿到 credential(ID token)POST /auth/google 成功即 reload(讓 on_identity 依 cookie 重判身分);
+# 「登出」鈕 POST /auth/logout 後 reload。僅 AUTH_ENABLED(有 client id)時掛。
+AUTH_JS = ("""
+() => {
+  if (window.__cs_auth_init) return;
+  window.__cs_auth_init = true;
+  const CID = "__GOOGLE_CLIENT_ID__";
+  const post = (url) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+  // 登出(事件委派,身分列可能重繪)
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'cs-logout') {
+      e.preventDefault();
+      post('/auth/logout').finally(() => location.reload());
+    }
+  }, true);
+  const onCred = (resp) => {
+    if (!resp || !resp.credential) return;
+    fetch('/auth/google', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential: resp.credential })
+    }).then(r => r.json().then(j => ({ ok: r.ok, j }))).then(({ ok, j }) => {
+      if (ok) location.reload();
+      else alert('登入失敗：' + ((j && j.error) || '請確認使用站主 Google 帳號'));
+    }).catch(() => alert('登入失敗（網路問題），請再試一次。'));
+  };
+  let inited = false;
+  const initGsi = () => {
+    if (inited || !(window.google && google.accounts && google.accounts.id)) return;
+    inited = true;
+    google.accounts.id.initialize({ client_id: CID, callback: onCred, auto_select: false });
+  };
+  // render 官方 Google 按鈕進 #cs-gbtn(身分列由 on_identity 非同步填入 → 輪詢等它出現)
+  let rendered = null;
+  const tryRender = () => {
+    initGsi();
+    const el = document.getElementById('cs-gbtn');
+    if (el && inited && el !== rendered && !el.childElementCount) {
+      try { google.accounts.id.renderButton(el, { type: 'standard', theme: 'outline', size: 'medium', text: 'signin', shape: 'pill' }); rendered = el; } catch (_) {}
+    }
+  };
+  // 載入 GSI SDK
+  const s = document.createElement('script');
+  s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.defer = true;
+  s.onload = () => { initGsi(); tryRender(); };
+  document.head.appendChild(s);
+  setInterval(tryRender, 700);   // 身分列重繪 / SDK 慢載都能補上按鈕
+}
+""").replace("__GOOGLE_CLIENT_ID__", GOOGLE_CLIENT_ID)
+
+
 def build():
     with gr.Blocks(title="ClinScope — 臨床顯微辨識工作台") as demo:
         gr.HTML(BRAND_HTML, elem_classes="brandwrap")
+        identity_html = gr.HTML("", elem_id="cs-identity")   # 公開站身分列(由 on_identity 於載入時填)
         if not AVAILABLE:
             gr.Markdown("⚠️ 找不到任何模型權重,請先完成至少一條 track 的訓練。")
             return demo
-        init_disc = DISCIPLINES[0]
-        init_label = labels_for(init_disc)[0]
+        _init_discs = visible_disciplines() or DISCIPLINES
+        # 公開站預設停在範例模型(OpenFungi),配合預先分類的範例畫面;否則第一個可見科別
+        _sample_spec = next((m for m in AVAILABLE
+                             if m["key"] == SAMPLE_MODEL_KEY and _visible_model(m["key"])), None)
+        if PUBLIC and _sample_spec:
+            init_disc = disc_of(_sample_spec["key"])
+            init_label = _sample_spec["label"]
+        else:
+            init_disc = _init_discs[0]
+            init_label = (labels_for(init_disc) or
+                          [m["label"] for m in AVAILABLE if disc_of(m["key"]) == init_disc])[0]
         S = gr.State(new_state(init_label))
 
         # --- 上排:模型(左) + 顯示(右) ---
         with gr.Row(equal_height=False, elem_classes="toprow"):
-            with gr.Column(scale=5, elem_classes="panel"):
+            with gr.Column(scale=5, elem_classes="panel cs-model"):
                 gr.HTML(panel_head("模型", "MODEL", "🟢≥.85 🟡≥.70 🟠≥.50 🔴<.50 成績分級"))
+                if PUBLIC:   # 站主:模型篩選 icon(絕對定位到「模型」標題列右側,預設隱藏)
+                    btn_filter = gr.Button("⚙︎ 篩選", visible=False, elem_classes="cs-filterbtn", scale=0)
                 with gr.Row(elem_classes="modelrow"):
-                    disc_dd = gr.Dropdown(DISCIPLINES, value=init_disc, label="分類（科別）", scale=2)
+                    disc_dd = gr.Dropdown(_init_discs, value=init_disc, label="分類（科別）", scale=2)
                     model_dd = gr.Dropdown(model_choices(init_disc), value=init_label, label="模型", scale=5)
                 card_md = gr.Markdown(card_text(init_label), elem_classes="card")
                 thr = gr.Slider(0.0, 1.0, value=0.5, step=0.01, label="信心門檻（分類）",
@@ -1655,13 +2280,19 @@ def build():
                 preview_img = gr.Image(show_label=False, height=520, elem_classes="preview")
                 preview_meta = gr.Markdown("", visible=False, elem_classes="pmeta")
 
-        # --- 下排:編輯(滿版) ---
+        # --- 下排:推論(滿版) ---
         with gr.Row(elem_classes="editrow"):
-            with gr.Column(elem_classes="panel"):
-                gr.HTML(panel_head("編輯", "EDIT", "批次／單張計算 · 分類分頁 · 匯出"))
+            with gr.Column(elem_classes="panel cs-infer"):
+                gr.HTML(panel_head("推論", "INFERENCE", "批次／單張計算 · 分類分頁 · 匯出"))
+                if PUBLIC:   # 站主本地模式切換:絕對定位到「推論」標題列右側(預設隱藏,on_identity 對站主開放)
+                    mode_chk = gr.Checkbox(label="🖥️ 本地模式", value=False, visible=False,
+                                           container=False, elem_classes="cs-modechk")
                 # 上排 ICON 列:按鈕 + 兩個短下拉(檢視 / 切換分類,各自前綴 👁 / ⇄ 自我標示)
                 with gr.Row(elem_classes="toolbar"):
-                    btn_folder = gr.Button("📁 選擇資料夾", elem_classes="tbtn", scale=0)
+                    if PUBLIC:   # 公開站:純 Button + 自建 directory input,前端分批上傳(繞過 CF 100MB)
+                        btn_folder = gr.Button("📁 上傳影像", elem_id="cs-upload", elem_classes="tbtn", scale=0)
+                    else:        # 本機桌面/dev:client 即 server,原生選夾直接可用
+                        btn_folder = gr.Button("📁 選擇資料夾", elem_classes="tbtn", scale=0)
                     view_dd = gr.Dropdown(["👁 詳細資料", "👁 圖示"], value="👁 詳細資料",
                                           show_label=False, container=False, elem_classes="shortdd")
                     btn_batch = gr.Button("▶ 批次計算", elem_classes="tbtn primary", scale=0)
@@ -1670,7 +2301,8 @@ def build():
                                             container=False, interactive=False, elem_classes="shortdd")
                     btn_apply = gr.Button("⚖️ 套用門檻", elem_classes="tbtn", scale=0)
                     btn_csv = gr.Button("⤓ 匯出 CSV", elem_classes="tbtn", scale=0)
-                    btn_save = gr.Button("💾 另存資料夾", elem_classes="tbtn", scale=0)
+                    btn_save = gr.Button("💾 打包下載 ZIP" if PUBLIC else "💾 另存資料夾",
+                                         elem_classes="tbtn", scale=0)
                 count_md = gr.Markdown("", visible=False, elem_classes="countbar")
                 page_radio = gr.Radio([TOTAL], value=TOTAL, show_label=False,
                                       container=False, elem_classes="tabstrip")
@@ -1683,18 +2315,43 @@ def build():
                 # 故改用「JS 設 textbox 值 → 點隱藏按鈕」觸發後端(按鈕的合成 click 才會送事件)。兩者都用 CSS 藏。
                 bridge = gr.Textbox("", elem_id="cs-bridge", show_label=False)
                 bridge_btn = gr.Button("bridge", elem_id="cs-trigger")
+                # 上傳完成信號(公開站):handler 每次寫入單調 token,前端進度層偵測到變化即收起。CSS 藏。
+                up_status = gr.Textbox("", elem_id="cs-upstatus", show_label=False)
+                # 分批上傳橋接(公開站):前端把已上傳的伺服器路徑 JSON 寫入 textbox → 點隱藏鈕觸發後端。CSS 藏。
+                up_paths = gr.Textbox("", elem_id="cs-uppaths", show_label=False)
+                up_paths_btn = gr.Button("uppaths", elem_id="cs-uppaths-btn")
+                # 模式旗標(公開/本地):on_mode_change 寫入,UPLOAD_JS 讀它決定是否攔截資料夾鈕。CSS 藏。
+                mode_flag = gr.Textbox("public", elem_id="cs-mode", show_label=False)
                 csv_out = gr.File(label="下載 CSV", visible=False)
+                zip_out = gr.File(label="下載 ZIP", visible=False)   # 公開站打包下載用
 
-        # 另存資料夾:檔名格式對話框(覆蓋全頁、置中);按『另存』先跳此框,確認後才開資料夾選擇框
+        # 另存/打包:檔名格式對話框(覆蓋全頁、置中);按鈕先跳此框,確認後桌面版開資料夾選擇框、公開站打包 zip
         with gr.Column(visible=False, elem_classes="cs-modal-backdrop") as save_modal:
             with gr.Column(elem_classes="cs-modal-box"):
-                gr.HTML('<div class="cs-modal-title">📁 另存資料夾 — 檔名格式</div>'
-                        '<div class="cs-modal-sub">選擇複製後的檔名命名方式（分類取自目前分頁／各檔指派）</div>')
+                _init_modal_title = (_save_modal_title(False) if PUBLIC else
+                    '<div class="cs-modal-title">📁 另存資料夾 — 檔名格式</div>'
+                    '<div class="cs-modal-sub">選擇複製後的檔名命名方式（分類取自目前分頁／各檔指派）</div>')
+                save_modal_title = gr.HTML(_init_modal_title)
                 save_fmt = gr.Radio([("分類_檔名", "c_n"), ("檔名_分類", "n_c"), ("檔名 (分類)", "n_pc")],
                                     value="c_n", show_label=False, elem_classes="cs-fmt")
                 with gr.Row(elem_classes="cs-modal-actions"):
                     save_cancel = gr.Button("取消", elem_classes="tbtn", scale=0)
                     save_confirm = gr.Button("確認另存", elem_classes="tbtn accent", scale=0)
+
+        if PUBLIC:   # 站主模型篩選對話框(分數門檻 slider + 手動隱藏,變更套用到所有訪客)
+            with gr.Column(visible=False, elem_classes="cs-modal-backdrop") as filter_modal:
+                with gr.Column(elem_classes="cs-modal-box"):
+                    gr.HTML('<div class="cs-modal-title">🔎 模型篩選（站主）</div>'
+                            '<div class="cs-modal-sub">設定顯示門檻與手動隱藏;變更會即時套用到所有訪客</div>')
+                    filter_score = gr.Slider(0, 100, value=int((MODEL_FILTER.get("min_score") or 0) * 100),
+                                             step=1, label="分數門檻（%）",
+                                             info="只顯示成績 ≥ 此門檻的模型;0 = 全部顯示（預設 85）")
+                    filter_hide = gr.Dropdown([(m["label"], m["key"]) for m in AVAILABLE],
+                                              value=MODEL_FILTER.get("hidden", []), multiselect=True,
+                                              label="手動隱藏的模型（可多選）", filterable=True)
+                    with gr.Row(elem_classes="cs-modal-actions"):
+                        filter_cancel = gr.Button("取消", elem_classes="tbtn", scale=0)
+                        filter_save = gr.Button("儲存篩選", elem_classes="tbtn accent", scale=0)
 
         gr.HTML(FOOTER_HTML)
 
@@ -1708,7 +2365,14 @@ def build():
 
         disc_dd.change(on_disc, [disc_dd], [model_dd]).then(on_model, [model_dd, S], MODEL_OUT)
         model_dd.change(on_model, [model_dd, S], MODEL_OUT)
-        btn_folder.click(on_pick_folder, [S], FOLDER_OUT)
+        if PUBLIC:
+            # 上傳完成後由隱藏鈕把伺服器路徑送進後端;資料夾鈕本身只在「站主+本地模式」時走原生選夾
+            up_paths_btn.click(on_uploaded_paths, [up_paths, S], FOLDER_OUT + [up_status])
+            btn_folder.click(on_pick_folder_pub, [S], FOLDER_OUT)
+            mode_chk.change(on_mode_change, [mode_chk, S],
+                            [S, btn_folder, btn_save, mode_flag, save_modal_title])
+        else:
+            btn_folder.click(on_pick_folder, [S], FOLDER_OUT)
         view_dd.change(on_view, [view_dd, S], PANEL_OUT)
         switch_dd.input(on_switch, [switch_dd, S], PANEL_OUT)
         page_radio.change(on_page, [page_radio, S], COMPUTE_OUT)
@@ -1718,11 +2382,29 @@ def build():
         btn_csv.click(on_csv, [model_dd, S], [csv_out])
         btn_save.click(on_saveas, [S], [save_modal])                       # 跳出檔名格式對話框
         save_cancel.click(lambda: gr.update(visible=False), None, [save_modal])
-        save_confirm.click(on_saveas_confirm, [save_fmt, S], [save_modal])  # 確認 → 開資料夾選擇框並複製
+        if PUBLIC:   # 公開站:本地模式(站主)→ 原生另存;否則 → 打包下載 ZIP
+            save_confirm.click(on_saveas_confirm_dispatch, [save_fmt, S], [save_modal, zip_out])
+        else:        # 桌面版:確認 → 開資料夾選擇框並複製到本機
+            save_confirm.click(on_saveas_confirm, [save_fmt, S], [save_modal])
+        if PUBLIC:   # 站主模型篩選:開/存(存後重建科別+模型下拉,並刷新模型卡)
+            btn_filter.click(on_open_filter, None, [filter_modal])
+            filter_cancel.click(lambda: gr.update(visible=False), None, [filter_modal])
+            filter_save.click(on_save_filter, [filter_score, filter_hide, S],
+                              [filter_modal, disc_dd, model_dd]).then(on_model, [model_dd, S], MODEL_OUT)
         gallery.select(on_select, [S, model_dd, thr], SELECT_OUT)
         bridge_btn.click(on_bridge, [bridge, S, model_dd, thr], BRIDGE_OUT)  # 詳細資料 HTML 表的選列/改分類
-        demo.load(on_model, [model_dd, S], MODEL_OUT)
+        _ev = demo.load(on_model, [model_dd, S], MODEL_OUT)
+        if PUBLIC:   # 預設畫面載入預先分類好的範例;.then 確保在 on_model 重設「之後」才跑(避免 load 事件競態把結果洗掉)
+            _ev.then(on_load_sample, [S], FOLDER_OUT)
         demo.load(None, None, None, js=ARROW_JS)  # 方向鍵切換檔案(圖示 / 詳細資料 皆可)
+        if PUBLIC:
+            demo.load(None, None, None, js=UPLOAD_JS)  # 公開站:上傳進度覆蓋層
+            # 身分判定:站主 → 按鈕可用;訪客 → 虛化停用(唯讀)。後端另有 _guard_owner 縱深防禦。
+            demo.load(on_identity, None,
+                      [identity_html, btn_folder, btn_batch, btn_single, btn_apply, btn_csv, btn_save,
+                       mode_chk, btn_filter])
+            if AUTH_ENABLED:
+                demo.load(None, None, None, js=AUTH_JS)  # 站內 Google 登入(登入/登出鈕 + GSI)
     return demo
 
 
@@ -1741,8 +2423,29 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
     # 即啟用 Gradio 內建「帳號+密碼」登入(密碼只走環境變數,不寫進原始碼/版控)。
     _u, _p = os.environ.get("CLINSCOPE_AUTH_USER"), os.environ.get("CLINSCOPE_AUTH_PASS")
     auth = (_u, _p) if (_u and _p) else None
+    port = int(server_port or os.environ.get("GRADIO_SERVER_PORT", 7860) or 7860)
     print(f"[ClinScope] device={DEVICE.type} | {len(AVAILABLE)} models | "
-          f"disciplines={DISCIPLINES} | allowed_paths={allowed} | auth={'on' if auth else 'off'}")
+          f"disciplines={DISCIPLINES} | allowed_paths={allowed} | auth={'on' if auth else 'off'} | "
+          f"mode={'PUBLIC(upload)' if PUBLIC else 'local(native-pick)'} | "
+          f"google-login={'ON' if AUTH_ENABLED else 'off'}")
+    if PUBLIC:
+        _precompute_sample()      # 預先分類範例夾(供預設畫面),失敗不影響啟動
+    demo = build()
+    if AUTH_ENABLED:
+        # 站內 Google 登入:掛自訂 /auth/* 路由到 Gradio 底層 FastAPI,再用 uvicorn 起(127.0.0.1,經 tunnel)。
+        import uvicorn
+        from fastapi import FastAPI
+        fastapi_app = FastAPI()
+        _add_auth_routes(fastapi_app)
+        mounted = gr.mount_gradio_app(fastapi_app, demo, path="/", allowed_paths=allowed,
+                                      theme=THEME, css=CSS, show_error=True)
+        server = uvicorn.Server(uvicorn.Config(mounted, host="127.0.0.1", port=port, log_level="warning"))
+        if prevent_thread_lock:
+            import threading
+            threading.Thread(target=server.run, daemon=True).start()
+            return mounted
+        server.run()
+        return mounted
     kw = dict(theme=THEME, css=CSS, allowed_paths=allowed,
               prevent_thread_lock=prevent_thread_lock, inbrowser=inbrowser)
     if auth:
@@ -1750,7 +2453,7 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
     if server_port:
         kw["server_port"] = server_port
     kw.update(overrides)
-    return build().launch(**kw)
+    return demo.launch(**kw)
 
 
 if __name__ == "__main__":
