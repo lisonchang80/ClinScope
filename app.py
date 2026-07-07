@@ -1859,7 +1859,7 @@ from urllib.parse import quote as _urlquote
 _SETUP_EXE = Path(__file__).resolve().parent / "packaging" / "dist" / "ClinScope-Setup.exe"
 SETUP_DL_URL = ("/gradio_api/file=" + _urlquote(_SETUP_EXE.as_posix())) if _SETUP_EXE.exists() else None
 
-_DL_BTN = (f'<a class="dlbtn" href="{SETUP_DL_URL}" download="ClinScope-Setup.exe" '
+_DL_BTN = (f'<a id="cs-dlbtn" class="dlbtn" href="{SETUP_DL_URL}" download="ClinScope-Setup.exe" '
            f'title="下載 Windows 桌面安裝版(約 320 MB;安裝後選模型才下載權重)">⬇ 下載桌面版</a>'
            ) if SETUP_DL_URL else ''
 BRAND_HTML = (
@@ -1873,6 +1873,53 @@ BRAND_HTML = (
 FOOTER_HTML = (
     '<div class="disc-foot">⚠️ 研究／作品集用途,<b>非臨床診斷</b>。'
     '每個模型僅在其資料集分布內準確;跨到不同染色法／相機／倍率的影像,準確率預期下降。</div>')
+
+# ── WebTour 首次進站導覽(spotlight 遮罩;引擎複製自 ~/.claude/skills/web-tour) ──
+# 引擎單檔 static/tour.js,去掉結尾兩行 ES export 後內嵌進 Gradio 的 js= hook(比照 ARROW_JS)。
+# selector 全用穩定 elem_id(#cs-*);Gradio 節點 Svelte 動態掛載,引擎 waitFor 每步輪詢等待,
+# 找不到就 warn+跳步不中斷。只在公開站注入(訪客視角文案),見 build() 的 if PUBLIC 區塊。
+_TOUR_ENGINE_SRC = (Path(__file__).resolve().parent / "static" / "tour.js").read_text(encoding="utf-8")
+_TOUR_ENGINE_SRC = _TOUR_ENGINE_SRC[: _TOUR_ENGINE_SRC.index("export {")]   # 切掉 ES export 兩行
+_TOUR_STEPS = [
+    {"title": "歡迎使用 ClinScope",
+     "body": "臨床顯微影像辨識工作台,內建 90+ 個模型。你現在是訪客唯讀模式:可瀏覽範例、切換模型看結果,操作類按鈕會虛化。用 ← → 鍵或點「下一步」,Esc 隨時關閉。"},
+    {"selector": "#cs-model-panel", "title": "選辨識模型", "placement": "right", "interactive": True,
+     "body": "先選科別,再選模型;下方卡片會說明這個模型辨識什麼、準確率多少。"},
+    {"selector": "#cs-modelcard", "title": "模型卡", "placement": "bottom",
+     "body": "圖示是準確率分級:🟢≥.85 🟡≥.70 🟠≥.50 🔴<.50,內文說明資料來源與適用情境。"},
+    {"selector": "#cs-results", "title": "辨識結果", "placement": "top", "interactive": True,
+     "body": "每一列是一張圖的分類與信心;上方分頁依類別分組,也可切「圖示」看縮圖牆。"},
+    {"selector": "#cs-preview", "title": "點圖看詳情", "placement": "left", "interactive": True,
+     "body": "點任一張縮圖,這裡會放大顯示辨識結果 —— 分類機率或偵測標註框。"},
+    {"selector": "#cs-upload", "title": "上傳與計算", "placement": "bottom",
+     "body": "上傳影像、批次／單張計算、匯出結果都在這一排。這些是站主功能,訪客看得到但不能點。"},
+    {"selector": "#cs-identity", "title": "站主登入", "placement": "bottom",
+     "body": "你是站主的話,在這裡用 Google 登入即可解鎖上傳、計算、匯出等操作。"},
+    {"selector": "#cs-dlbtn", "title": "下載桌面版", "placement": "bottom",
+     "body": "想離線、不受訪客限制,可下載 Windows 桌面版,本機執行沒有站主限制。"},
+]
+# 組成 Gradio js= 用的箭頭函式:引擎源碼 + 步驟 + 啟動(輪詢等 Gradio 框架掛載再播)。
+WEBTOUR_JS = (
+    "() => {\n"
+    "  if (window.__cs_tour) return;\n"          # Gradio 有時重連會重觸 demo.load;去重
+    "  window.__cs_tour = true;\n"
+    + _TOUR_ENGINE_SRC + "\n"
+    "  const STEPS = " + json.dumps(_TOUR_STEPS, ensure_ascii=False) + ";\n"
+    # 下載鈕是靜態 HTML(未打包則不存在),boot 當下即可判定 → 不存在就抽掉該步免空等;
+    # 其餘動態節點交給引擎 waitFor。
+    "  const steps = STEPS.filter(s => s.selector !== '#cs-dlbtn' || document.querySelector('#cs-dlbtn'));\n"
+    "  const opts = { key: 'clinscope', version: 1, accent: '#2f6df6' };\n"
+    "  let tries = 0;\n"
+    "  const boot = () => {\n"
+    "    if (!window.WebTour) return;\n"
+    "    const framed = document.querySelector('.brandbar') && document.querySelector('#cs-model-panel');\n"
+    "    if (!framed && tries++ < 40) { setTimeout(boot, 200); return; }\n"   # 等 Gradio 掛載,最多 8s
+    "    window.WebTour.attachHelpButton(steps, opts);\n"
+    "    window.WebTour.autoStartOnce(steps, opts);\n"
+    "  };\n"
+    "  boot();\n"
+    "}\n"
+)
 
 # 前端互動橋接(詳細資料改成自訂 HTML 表):
 #  - 選列(點/方向鍵)→ 經隱藏 textbox #cs-bridge 送 {"a":"sel","i":idx} 給 on_bridge 更新大圖
@@ -2265,19 +2312,19 @@ def build():
 
         # --- 上排:模型(左) + 顯示(右) ---
         with gr.Row(equal_height=False, elem_classes="toprow"):
-            with gr.Column(scale=5, elem_classes="panel cs-model"):
+            with gr.Column(scale=5, elem_id="cs-model-panel", elem_classes="panel cs-model"):
                 gr.HTML(panel_head("模型", "MODEL", "🟢≥.85 🟡≥.70 🟠≥.50 🔴<.50 成績分級"))
                 if PUBLIC:   # 站主:模型篩選 icon(絕對定位到「模型」標題列右側,預設隱藏)
                     btn_filter = gr.Button("⚙︎ 篩選", visible=False, elem_classes="cs-filterbtn", scale=0)
                 with gr.Row(elem_classes="modelrow"):
                     disc_dd = gr.Dropdown(_init_discs, value=init_disc, label="分類（科別）", scale=2)
                     model_dd = gr.Dropdown(model_choices(init_disc), value=init_label, label="模型", scale=5)
-                card_md = gr.Markdown(card_text(init_label), elem_classes="card")
+                card_md = gr.Markdown(card_text(init_label), elem_id="cs-modelcard", elem_classes="card")
                 thr = gr.Slider(0.0, 1.0, value=0.5, step=0.01, label="信心門檻（分類）",
                                 info="Top-1 機率低於此值 → 歸入 Null 待確認", elem_classes="thr")
             with gr.Column(scale=6, elem_classes="panel"):
                 gr.HTML(panel_head("顯示", "DISPLAY", ""))
-                preview_img = gr.Image(show_label=False, height=520, elem_classes="preview")
+                preview_img = gr.Image(show_label=False, height=520, elem_id="cs-preview", elem_classes="preview")
                 preview_meta = gr.Markdown("", visible=False, elem_classes="pmeta")
 
         # --- 下排:推論(滿版) ---
@@ -2307,10 +2354,10 @@ def build():
                 page_radio = gr.Radio([TOTAL], value=TOTAL, show_label=False,
                                       container=False, elem_classes="tabstrip")
                 gallery = gr.Gallery(show_label=False, columns=8, object_fit="cover",
-                                     allow_preview=False, elem_classes="grid")
+                                     allow_preview=False, elem_id="cs-gallery", elem_classes="grid")
                 # 詳細資料 = 自訂 HTML 表(分類欄內嵌 <select> 下拉);互動經 bridge 回傳
                 # 注意:建立時 visible=True 才會掛載,初始可見性交給首次 render 決定(visible=False 建立者不掛載)
-                detail_html = gr.HTML("", elem_classes="detail")
+                detail_html = gr.HTML("", elem_id="cs-results", elem_classes="detail")
                 # bridge:前端 JS 寫入指令的隱藏 textbox + 觸發鈕。Gradio 不認「合成 input 事件」,
                 # 故改用「JS 設 textbox 值 → 點隱藏按鈕」觸發後端(按鈕的合成 click 才會送事件)。兩者都用 CSS 藏。
                 bridge = gr.Textbox("", elem_id="cs-bridge", show_label=False)
@@ -2399,6 +2446,7 @@ def build():
         demo.load(None, None, None, js=ARROW_JS)  # 方向鍵切換檔案(圖示 / 詳細資料 皆可)
         if PUBLIC:
             demo.load(None, None, None, js=UPLOAD_JS)  # 公開站:上傳進度覆蓋層
+            demo.load(None, None, None, js=WEBTOUR_JS)  # 首次進站導覽(訪客 spotlight + 右下 ? 重播鈕)
             # 身分判定:站主 → 按鈕可用;訪客 → 虛化停用(唯讀)。後端另有 _guard_owner 縱深防禦。
             demo.load(on_identity, None,
                       [identity_html, btn_folder, btn_batch, btn_single, btn_apply, btn_csv, btn_save,
