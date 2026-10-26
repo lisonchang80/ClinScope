@@ -157,6 +157,47 @@ def cls_label():
                 and (A.CARDS.get(m["key"]) or {}).get("classes"))
 
 
+VISITORS = ["anonymous", "guest"]
+
+
+def cookie_for(who):
+    """anonymous=無 cookie;guest=已用 Google 登入但非站主;其餘=站主。"""
+    if who == "anonymous":
+        return None
+    if who == "guest":
+        return f"{A.COOKIE_NAME}={A.make_session(GUEST)}"
+    return owner_cookie_header()
+
+
+def new_session():
+    return uuid.uuid4().hex[:12]
+
+
+def upload(site, paths, cookie=None):
+    import httpx
+    files = [("files", (Path(p).name, open(p, "rb"), "image/png")) for p in paths]
+    return httpx.post(f"{site.base}/gradio_api/upload", files=files,
+                      headers={"Cookie": cookie} if cookie else {}, timeout=30)
+
+
+@pytest.fixture
+def sample(monkeypatch):
+    """模擬公開站預設畫面:範例夾已預先分類(訪客一進站就有 files/results)。"""
+    files = [str(make_png(TMP / f"sample_{i}.png", (i * 60, 90, 30))) for i in range(3)]
+    res = {p: {"page": "x", "prob": 0.9, "ranked": [("x", 0.9)], "manual": False} for p in files}
+    monkeypatch.setitem(A.SAMPLE, "label", cls_label())
+    monkeypatch.setitem(A.SAMPLE, "files", files)
+    monkeypatch.setitem(A.SAMPLE, "results", res)
+    return files
+
+
+def visitor_session(site, who, sample):
+    """以 who 身分開一個已載入範例的新 session,回傳 session_hash。"""
+    sh = new_session()
+    assert site.call("on_load_sample", cookie=cookie_for(who), session=sh)["success"]
+    return sh
+
+
 def select_model(site, label, cookie=None, session=None):
     """照 UI 順序切模型:先切科別(更新該 session 的模型下拉選項)再選模型 —— Gradio 會拒絕不在選項內的值。"""
     disc = A.disc_of(A.BY_LABEL[label]["key"])

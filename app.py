@@ -1414,7 +1414,7 @@ def on_apply_thr(thr, S):
     return (S,) + render(S)
 
 
-def _select_core(S, label, thr, idx, progress=None):
+def _select_core(S, label, thr, idx, progress=None, request=None):
     pf = S["page_files"]
     if not isinstance(idx, int) or idx < 0 or idx >= len(pf):
         return S, gr.update(), gr.update(), gr.update()
@@ -1426,6 +1426,10 @@ def _select_core(S, label, thr, idx, progress=None):
         sw = gr.update(interactive=(r is not None),
                        value=(f"⇄ {r['page']}" if r else SW_PLACEHOLDER))
         return S, sw, _open_rgb(p), meta_text_cls(p, r)
+    # det 點圖會跑 GPU 推論 → 僅站主(fail-closed);訪客只看原圖
+    if not _is_owner(request):
+        meta = meta_text_det(p, r) if r else f"**{Path(p).name}**\n\n👁 訪客唯讀：點圖偵測僅站主可執行，這裡只顯示原圖。"
+        return S, gr.update(), _open_rgb(p), meta
     # det:點選即以目前門檻產生標註圖(首次用此模型先下載權重)
     for rel in W.pending_rels(spec):
         W.ensure_file(rel, progress=progress)
@@ -1434,11 +1438,11 @@ def _select_core(S, label, thr, idx, progress=None):
     return S, gr.update(), annotated, meta_text_det(p, S["results"][p])
 
 
-def on_select(evt: gr.SelectData, S, label, thr, progress=gr.Progress()):
-    return _select_core(S, label, thr, evt.index, progress=progress)
+def on_select(evt: gr.SelectData, S, label, thr, progress=gr.Progress(), request: gr.Request = None):
+    return _select_core(S, label, thr, evt.index, progress=progress, request=request)
 
 
-def on_bridge(cmd, S, label, thr, progress=gr.Progress()):
+def on_bridge(cmd, S, label, thr, progress=gr.Progress(), request: gr.Request = None):
     """詳細資料自訂 HTML 表的前端事件橋接:
        {"a":"sel","i":idx} 選列(更新大圖) / {"a":"cls","i":idx,"p":類別} 內嵌下拉改分類 /
        {"a":"addpage","name":名稱} 「＋」分頁新增自訂分類。
@@ -1468,7 +1472,7 @@ def on_bridge(cmd, S, label, thr, progress=gr.Progress()):
     p = pf[idx]
     if act == "sel":
         # 選列:不重繪表格(避免方向鍵連按時閃爍),只更新大圖 + 工具列切換下拉
-        _, sw, pv, meta = _select_core(S, label, thr, idx, progress=progress)
+        _, sw, pv, meta = _select_core(S, label, thr, idx, progress=progress, request=request)
         return (S, gr.update(), gr.update(), gr.update(), gr.update(), sw, pv, meta)
     if act == "cls":
         page = obj.get("p")

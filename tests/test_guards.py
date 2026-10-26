@@ -10,51 +10,11 @@
 """
 import json
 import uuid
-from pathlib import Path
 
-import httpx
 import pytest
 
-from conftest import (A, GUEST, TMP, cls_label, det_label, make_png, owner_cookie_header,
-                      select_model)
-
-VISITORS = ["anonymous", "guest"]
-
-
-def cookie_for(who):
-    if who == "anonymous":
-        return None
-    if who == "guest":                      # 已用 Google 登入、但不是站主
-        return f"{A.COOKIE_NAME}={A.make_session(GUEST)}"
-    return owner_cookie_header()
-
-
-def new_session():
-    return uuid.uuid4().hex[:12]
-
-
-def upload(site, paths, cookie=None):
-    files = [("files", (Path(p).name, open(p, "rb"), "image/png")) for p in paths]
-    return httpx.post(f"{site.base}/gradio_api/upload", files=files,
-                      headers={"Cookie": cookie} if cookie else {}, timeout=30)
-
-
-@pytest.fixture
-def sample(monkeypatch):
-    """模擬公開站預設畫面:範例夾已預先分類(訪客一進站就有 files/results)。"""
-    files = [str(make_png(TMP / f"sample_{i}.png", (i * 60, 90, 30))) for i in range(3)]
-    res = {p: {"page": "x", "prob": 0.9, "ranked": [("x", 0.9)], "manual": False} for p in files}
-    monkeypatch.setitem(A.SAMPLE, "label", cls_label())
-    monkeypatch.setitem(A.SAMPLE, "files", files)
-    monkeypatch.setitem(A.SAMPLE, "results", res)
-    return files
-
-
-def _visitor_session(site, who, sample):
-    sh = new_session()
-    assert site.call("on_load_sample", cookie=cookie_for(who), session=sh)["success"]
-    return sh
-
+from conftest import (A, TMP, VISITORS, cls_label, cookie_for, det_label, make_png, new_session,
+                      select_model, upload, visitor_session)
 
 @pytest.mark.parametrize("who", VISITORS)
 @pytest.mark.parametrize("fn, data", [
@@ -64,7 +24,7 @@ def _visitor_session(site, who, sample):
     ("on_uploaded_paths", lambda: {0: "[]"}),
 ])
 def test_owner_only_events_raise_for_visitors(site, sample, infer_calls, who, fn, data):
-    sh = _visitor_session(site, who, sample)
+    sh = visitor_session(site, who, sample)
     msg = site.call(fn, data(), cookie=cookie_for(who), session=sh)
     assert not msg["success"]
     assert "僅站主" in (msg["output"].get("error") or "")
@@ -83,7 +43,7 @@ def test_model_filter_write_refused_for_visitors(site, monkeypatch, who):
 
 @pytest.mark.parametrize("who", VISITORS)
 def test_zip_export_refused_for_visitors(site, sample, who):
-    sh = _visitor_session(site, who, sample)
+    sh = visitor_session(site, who, sample)
     msg = site.call("on_saveas_confirm_dispatch", {0: "c_n"}, cookie=cookie_for(who), session=sh)
     assert msg["success"]
     assert not (msg["output"]["data"][1] or {}).get("value")
@@ -141,7 +101,7 @@ def test_owner_det_click_runs_detection(site, infer_calls):
 
 
 def test_visitor_can_still_browse_sample(site, sample):
-    sh = _visitor_session(site, "anonymous", sample)
+    sh = visitor_session(site, "anonymous", sample)
     for fn, data in [("on_view", {0: "👁 圖示"}), ("on_page", {0: A.TOTAL}),
                      ("on_bridge", {0: json.dumps({"a": "sel", "i": 1}), 2: cls_label(), 3: 0.5})]:
         assert site.call(fn, data, session=sh)["success"], fn
