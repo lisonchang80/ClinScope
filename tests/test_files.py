@@ -29,15 +29,26 @@ def test_unsafe_to_serve_covers_repo_home_and_their_parents():
     for p in (ROOT, ROOT.parent, ROOT / "models", ROOT / "data", ROOT / "packaging" / "autostart",
               Path.home(), Path(Path.home().anchor)):
         assert A._unsafe_to_serve(p), p
+
+
+def _safe_share(monkeypatch):
+    """repo 與家目錄以外的資料夾。Windows 的 %TEMP% 位在家目錄內 → 測試改用假家目錄。"""
+    fake_home = TMP / "fake_home"
+    fake_home.mkdir(exist_ok=True)
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: fake_home))
     ok = TMP / "public_share"
     ok.mkdir(exist_ok=True)
-    assert not A._unsafe_to_serve(ok)
+    return ok
+
+
+def test_dir_outside_repo_and_home_is_servable(monkeypatch):
+    assert not A._unsafe_to_serve(_safe_share(monkeypatch))
 
 
 def test_public_allowed_paths_only_keep_safe_entries(monkeypatch):
-    ok = TMP / "public_share"
-    ok.mkdir(exist_ok=True)
-    monkeypatch.setenv("CLINSCOPE_ALLOWED_PATHS", ";".join(map(str, [ROOT.parent, ROOT, Path.home(), ok])))
+    ok = _safe_share(monkeypatch)
+    monkeypatch.setenv("CLINSCOPE_ALLOWED_PATHS",
+                       ";".join(map(str, [ROOT.parent, ROOT, Path.home(), Path.home() / "Desktop", ok])))
     extra = {str(A._SETUP_EXE)} if A._SETUP_EXE.exists() else set()
     assert set(A._allowed_paths()) == {str(ok)} | extra
     monkeypatch.delenv("CLINSCOPE_ALLOWED_PATHS")

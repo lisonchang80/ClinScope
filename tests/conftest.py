@@ -175,7 +175,7 @@ def new_session():
 
 def upload(site, paths, cookie=None):
     import httpx
-    files = [("files", (Path(p).name, open(p, "rb"), "image/png")) for p in paths]
+    files = [("files", (Path(p).name, Path(p).read_bytes(), "image/png")) for p in paths]
     return httpx.post(f"{site.base}/gradio_api/upload", files=files,
                       headers={"Cookie": cookie} if cookie else {}, timeout=30)
 

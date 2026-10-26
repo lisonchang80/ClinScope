@@ -3,13 +3,14 @@
 模型卡與影像說明走 gr.Markdown(sanitize_html 預設開啟)。審查時未發現可利用點,這些測試防止日後退化。"""
 import json
 
-from conftest import A, OWNER, TMP, cls_label, det_label, fake_request, make_png
+from conftest import A, OWNER, TMP, cls_label, det_label, fake_request
 
 EVIL = '"><img src=x onerror=alert(1)>'
 
 
 def _evil_file():
-    return str(make_png(TMP / f"{EVIL}.png"))
+    # 只當路徑字串用、不建檔(Windows 檔名不能含 " < >;detail_html_str 對不存在的檔顯示「—」)
+    return str(TMP / f"{EVIL}.png")
 
 
 def _assert_inert(html):
@@ -61,7 +62,7 @@ def test_model_cards_render_through_sanitized_markdown(site):
 def test_model_cards_contain_no_active_html():
     import re
     bad = re.compile(r"<\s*(script|iframe|object|embed|svg|img)\b|\bon\w+\s*=|javascript:", re.I)
-    for key in A.CARDS:
-        text = A.card_text(next(m["label"] for m in A.AVAILABLE if m["key"] == key)) \
-            if any(m["key"] == key for m in A.AVAILABLE) else json.dumps(A.CARDS[key], ensure_ascii=False)
-        assert not bad.search(text), key
+    texts = [A.card_text(m["label"]) for m in A.AVAILABLE]
+    texts += [json.dumps(c, ensure_ascii=False) for c in A.CARDS.values()]
+    for t in texts:
+        assert not bad.search(t), t[:80]

@@ -1,0 +1,7 @@
+# 網頁／API 層測試額外依賴（不載入模型、不下載權重、不需 GPU）。
+# 其餘（gradio、httpx、gradio_client、numpy、pillow）隨 ../requirements.txt 的 gradio 一起裝好。
+pytest
+itsdangerous     # 站內登入 cookie 簽章（app.py 公開站執行期也需要）
+google-auth      # Google ID token 驗證（app.py 公開站執行期也需要）
+requests         # google-auth 取公鑰用的 transport
+cryptography     # 測試自產 RSA 金鑰簽假 ID token
