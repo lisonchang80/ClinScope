@@ -619,6 +619,8 @@ _GRADIO_TMP = Path(os.environ.get("GRADIO_TEMP_DIR") or (Path(tempfile.gettempdi
 UPLOAD_MAX_FILE_MB = 100
 UPLOAD_MAX_FILES = 5000
 UPLOAD_MAX_TOTAL_MB = 5000
+# 公開站佇列上限:同時排隊的事件數(匿名洗事件不會無限堆積,滿了回「佇列已滿」);推論另限單一 GPU 槽(見 build)。
+QUEUE_MAX_SIZE = 128
 # 公開站身分:僅登入 email == OWNER_EMAIL 為「站主」(可操作),其餘(含匿名)為訪客(唯讀)。
 OWNER_EMAIL = os.environ.get("CLINSCOPE_OWNER_EMAIL", "lisonchang80@gmail.com").strip().lower()
 _ID_LOG = Path(__file__).resolve().parent / "identity_debug.log"   # 記錄真流量看到的 email,便於確認(可日後移除)
@@ -2573,8 +2575,9 @@ def build():
         view_dd.change(on_view, [view_dd, S], PANEL_OUT)
         switch_dd.input(on_switch, [switch_dd, S], PANEL_OUT)
         page_radio.change(on_page, [page_radio, S], COMPUTE_OUT)
-        btn_batch.click(on_batch, [model_dd, thr, S], COMPUTE_OUT)
-        btn_single.click(on_single, [model_dd, thr, S], COMPUTE_OUT)
+        # 批次/單張推論共用單一 GPU 槽:同時只跑一個(多分頁/多請求排隊,不會疊加吃滿顯示卡)
+        btn_batch.click(on_batch, [model_dd, thr, S], COMPUTE_OUT, concurrency_id="gpu", concurrency_limit=1)
+        btn_single.click(on_single, [model_dd, thr, S], COMPUTE_OUT, concurrency_id="gpu", concurrency_limit=1)
         btn_apply.click(on_apply_thr, [thr, S], PANEL_OUT)
         btn_csv.click(on_csv, [model_dd, S], [csv_out])
         btn_save.click(on_saveas, [S], [save_modal])                       # 跳出檔名格式對話框
@@ -2603,6 +2606,8 @@ def build():
                        mode_chk, btn_filter])
             if AUTH_ENABLED:
                 demo.load(None, None, None, js=AUTH_JS)  # 站內 Google 登入(登入/登出鈕 + GSI)
+    if PUBLIC:   # 佇列有上限;其餘事件每個同時 1 個(明寫,不受 GRADIO_DEFAULT_CONCURRENCY_LIMIT 影響)
+        demo.queue(max_size=QUEUE_MAX_SIZE, default_concurrency_limit=1)
     return demo
 
 
