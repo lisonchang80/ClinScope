@@ -614,6 +614,11 @@ SAMPLE = {"label": None, "files": [], "results": {}}   # 啟動時由 _precomput
 PUBLIC = bool(os.environ.get("CLINSCOPE_PUBLIC", "").strip())
 # Gradio 上傳暫存根目錄:分批上傳後,前端回傳的伺服器路徑必須落在此目錄內才接受(擋路徑注入)。
 _GRADIO_TMP = Path(os.environ.get("GRADIO_TEMP_DIR") or (Path(tempfile.gettempdir()) / "gradio")).resolve()
+# 公開站上傳上限(只有站主能上傳,見 _OwnerOnlyUploads):單檔(Gradio max_file_size;Cloudflare 單次本就 ~100MB)、
+# 單次載入的總檔數 / 總量(on_uploaded_paths)。上傳暫存由 Blocks(delete_cache=...)每小時清一天前的檔。
+UPLOAD_MAX_FILE_MB = 100
+UPLOAD_MAX_FILES = 5000
+UPLOAD_MAX_TOTAL_MB = 5000
 # 公開站身分:僅登入 email == OWNER_EMAIL 為「站主」(可操作),其餘(含匿名)為訪客(唯讀)。
 OWNER_EMAIL = os.environ.get("CLINSCOPE_OWNER_EMAIL", "lisonchang80@gmail.com").strip().lower()
 _ID_LOG = Path(__file__).resolve().parent / "identity_debug.log"   # 記錄真流量看到的 email,便於確認(可日後移除)
@@ -822,6 +827,25 @@ def _add_auth_routes(fastapi_app):
         resp = JSONResponse({"ok": True})
         resp.delete_cookie(COOKIE_NAME, path="/", httponly=True, samesite="lax", secure=cookie_secure)
         return resp
+
+
+class _OwnerOnlyUploads:
+    """公開站 ASGI 中介層:Gradio 的 /gradio_api/upload(及錄影處理 /process_recording)對任何人開放 →
+    匿名可無限寫入伺服器暫存塞爆硬碟。公開站訪客沒有任何上傳功能,只有站主的分批上傳會用 → 非站主一律 403。"""
+    _PATHS = ("/upload", "/process_recording")
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if (scope.get("type") == "http" and scope.get("method") == "POST"
+                and scope.get("path", "").rstrip("/").endswith(self._PATHS)):
+            from starlette.requests import Request
+            if not _is_owner(Request(scope)):
+                from starlette.responses import PlainTextResponse
+                await PlainTextResponse("僅站主可上傳", status_code=403)(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
 
 
 def _guard_owner(request):
@@ -1284,12 +1308,22 @@ def on_uploaded_paths(paths_json, S, request: gr.Request = None):
             inside = False
         if inside and rp.is_file():
             imgs.append(str(rp))
-    imgs = sorted(imgs)
+    kept, total = [], 0
+    for p in sorted(set(imgs)):                  # 單次載入上限:檔數 / 總量,超過的略過並提示
+        sz = Path(p).stat().st_size
+        if len(kept) >= UPLOAD_MAX_FILES or total + sz > UPLOAD_MAX_TOTAL_MB * 1048576:
+            break
+        kept.append(p)
+        total += sz
+    skipped = len(set(imgs)) - len(kept)
+    imgs = kept
     S["files"], S["results"], S["page"], S["selected"] = imgs, {}, TOTAL, None
     S["upseq"] = S.get("upseq", 0) + 1          # 單調遞增:前端上傳進度層據此判定「已完成」並收起
     pr, gal, df, cs = render(S)
     msg = (f"📂 已載入 **{len(imgs)}** 張影像。按 ▶ 批次計算 開始分類。" if imgs
            else "⚠️ 這批檔案裡找不到有效影像（支援 jpg/png/tif/bmp/webp/gif）。")
+    if skipped:
+        msg += f"　⚠️ 超過單次上限（{UPLOAD_MAX_FILES} 張／{UPLOAD_MAX_TOTAL_MB} MB），略過 {skipped} 張。"
     return S, pr, gal, df, cs, None, msg, f"done:{S['upseq']}:{len(imgs)}"
 
 
@@ -2404,7 +2438,9 @@ AUTH_JS = ("""
 
 
 def build():
-    with gr.Blocks(title="ClinScope — 臨床顯微辨識工作台") as demo:
+    # 公開站:每小時清掉一天前的上傳/快取暫存(重啟時全清);桌面版不動
+    with gr.Blocks(title="ClinScope — 臨床顯微辨識工作台",
+                   delete_cache=(3600, 86400) if PUBLIC else None) as demo:
         gr.HTML(BRAND_HTML, elem_classes="brandwrap")
         identity_html = gr.HTML("", elem_id="cs-identity")   # 公開站身分列(由 on_identity 於載入時填)
         if not AVAILABLE:
@@ -2630,8 +2666,10 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
         from fastapi import FastAPI
         fastapi_app = FastAPI()
         _add_auth_routes(fastapi_app)
+        fastapi_app.add_middleware(_OwnerOnlyUploads)
         mounted = gr.mount_gradio_app(fastapi_app, demo, path="/", allowed_paths=allowed,
-                                      theme=THEME, css=CSS, show_error=True)
+                                      theme=THEME, css=CSS, show_error=True,
+                                      max_file_size=f"{UPLOAD_MAX_FILE_MB}mb")
         server = uvicorn.Server(uvicorn.Config(mounted, host="127.0.0.1", port=port, log_level="warning"))
         if prevent_thread_lock:
             import threading
@@ -2643,6 +2681,10 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
               prevent_thread_lock=prevent_thread_lock, inbrowser=inbrowser)
     if auth:
         kw["auth"] = auth
+    if PUBLIC:   # 未啟用站內登入的公開站:沒有站主 → 上傳端點全擋
+        from starlette.middleware import Middleware
+        kw["app_kwargs"] = {"middleware": [Middleware(_OwnerOnlyUploads)]}
+        kw["max_file_size"] = f"{UPLOAD_MAX_FILE_MB}mb"
     if server_port:
         kw["server_port"] = server_port
     kw.update(overrides)
