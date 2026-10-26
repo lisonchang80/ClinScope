@@ -2562,40 +2562,44 @@ def build():
         SELECT_OUT = [S, switch_dd, preview_img, preview_meta]
         BRIDGE_OUT = [S, detail_html, gallery, page_radio, count_md, switch_dd, preview_img, preview_meta]
 
-        disc_dd.change(on_disc, [disc_dd], [model_dd]).then(on_model, [model_dd, S], MODEL_OUT)
-        model_dd.change(on_model, [model_dd, S], MODEL_OUT)
+        # 本站沒有要對外提供的 API → 所有事件 api_visibility="private"(gradio 6 寫法,取代 show_api=False):
+        # 不列進 API 文件、gradio_client 不能用名字呼叫。⚠️ 這不是防線 —— 直接打 /gradio_api/queue/join + fn_index
+        # 仍打得到,寫檔 / 本機路徑 / GPU 事件一律靠函式內 _guard_owner / _is_owner(tests/test_guards.py)。
+        _P = dict(api_visibility="private")
+        disc_dd.change(on_disc, [disc_dd], [model_dd], **_P).then(on_model, [model_dd, S], MODEL_OUT, **_P)
+        model_dd.change(on_model, [model_dd, S], MODEL_OUT, **_P)
         if PUBLIC:
             # 上傳完成後由隱藏鈕把伺服器路徑送進後端;資料夾鈕本身只在「站主+本地模式」時走原生選夾
-            up_paths_btn.click(on_uploaded_paths, [up_paths, S], FOLDER_OUT + [up_status])
-            btn_folder.click(on_pick_folder_pub, [S], FOLDER_OUT)
+            up_paths_btn.click(on_uploaded_paths, [up_paths, S], FOLDER_OUT + [up_status], **_P)
+            btn_folder.click(on_pick_folder_pub, [S], FOLDER_OUT, **_P)
             mode_chk.change(on_mode_change, [mode_chk, S],
-                            [S, btn_folder, btn_save, mode_flag, save_modal_title])
+                            [S, btn_folder, btn_save, mode_flag, save_modal_title], **_P)
         else:
-            btn_folder.click(on_pick_folder, [S], FOLDER_OUT)
-        view_dd.change(on_view, [view_dd, S], PANEL_OUT)
-        switch_dd.input(on_switch, [switch_dd, S], PANEL_OUT)
-        page_radio.change(on_page, [page_radio, S], COMPUTE_OUT)
+            btn_folder.click(on_pick_folder, [S], FOLDER_OUT, **_P)
+        view_dd.change(on_view, [view_dd, S], PANEL_OUT, **_P)
+        switch_dd.input(on_switch, [switch_dd, S], PANEL_OUT, **_P)
+        page_radio.change(on_page, [page_radio, S], COMPUTE_OUT, **_P)
         # 批次/單張推論共用單一 GPU 槽:同時只跑一個(多分頁/多請求排隊,不會疊加吃滿顯示卡)
-        btn_batch.click(on_batch, [model_dd, thr, S], COMPUTE_OUT, concurrency_id="gpu", concurrency_limit=1)
-        btn_single.click(on_single, [model_dd, thr, S], COMPUTE_OUT, concurrency_id="gpu", concurrency_limit=1)
-        btn_apply.click(on_apply_thr, [thr, S], PANEL_OUT)
-        btn_csv.click(on_csv, [model_dd, S], [csv_out])
-        btn_save.click(on_saveas, [S], [save_modal])                       # 跳出檔名格式對話框
-        save_cancel.click(lambda: gr.update(visible=False), None, [save_modal])
+        btn_batch.click(on_batch, [model_dd, thr, S], COMPUTE_OUT, concurrency_id="gpu", concurrency_limit=1, **_P)
+        btn_single.click(on_single, [model_dd, thr, S], COMPUTE_OUT, concurrency_id="gpu", concurrency_limit=1, **_P)
+        btn_apply.click(on_apply_thr, [thr, S], PANEL_OUT, **_P)
+        btn_csv.click(on_csv, [model_dd, S], [csv_out], **_P)
+        btn_save.click(on_saveas, [S], [save_modal], **_P)                 # 跳出檔名格式對話框
+        save_cancel.click(lambda: gr.update(visible=False), None, [save_modal], **_P)
         if PUBLIC:   # 公開站:本地模式(站主)→ 原生另存;否則 → 打包下載 ZIP
-            save_confirm.click(on_saveas_confirm_dispatch, [save_fmt, S], [save_modal, zip_out])
+            save_confirm.click(on_saveas_confirm_dispatch, [save_fmt, S], [save_modal, zip_out], **_P)
         else:        # 桌面版:確認 → 開資料夾選擇框並複製到本機
-            save_confirm.click(on_saveas_confirm, [save_fmt, S], [save_modal])
+            save_confirm.click(on_saveas_confirm, [save_fmt, S], [save_modal], **_P)
         if PUBLIC:   # 站主模型篩選:開/存(存後重建科別+模型下拉,並刷新模型卡)
-            btn_filter.click(on_open_filter, None, [filter_modal])
-            filter_cancel.click(lambda: gr.update(visible=False), None, [filter_modal])
+            btn_filter.click(on_open_filter, None, [filter_modal], **_P)
+            filter_cancel.click(lambda: gr.update(visible=False), None, [filter_modal], **_P)
             filter_save.click(on_save_filter, [filter_score, filter_hide, S],
-                              [filter_modal, disc_dd, model_dd]).then(on_model, [model_dd, S], MODEL_OUT)
-        gallery.select(on_select, [S, model_dd, thr], SELECT_OUT)
-        bridge_btn.click(on_bridge, [bridge, S, model_dd, thr], BRIDGE_OUT)  # 詳細資料 HTML 表的選列/改分類
-        _ev = demo.load(on_model, [model_dd, S], MODEL_OUT)
+                              [filter_modal, disc_dd, model_dd], **_P).then(on_model, [model_dd, S], MODEL_OUT, **_P)
+        gallery.select(on_select, [S, model_dd, thr], SELECT_OUT, **_P)
+        bridge_btn.click(on_bridge, [bridge, S, model_dd, thr], BRIDGE_OUT, **_P)  # 詳細資料 HTML 表的選列/改分類
+        _ev = demo.load(on_model, [model_dd, S], MODEL_OUT, **_P)
         if PUBLIC:   # 預設畫面載入預先分類好的範例;.then 確保在 on_model 重設「之後」才跑(避免 load 事件競態把結果洗掉)
-            _ev.then(on_load_sample, [S], FOLDER_OUT)
+            _ev.then(on_load_sample, [S], FOLDER_OUT, **_P)
         demo.load(None, None, None, js=ARROW_JS)  # 方向鍵切換檔案(圖示 / 詳細資料 皆可)
         if PUBLIC:
             demo.load(None, None, None, js=UPLOAD_JS)  # 公開站:上傳進度覆蓋層
@@ -2603,7 +2607,7 @@ def build():
             # 身分判定:站主 → 按鈕可用;訪客 → 虛化停用(唯讀)。後端另有 _guard_owner 縱深防禦。
             demo.load(on_identity, None,
                       [identity_html, btn_folder, btn_batch, btn_single, btn_apply, btn_csv, btn_save,
-                       mode_chk, btn_filter])
+                       mode_chk, btn_filter], **_P)
             if AUTH_ENABLED:
                 demo.load(None, None, None, js=AUTH_JS)  # 站內 Google 登入(登入/登出鈕 + GSI)
     if PUBLIC:   # 佇列有上限;其餘事件每個同時 1 個(明寫,不受 GRADIO_DEFAULT_CONCURRENCY_LIMIT 影響)
