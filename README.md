@@ -183,6 +183,17 @@ pip install -r requirements.txt
 .\.venv\Scripts\python.exe src\predict.py --model models\<name>_resnet50.pt --input <圖或資料夾> --topk 3
 ```
 
+## 測試
+
+網頁／API 層（身分、站主權限、檔案曝險、上傳、佇列、XSS）的 pytest，**不載入任何模型、不下載權重、不需 GPU**：推論層換成假函式，並真的起一個公開站直接打 `/gradio_api/queue/join` 驗證。
+
+```powershell
+# 第一次先裝測試依賴
+.\.venv\Scripts\python.exe -m pip install -r tests\requirements.txt
+# 一行跑全部測試
+.\.venv\Scripts\python.exe -m pytest tests -q
+```
+
 ## 目錄
 
 - `app.py` — Gradio 統一前端，含 11 條 track 的 model registry
@@ -192,6 +203,7 @@ pip install -r requirements.txt
 - `src/prepare_yolo.py` — Pascal VOC → YOLO 格式轉換
 - `src/train_yolo.py` — YOLOv8 偵測訓練（ultralytics，內建早停）
 - `src/predict_yolo.py` — YOLO 推論：標註圖 + 每類計數
+- `tests/` — 網頁／API 層 pytest（不載入模型；見上方「測試」）
 - `data/`、`models/`、`reports/`、`.venv/` — 已 gitignore，不進版控
 
 ## 資料來源

@@ -18,6 +18,7 @@ import html as _html
 import json
 import os
 import re
+import secrets
 import shutil
 import tempfile
 from collections import Counter
@@ -613,18 +614,43 @@ SAMPLE = {"label": None, "files": [], "results": {}}   # 啟動時由 _precomput
 PUBLIC = bool(os.environ.get("CLINSCOPE_PUBLIC", "").strip())
 # Gradio 上傳暫存根目錄:分批上傳後,前端回傳的伺服器路徑必須落在此目錄內才接受(擋路徑注入)。
 _GRADIO_TMP = Path(os.environ.get("GRADIO_TEMP_DIR") or (Path(tempfile.gettempdir()) / "gradio")).resolve()
+# 公開站上傳上限(只有站主能上傳,見 _OwnerOnlyUploads):單檔(Gradio max_file_size;Cloudflare 單次本就 ~100MB)、
+# 單次載入的總檔數 / 總量(on_uploaded_paths)。上傳暫存由 Blocks(delete_cache=...)每小時清一天前的檔。
+UPLOAD_MAX_FILE_MB = 100
+UPLOAD_MAX_FILES = 5000
+UPLOAD_MAX_TOTAL_MB = 5000
+# 公開站佇列上限:同時排隊的事件數(匿名洗事件不會無限堆積,滿了回「佇列已滿」);推論另限單一 GPU 槽(見 build)。
+QUEUE_MAX_SIZE = 128
 # 公開站身分:僅登入 email == OWNER_EMAIL 為「站主」(可操作),其餘(含匿名)為訪客(唯讀)。
 OWNER_EMAIL = os.environ.get("CLINSCOPE_OWNER_EMAIL", "lisonchang80@gmail.com").strip().lower()
 _ID_LOG = Path(__file__).resolve().parent / "identity_debug.log"   # 記錄真流量看到的 email,便於確認(可日後移除)
+_ID_LOG_MAX_BYTES = 1_000_000   # 上限 1MB,超過就不再追加
 
 # ── 站內 Google 登入(取代 CF Access,讓路人可匿名唯讀瀏覽)────────────────────────
 # 前端 Google Sign-In → ID token(JWT)→ 後端驗簽/audience/issuer → 簽 itsdangerous cookie 記 email。
-# 需設 CLINSCOPE_GOOGLE_CLIENT_ID 才啟用;未設則回退為「CF Access 標頭判斷」(部署過渡期安全)。
+# 需設 CLINSCOPE_GOOGLE_CLIENT_ID 才啟用;未設時公開站沒有站主(全員唯讀),除非明確信任 CF Access 標頭。
 GOOGLE_CLIENT_ID = os.environ.get("CLINSCOPE_GOOGLE_CLIENT_ID", "").strip()
-SESSION_SECRET = os.environ.get("CLINSCOPE_SESSION_SECRET", "dev-insecure-change-me")
 COOKIE_NAME = "cs_session"
 SESSION_MAX_AGE = 60 * 60 * 24 * 30      # 30 天
 AUTH_ENABLED = bool(PUBLIC and GOOGLE_CLIENT_ID)   # 站內 Google 登入是否啟用(啟用才 mount 路由 + 顯示登入鈕)
+_PUBLIC_DEFAULT_SECRET = "dev-insecure-change-me"   # 舊版預設值,寫在公開 repo 裡 → 絕不可拿來簽 cookie
+
+
+def _session_secret(raw):
+    """cookie 簽章金鑰。未設 / 沿用公開預設值 / 短於 32 字 → 改用本次啟動的隨機金鑰(fail-closed:
+    重啟後需重新登入,但沒人能自簽站主 cookie)。正式站請在 env.local.bat 設 CLINSCOPE_SESSION_SECRET。"""
+    raw = (raw or "").strip()
+    if len(raw) >= 32 and raw != _PUBLIC_DEFAULT_SECRET:
+        return raw
+    if AUTH_ENABLED:
+        print("[ClinScope] ⚠ CLINSCOPE_SESSION_SECRET 未設或太弱(需 ≥32 字)→ 改用隨機金鑰,重啟後需重新登入。")
+    return secrets.token_urlsafe(48)
+
+
+SESSION_SECRET = _session_secret(os.environ.get("CLINSCOPE_SESSION_SECRET"))
+# CF Access 身分標頭只有在 Access 真的擋在前面(非 Bypass)時才由 Cloudflare 填入;Access 改 Bypass 後
+# 它就只是普通請求標頭,任何人都能自帶冒充站主 → 預設不信任。僅「未啟用站內登入」且明確設 =1 時採用。
+TRUST_CF_ACCESS_HEADER = os.environ.get("CLINSCOPE_TRUST_CF_ACCESS_HEADER", "").strip() == "1"
 _SER = None
 
 
@@ -636,20 +662,61 @@ def _serializer():
     return _SER
 
 
+# 登出作廢清單:sid → 該 cookie 原本的到期時間(epoch 秒)。持久化(git-ignored),重啟後仍有效;過期項目自動丟棄。
+_REVOKED_FILE = ROOT / "session_revoked.json"
+
+
+def _load_revoked():
+    try:
+        now = datetime.now().timestamp()
+        d = json.loads(_REVOKED_FILE.read_text(encoding="utf-8"))
+        return {str(k): float(v) for k, v in d.items() if float(v) > now}
+    except Exception:
+        return {}
+
+
+_REVOKED = _load_revoked()
+
+
 def make_session(email):
-    return _serializer().dumps({"email": email})
+    return _serializer().dumps({"email": email, "sid": secrets.token_urlsafe(16)})
+
+
+def _session_payload(token):
+    """驗簽 + 驗期限 → (payload, 簽發時間);失敗回 (None, None)。"""
+    try:
+        data, ts = _serializer().loads(token, max_age=SESSION_MAX_AGE, return_timestamp=True)
+        return (data, ts) if isinstance(data, dict) else (None, None)
+    except Exception:
+        return None, None
 
 
 def read_session(token):
-    try:
-        data = _serializer().loads(token, max_age=SESSION_MAX_AGE)
-        return (data.get("email") or "").strip().lower() or None
-    except Exception:
+    data, _ = _session_payload(token)
+    if not data or not data.get("sid") or data["sid"] in _REVOKED:   # 無 sid(舊格式)或已登出 → 失效
         return None
+    return (data.get("email") or "").strip().lower() or None
+
+
+def revoke_session(token):
+    """登出:把這個 cookie 的 sid 記進作廢清單 —— cookie 值即使被複製走也不能再用(瀏覽器刪 cookie 只是第一層)。"""
+    data, ts = _session_payload(token)
+    if not data or not data.get("sid"):
+        return
+    now = datetime.now().timestamp()
+    for k in [k for k, exp in _REVOKED.items() if exp <= now]:
+        del _REVOKED[k]
+    _REVOKED[data["sid"]] = ts.timestamp() + SESSION_MAX_AGE
+    try:
+        _REVOKED_FILE.write_text(json.dumps(_REVOKED), encoding="utf-8")
+    except Exception:
+        pass
 
 
 def verify_google_credential(credential):
-    """驗證 Google Sign-In 回傳的 ID token,回傳 claims(email/sub/...)。無 client id 則報錯。"""
+    """驗證 Google Sign-In 回傳的 ID token,回傳 claims(email/sub/...)。無 client id 則報錯。
+    google-auth 驗簽章 / aud / exp;此處再驗 iss 與 email_verified —— 未驗證的 email 不能當身分
+    (否則可註冊一個「掛著站主 email 但未驗證」的 Google 帳號冒充;非 Gmail 的站主 email 尤其危險)。"""
     if not GOOGLE_CLIENT_ID:
         raise ValueError("CLINSCOPE_GOOGLE_CLIENT_ID 未設定")
     from google.auth.transport import requests as g_requests
@@ -658,6 +725,10 @@ def verify_google_credential(credential):
                                    clock_skew_in_seconds=30)   # 容忍時鐘差,免「used too early」
     if info.get("iss") not in ("accounts.google.com", "https://accounts.google.com"):
         raise ValueError("invalid issuer")
+    if not (info.get("email") or "").strip():
+        raise ValueError("missing email")
+    if info.get("email_verified") not in (True, "true"):
+        raise ValueError("email not verified")
     return info
 
 
@@ -703,16 +774,20 @@ def _req_email(request):
 
 
 def _identity_email(request):
-    """目前登入 email:站內 Google cookie 優先,其次 CF Access 標頭(過渡);皆無=匿名。"""
-    return _cookie_email(request) or _req_email(request)
+    """目前登入 email:站內 Google cookie(僅站內登入啟用時);CF Access 標頭只在明確信任時採用
+    (見 TRUST_CF_ACCESS_HEADER);皆無=匿名。"""
+    email = _cookie_email(request) if AUTH_ENABLED else None
+    if email:
+        return email
+    if TRUST_CF_ACCESS_HEADER and not AUTH_ENABLED:
+        return _req_email(request)
+    return None
 
 
 def _is_owner(request):
     """公開站:僅登入 email == OWNER_EMAIL 才是站主(fail-closed —— 匿名/不符一律訪客)。
-    桌面/dev(非 PUBLIC)或設 CLINSCOPE_FORCE_OWNER 時一律站主。"""
+    桌面/dev(非 PUBLIC,單人本機)一律站主。公開模式沒有任何放行捷徑(舊 CLINSCOPE_FORCE_OWNER 已移除)。"""
     if not PUBLIC:
-        return True
-    if os.environ.get("CLINSCOPE_FORCE_OWNER", "").strip():
         return True
     return _identity_email(request) == OWNER_EMAIL
 
@@ -723,8 +798,17 @@ def _add_auth_routes(fastapi_app):
     from fastapi.responses import JSONResponse
     cookie_secure = os.environ.get("CLINSCOPE_COOKIE_SECURE", "1") == "1"
 
+    def _not_json(request):
+        """跨站 <form> 只能送 text/plain 等簡單型別;只收 application/json → 跨站請求必須過 CORS 預檢而被擋(擋登入/登出 CSRF)。"""
+        ct = request.headers.get("content-type", "").split(";")[0].strip().lower()
+        if ct != "application/json":
+            return JSONResponse({"error": "content-type must be application/json"}, status_code=415)
+        return None
+
     @fastapi_app.post("/auth/google")
     async def _auth_google(request: Request):
+        if (bad := _not_json(request)) is not None:
+            return bad
         try:
             body = await request.json()
         except Exception:
@@ -740,10 +824,32 @@ def _add_auth_routes(fastapi_app):
         return resp
 
     @fastapi_app.post("/auth/logout")
-    async def _auth_logout():
+    async def _auth_logout(request: Request):
+        if (bad := _not_json(request)) is not None:
+            return bad
+        revoke_session(request.cookies.get(COOKIE_NAME) or "")
         resp = JSONResponse({"ok": True})
-        resp.delete_cookie(COOKIE_NAME, path="/")
+        resp.delete_cookie(COOKIE_NAME, path="/", httponly=True, samesite="lax", secure=cookie_secure)
         return resp
+
+
+class _OwnerOnlyUploads:
+    """公開站 ASGI 中介層:Gradio 的 /gradio_api/upload(及錄影處理 /process_recording)對任何人開放 →
+    匿名可無限寫入伺服器暫存塞爆硬碟。公開站訪客沒有任何上傳功能,只有站主的分批上傳會用 → 非站主一律 403。"""
+    _PATHS = ("/upload", "/process_recording")
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if (scope.get("type") == "http" and scope.get("method") == "POST"
+                and scope.get("path", "").rstrip("/").endswith(self._PATHS)):
+            from starlette.requests import Request
+            if not _is_owner(Request(scope)):
+                from starlette.responses import PlainTextResponse
+                await PlainTextResponse("僅站主可上傳", status_code=403)(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
 
 
 def _guard_owner(request):
@@ -756,11 +862,14 @@ def on_identity(request: gr.Request):
     """載入時判定身分 → 身分列(含登入/登出鈕)+ 開/關(虛化)可操作按鈕。公開站專用。"""
     owner = _is_owner(request)
     email = _identity_email(request)
-    try:
-        with open(_ID_LOG, "a", encoding="utf-8") as f:
-            f.write(f"{datetime.now():%Y-%m-%d %H:%M:%S}\temail={email}\towner={owner}\tauth={AUTH_ENABLED}\n")
-    except Exception:
-        pass
+    # 只記登入者:匿名載入不寫檔(否則任何人直接狂打此事件就能無限長檔);檔案有上限
+    if email:
+        try:
+            if not _ID_LOG.exists() or _ID_LOG.stat().st_size < _ID_LOG_MAX_BYTES:
+                with open(_ID_LOG, "a", encoding="utf-8") as f:
+                    f.write(f"{datetime.now():%Y-%m-%d %H:%M:%S}\temail={email}\towner={owner}\tauth={AUTH_ENABLED}\n")
+        except Exception:
+            pass
     logout_btn = '<button class="cs-authbtn" id="cs-logout">登出</button>' if AUTH_ENABLED else ''
     if owner:
         bar = ('<div class="cs-idbar cs-owner">✅ 已登入站主 <b>' + _html.escape(email or OWNER_EMAIL)
@@ -902,8 +1011,22 @@ def gallery_items(S, pf):
             cap = f"{r['page']} · {r['prob'] * 100:.0f}%"
         else:
             cap = f"{r['total']} 物件"
-        out.append((p, cap))
+        out.append((_servable(p), cap))
     return out
+
+
+def _servable(p):
+    """公開站圖示檢視:原檔(範例夾/站主本地模式資料夾)不在 allowed_paths 內,先複製進 Gradio 快取
+    (以內容雜湊命名,與 Gradio 自己的做法相同)再交給 Gallery;原資料夾因此不必對外開放。桌面版直接用原路徑。"""
+    if not PUBLIC:
+        return p
+    try:
+        if Path(p).resolve().is_relative_to(_GRADIO_TMP):
+            return p
+        from gradio.processing_utils import save_file_to_cache
+        return save_file_to_cache(p, str(_GRADIO_TMP))
+    except Exception:
+        return p          # 交回原路徑 → Gradio 自身的路徑檢查會擋(fail-closed,不會因此對外提供)
 
 
 def _file_meta(p):
@@ -1192,12 +1315,22 @@ def on_uploaded_paths(paths_json, S, request: gr.Request = None):
             inside = False
         if inside and rp.is_file():
             imgs.append(str(rp))
-    imgs = sorted(imgs)
+    kept, total = [], 0
+    for p in sorted(set(imgs)):                  # 單次載入上限:檔數 / 總量,超過的略過並提示
+        sz = Path(p).stat().st_size
+        if len(kept) >= UPLOAD_MAX_FILES or total + sz > UPLOAD_MAX_TOTAL_MB * 1048576:
+            break
+        kept.append(p)
+        total += sz
+    skipped = len(set(imgs)) - len(kept)
+    imgs = kept
     S["files"], S["results"], S["page"], S["selected"] = imgs, {}, TOTAL, None
     S["upseq"] = S.get("upseq", 0) + 1          # 單調遞增:前端上傳進度層據此判定「已完成」並收起
     pr, gal, df, cs = render(S)
     msg = (f"📂 已載入 **{len(imgs)}** 張影像。按 ▶ 批次計算 開始分類。" if imgs
            else "⚠️ 這批檔案裡找不到有效影像（支援 jpg/png/tif/bmp/webp/gif）。")
+    if skipped:
+        msg += f"　⚠️ 超過單次上限（{UPLOAD_MAX_FILES} 張／{UPLOAD_MAX_TOTAL_MB} MB），略過 {skipped} 張。"
     return S, pr, gal, df, cs, None, msg, f"done:{S['upseq']}:{len(imgs)}"
 
 
@@ -1322,7 +1455,7 @@ def on_apply_thr(thr, S):
     return (S,) + render(S)
 
 
-def _select_core(S, label, thr, idx, progress=None):
+def _select_core(S, label, thr, idx, progress=None, request=None):
     pf = S["page_files"]
     if not isinstance(idx, int) or idx < 0 or idx >= len(pf):
         return S, gr.update(), gr.update(), gr.update()
@@ -1334,6 +1467,10 @@ def _select_core(S, label, thr, idx, progress=None):
         sw = gr.update(interactive=(r is not None),
                        value=(f"⇄ {r['page']}" if r else SW_PLACEHOLDER))
         return S, sw, _open_rgb(p), meta_text_cls(p, r)
+    # det 點圖會跑 GPU 推論 → 僅站主(fail-closed);訪客只看原圖
+    if not _is_owner(request):
+        meta = meta_text_det(p, r) if r else f"**{Path(p).name}**\n\n👁 訪客唯讀：點圖偵測僅站主可執行，這裡只顯示原圖。"
+        return S, gr.update(), _open_rgb(p), meta
     # det:點選即以目前門檻產生標註圖(首次用此模型先下載權重)
     for rel in W.pending_rels(spec):
         W.ensure_file(rel, progress=progress)
@@ -1342,11 +1479,11 @@ def _select_core(S, label, thr, idx, progress=None):
     return S, gr.update(), annotated, meta_text_det(p, S["results"][p])
 
 
-def on_select(evt: gr.SelectData, S, label, thr, progress=gr.Progress()):
-    return _select_core(S, label, thr, evt.index, progress=progress)
+def on_select(evt: gr.SelectData, S, label, thr, progress=gr.Progress(), request: gr.Request = None):
+    return _select_core(S, label, thr, evt.index, progress=progress, request=request)
 
 
-def on_bridge(cmd, S, label, thr, progress=gr.Progress()):
+def on_bridge(cmd, S, label, thr, progress=gr.Progress(), request: gr.Request = None):
     """詳細資料自訂 HTML 表的前端事件橋接:
        {"a":"sel","i":idx} 選列(更新大圖) / {"a":"cls","i":idx,"p":類別} 內嵌下拉改分類 /
        {"a":"addpage","name":名稱} 「＋」分頁新增自訂分類。
@@ -1376,7 +1513,7 @@ def on_bridge(cmd, S, label, thr, progress=gr.Progress()):
     p = pf[idx]
     if act == "sel":
         # 選列:不重繪表格(避免方向鍵連按時閃爍),只更新大圖 + 工具列切換下拉
-        _, sw, pv, meta = _select_core(S, label, thr, idx, progress=progress)
+        _, sw, pv, meta = _select_core(S, label, thr, idx, progress=progress, request=request)
         return (S, gr.update(), gr.update(), gr.update(), gr.update(), sw, pv, meta)
     if act == "cls":
         page = obj.get("p")
@@ -1394,14 +1531,33 @@ def _safe(name):
     return re.sub(r'[\\/:*?"<>|\s]+', "_", str(name)).strip("_") or "x"
 
 
+def _export_dir():
+    """匯出檔(CSV/ZIP)存放處。桌面版沿用 repo/exports;公開站改放系統暫存下的隨機子目錄 ——
+    不在 repo、不在 allowed_paths、也不在 Gradio 上傳暫存根 → 原檔無法被 /gradio_api/file= 猜路徑抓走,
+    只透過 Gradio 以內容雜湊命名的快取副本下載。順手清掉一天前的舊匯出。"""
+    if not PUBLIC:
+        exp = ROOT / "exports"
+        exp.mkdir(exist_ok=True)
+        return exp
+    base = Path(tempfile.gettempdir()) / "clinscope_exports"
+    base.mkdir(parents=True, exist_ok=True)
+    cutoff = datetime.now().timestamp() - 86400
+    for old in base.iterdir():
+        try:
+            if old.stat().st_mtime < cutoff:
+                shutil.rmtree(old, ignore_errors=True)
+        except OSError:
+            pass
+    return Path(tempfile.mkdtemp(dir=base))
+
+
 def on_csv(label, S, request: gr.Request = None):
     _guard_owner(request)
     res = S["results"]
     if not res:
         raise gr.Error("尚無計算結果可匯出。")
     spec = BY_LABEL[label]
-    exp = ROOT / "exports"
-    exp.mkdir(exist_ok=True)
+    exp = _export_dir()
     fn = exp / f"clinscope_{spec['key']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     with open(fn, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f)
@@ -1470,9 +1626,7 @@ def on_saveas_confirm_zip(mode, S, request: gr.Request = None):
         gr.Info("目前分頁沒有檔案可下載。")
         return gr.update(visible=False), gr.update()
     res, kind = S["results"], S["kind"]
-    exp = ROOT / "exports"
-    exp.mkdir(exist_ok=True)
-    zpath = exp / f"clinscope_{_safe(page)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+    zpath = _export_dir() / f"clinscope_{_safe(page)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
     used, n = {}, 0
     with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
         for p in pf:
@@ -2291,7 +2445,9 @@ AUTH_JS = ("""
 
 
 def build():
-    with gr.Blocks(title="ClinScope — 臨床顯微辨識工作台") as demo:
+    # 公開站:每小時清掉一天前的上傳/快取暫存(重啟時全清);桌面版不動
+    with gr.Blocks(title="ClinScope — 臨床顯微辨識工作台",
+                   delete_cache=(3600, 86400) if PUBLIC else None) as demo:
         gr.HTML(BRAND_HTML, elem_classes="brandwrap")
         identity_html = gr.HTML("", elem_id="cs-identity")   # 公開站身分列(由 on_identity 於載入時填)
         if not AVAILABLE:
@@ -2410,39 +2566,44 @@ def build():
         SELECT_OUT = [S, switch_dd, preview_img, preview_meta]
         BRIDGE_OUT = [S, detail_html, gallery, page_radio, count_md, switch_dd, preview_img, preview_meta]
 
-        disc_dd.change(on_disc, [disc_dd], [model_dd]).then(on_model, [model_dd, S], MODEL_OUT)
-        model_dd.change(on_model, [model_dd, S], MODEL_OUT)
+        # 本站沒有要對外提供的 API → 所有事件 api_visibility="private"(gradio 6 寫法,取代 show_api=False):
+        # 不列進 API 文件、gradio_client 不能用名字呼叫。⚠️ 這不是防線 —— 直接打 /gradio_api/queue/join + fn_index
+        # 仍打得到,寫檔 / 本機路徑 / GPU 事件一律靠函式內 _guard_owner / _is_owner(tests/test_guards.py)。
+        _P = dict(api_visibility="private")
+        disc_dd.change(on_disc, [disc_dd], [model_dd], **_P).then(on_model, [model_dd, S], MODEL_OUT, **_P)
+        model_dd.change(on_model, [model_dd, S], MODEL_OUT, **_P)
         if PUBLIC:
             # 上傳完成後由隱藏鈕把伺服器路徑送進後端;資料夾鈕本身只在「站主+本地模式」時走原生選夾
-            up_paths_btn.click(on_uploaded_paths, [up_paths, S], FOLDER_OUT + [up_status])
-            btn_folder.click(on_pick_folder_pub, [S], FOLDER_OUT)
+            up_paths_btn.click(on_uploaded_paths, [up_paths, S], FOLDER_OUT + [up_status], **_P)
+            btn_folder.click(on_pick_folder_pub, [S], FOLDER_OUT, **_P)
             mode_chk.change(on_mode_change, [mode_chk, S],
-                            [S, btn_folder, btn_save, mode_flag, save_modal_title])
+                            [S, btn_folder, btn_save, mode_flag, save_modal_title], **_P)
         else:
-            btn_folder.click(on_pick_folder, [S], FOLDER_OUT)
-        view_dd.change(on_view, [view_dd, S], PANEL_OUT)
-        switch_dd.input(on_switch, [switch_dd, S], PANEL_OUT)
-        page_radio.change(on_page, [page_radio, S], COMPUTE_OUT)
-        btn_batch.click(on_batch, [model_dd, thr, S], COMPUTE_OUT)
-        btn_single.click(on_single, [model_dd, thr, S], COMPUTE_OUT)
-        btn_apply.click(on_apply_thr, [thr, S], PANEL_OUT)
-        btn_csv.click(on_csv, [model_dd, S], [csv_out])
-        btn_save.click(on_saveas, [S], [save_modal])                       # 跳出檔名格式對話框
-        save_cancel.click(lambda: gr.update(visible=False), None, [save_modal])
+            btn_folder.click(on_pick_folder, [S], FOLDER_OUT, **_P)
+        view_dd.change(on_view, [view_dd, S], PANEL_OUT, **_P)
+        switch_dd.input(on_switch, [switch_dd, S], PANEL_OUT, **_P)
+        page_radio.change(on_page, [page_radio, S], COMPUTE_OUT, **_P)
+        # 批次/單張推論共用單一 GPU 槽:同時只跑一個(多分頁/多請求排隊,不會疊加吃滿顯示卡)
+        btn_batch.click(on_batch, [model_dd, thr, S], COMPUTE_OUT, concurrency_id="gpu", concurrency_limit=1, **_P)
+        btn_single.click(on_single, [model_dd, thr, S], COMPUTE_OUT, concurrency_id="gpu", concurrency_limit=1, **_P)
+        btn_apply.click(on_apply_thr, [thr, S], PANEL_OUT, **_P)
+        btn_csv.click(on_csv, [model_dd, S], [csv_out], **_P)
+        btn_save.click(on_saveas, [S], [save_modal], **_P)                 # 跳出檔名格式對話框
+        save_cancel.click(lambda: gr.update(visible=False), None, [save_modal], **_P)
         if PUBLIC:   # 公開站:本地模式(站主)→ 原生另存;否則 → 打包下載 ZIP
-            save_confirm.click(on_saveas_confirm_dispatch, [save_fmt, S], [save_modal, zip_out])
+            save_confirm.click(on_saveas_confirm_dispatch, [save_fmt, S], [save_modal, zip_out], **_P)
         else:        # 桌面版:確認 → 開資料夾選擇框並複製到本機
-            save_confirm.click(on_saveas_confirm, [save_fmt, S], [save_modal])
+            save_confirm.click(on_saveas_confirm, [save_fmt, S], [save_modal], **_P)
         if PUBLIC:   # 站主模型篩選:開/存(存後重建科別+模型下拉,並刷新模型卡)
-            btn_filter.click(on_open_filter, None, [filter_modal])
-            filter_cancel.click(lambda: gr.update(visible=False), None, [filter_modal])
+            btn_filter.click(on_open_filter, None, [filter_modal], **_P)
+            filter_cancel.click(lambda: gr.update(visible=False), None, [filter_modal], **_P)
             filter_save.click(on_save_filter, [filter_score, filter_hide, S],
-                              [filter_modal, disc_dd, model_dd]).then(on_model, [model_dd, S], MODEL_OUT)
-        gallery.select(on_select, [S, model_dd, thr], SELECT_OUT)
-        bridge_btn.click(on_bridge, [bridge, S, model_dd, thr], BRIDGE_OUT)  # 詳細資料 HTML 表的選列/改分類
-        _ev = demo.load(on_model, [model_dd, S], MODEL_OUT)
+                              [filter_modal, disc_dd, model_dd], **_P).then(on_model, [model_dd, S], MODEL_OUT, **_P)
+        gallery.select(on_select, [S, model_dd, thr], SELECT_OUT, **_P)
+        bridge_btn.click(on_bridge, [bridge, S, model_dd, thr], BRIDGE_OUT, **_P)  # 詳細資料 HTML 表的選列/改分類
+        _ev = demo.load(on_model, [model_dd, S], MODEL_OUT, **_P)
         if PUBLIC:   # 預設畫面載入預先分類好的範例;.then 確保在 on_model 重設「之後」才跑(避免 load 事件競態把結果洗掉)
-            _ev.then(on_load_sample, [S], FOLDER_OUT)
+            _ev.then(on_load_sample, [S], FOLDER_OUT, **_P)
         demo.load(None, None, None, js=ARROW_JS)  # 方向鍵切換檔案(圖示 / 詳細資料 皆可)
         if PUBLIC:
             demo.load(None, None, None, js=UPLOAD_JS)  # 公開站:上傳進度覆蓋層
@@ -2450,23 +2611,55 @@ def build():
             # 身分判定:站主 → 按鈕可用;訪客 → 虛化停用(唯讀)。後端另有 _guard_owner 縱深防禦。
             demo.load(on_identity, None,
                       [identity_html, btn_folder, btn_batch, btn_single, btn_apply, btn_csv, btn_save,
-                       mode_chk, btn_filter])
+                       mode_chk, btn_filter], **_P)
             if AUTH_ENABLED:
                 demo.load(None, None, None, js=AUTH_JS)  # 站內 Google 登入(登入/登出鈕 + GSI)
+    if PUBLIC:   # 佇列有上限;其餘事件每個同時 1 個(明寫,不受 GRADIO_DEFAULT_CONCURRENCY_LIMIT 影響)
+        demo.queue(max_size=QUEUE_MAX_SIZE, default_concurrency_limit=1)
     return demo
+
+
+def _unsafe_to_serve(p) -> bool:
+    """公開站不得對外提供的路徑:repo 根(含 models/、data/、reports/、packaging/autostart/env.local.bat…)
+    與使用者家目錄(含 .cloudflared 憑證、桌面/下載裡的影像)—— 本身、其內任何位置、或涵蓋它們的上層(如 D:\\、C:\\)。"""
+    try:
+        p = Path(p).resolve()
+    except Exception:
+        return True
+    for s in (ROOT, Path.home()):
+        s = s.resolve()
+        if p == s or p.is_relative_to(s) or s.is_relative_to(p):
+            return True
+    return False
+
+
+def _allowed_paths():
+    """Gradio allowed_paths —— 清單內任何檔案都能被**任何人**經 /gradio_api/file=<絕對路徑> 直接下載。
+    桌面/dev(非 PUBLIC,只綁 127.0.0.1):沿用預設開放各磁碟根,或 CLINSCOPE_ALLOWED_PATHS(分號分隔)。
+    公開站 fail-closed:預設只開桌面安裝檔;CLINSCOPE_ALLOWED_PATHS 中涵蓋/位於 repo 根或家目錄的項目一律剔除。
+    (工作台影像不靠 allowed_paths:圖示檢視由 _servable 複製進 Gradio 快取;匯出見 _export_dir。)"""
+    env_paths = os.environ.get("CLINSCOPE_ALLOWED_PATHS", "").strip()
+    if env_paths:
+        allowed = [p.strip() for p in env_paths.split(";")
+                   if p.strip() and Path(p.strip()).exists()]
+    elif PUBLIC:
+        allowed = []
+    else:
+        allowed = [f"{d}:\\" for d in "CDEFGHIJKLMNOPQRSTUVWXYZ" if Path(f"{d}:\\").exists()]
+    if PUBLIC:
+        dropped = [p for p in allowed if _unsafe_to_serve(p)]
+        if dropped:
+            print(f"[ClinScope] ⚠ 公開站忽略會曝露 repo/家目錄的 CLINSCOPE_ALLOWED_PATHS 項目: {dropped}")
+        allowed = [p for p in allowed if not _unsafe_to_serve(p)]
+        if _SETUP_EXE.exists():          # 下載桌面版按鈕(BRAND_HTML)只開這一個檔
+            allowed.append(str(_SETUP_EXE))
+    return allowed
 
 
 def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **overrides):
     """建構並啟動工作台。供 `python app.py`(__main__)與 packaging/run_desktop.py
     (pywebview 桌面視窗,需 prevent_thread_lock=True)共用,避免啟動參數兩處重複。"""
-    # allowed_paths:工作台會服務本機資料夾內影像,預設開放各磁碟根(本機單人用)。
-    # 公開站可用環境變數 CLINSCOPE_ALLOWED_PATHS(分號分隔)收緊,例如只開 D:\ 不曝 C:\Users。
-    env_paths = os.environ.get("CLINSCOPE_ALLOWED_PATHS", "").strip()
-    if env_paths:
-        allowed = [p.strip() for p in env_paths.split(";")
-                   if p.strip() and Path(p.strip()).exists()]
-    else:
-        allowed = [f"{d}:\\" for d in "CDEFGHIJKLMNOPQRSTUVWXYZ" if Path(f"{d}:\\").exists()]
+    allowed = _allowed_paths()
     # auth:預設無(本機單人直用);公開站設 CLINSCOPE_AUTH_USER + CLINSCOPE_AUTH_PASS
     # 即啟用 Gradio 內建「帳號+密碼」登入(密碼只走環境變數,不寫進原始碼/版控)。
     _u, _p = os.environ.get("CLINSCOPE_AUTH_USER"), os.environ.get("CLINSCOPE_AUTH_PASS")
@@ -2476,6 +2669,8 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
           f"disciplines={DISCIPLINES} | allowed_paths={allowed} | auth={'on' if auth else 'off'} | "
           f"mode={'PUBLIC(upload)' if PUBLIC else 'local(native-pick)'} | "
           f"google-login={'ON' if AUTH_ENABLED else 'off'}")
+    if PUBLIC and os.environ.get("CLINSCOPE_FORCE_OWNER", "").strip():
+        print("[ClinScope] ⚠ CLINSCOPE_FORCE_OWNER 已移除,公開模式一律忽略(站主只能經站內 Google 登入)。")
     if PUBLIC:
         _precompute_sample()      # 預先分類範例夾(供預設畫面),失敗不影響啟動
     demo = build()
@@ -2485,8 +2680,11 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
         from fastapi import FastAPI
         fastapi_app = FastAPI()
         _add_auth_routes(fastapi_app)
+        fastapi_app.add_middleware(_OwnerOnlyUploads)
+        # show_error=False:非預期例外內文(常含伺服器路徑)不回給瀏覽器、只印在 console;gr.Error 訊息照常顯示
         mounted = gr.mount_gradio_app(fastapi_app, demo, path="/", allowed_paths=allowed,
-                                      theme=THEME, css=CSS, show_error=True)
+                                      theme=THEME, css=CSS, show_error=False,
+                                      max_file_size=f"{UPLOAD_MAX_FILE_MB}mb")
         server = uvicorn.Server(uvicorn.Config(mounted, host="127.0.0.1", port=port, log_level="warning"))
         if prevent_thread_lock:
             import threading
@@ -2498,6 +2696,10 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
               prevent_thread_lock=prevent_thread_lock, inbrowser=inbrowser)
     if auth:
         kw["auth"] = auth
+    if PUBLIC:   # 未啟用站內登入的公開站:沒有站主 → 上傳端點全擋
+        from starlette.middleware import Middleware
+        kw["app_kwargs"] = {"middleware": [Middleware(_OwnerOnlyUploads)]}
+        kw["max_file_size"] = f"{UPLOAD_MAX_FILE_MB}mb"
     if server_port:
         kw["server_port"] = server_port
     kw.update(overrides)
