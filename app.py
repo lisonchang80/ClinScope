@@ -18,6 +18,7 @@ import html as _html
 import json
 import os
 import re
+import secrets
 import shutil
 import tempfile
 from collections import Counter
@@ -621,10 +622,24 @@ _ID_LOG = Path(__file__).resolve().parent / "identity_debug.log"   # 記錄真�
 # 前端 Google Sign-In → ID token(JWT)→ 後端驗簽/audience/issuer → 簽 itsdangerous cookie 記 email。
 # 需設 CLINSCOPE_GOOGLE_CLIENT_ID 才啟用;未設時公開站沒有站主(全員唯讀),除非明確信任 CF Access 標頭。
 GOOGLE_CLIENT_ID = os.environ.get("CLINSCOPE_GOOGLE_CLIENT_ID", "").strip()
-SESSION_SECRET = os.environ.get("CLINSCOPE_SESSION_SECRET", "dev-insecure-change-me")
 COOKIE_NAME = "cs_session"
 SESSION_MAX_AGE = 60 * 60 * 24 * 30      # 30 天
 AUTH_ENABLED = bool(PUBLIC and GOOGLE_CLIENT_ID)   # 站內 Google 登入是否啟用(啟用才 mount 路由 + 顯示登入鈕)
+_PUBLIC_DEFAULT_SECRET = "dev-insecure-change-me"   # 舊版預設值,寫在公開 repo 裡 → 絕不可拿來簽 cookie
+
+
+def _session_secret(raw):
+    """cookie 簽章金鑰。未設 / 沿用公開預設值 / 短於 32 字 → 改用本次啟動的隨機金鑰(fail-closed:
+    重啟後需重新登入,但沒人能自簽站主 cookie)。正式站請在 env.local.bat 設 CLINSCOPE_SESSION_SECRET。"""
+    raw = (raw or "").strip()
+    if len(raw) >= 32 and raw != _PUBLIC_DEFAULT_SECRET:
+        return raw
+    if AUTH_ENABLED:
+        print("[ClinScope] ⚠ CLINSCOPE_SESSION_SECRET 未設或太弱(需 ≥32 字)→ 改用隨機金鑰,重啟後需重新登入。")
+    return secrets.token_urlsafe(48)
+
+
+SESSION_SECRET = _session_secret(os.environ.get("CLINSCOPE_SESSION_SECRET"))
 # CF Access 身分標頭只有在 Access 真的擋在前面(非 Bypass)時才由 Cloudflare 填入;Access 改 Bypass 後
 # 它就只是普通請求標頭,任何人都能自帶冒充站主 → 預設不信任。僅「未啟用站內登入」且明確設 =1 時採用。
 TRUST_CF_ACCESS_HEADER = os.environ.get("CLINSCOPE_TRUST_CF_ACCESS_HEADER", "").strip() == "1"
