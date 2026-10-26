@@ -8,10 +8,8 @@ import types
 import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
-from conftest import A, CLIENT_ID, OWNER
+from conftest import A, CLIENT_ID, OWNER, auth_client
 
 KID = "test-kid"
 
@@ -69,14 +67,8 @@ def test_bad_tokens_rejected(why, tok):
         A.verify_google_credential(tok())
 
 
-def _auth_client():
-    app = FastAPI()
-    A._add_auth_routes(app)
-    return TestClient(app, base_url="https://testserver")
-
-
 def test_auth_route_sets_hardened_cookie_and_normalizes_email():
-    c = _auth_client()
+    c = auth_client()
     r = c.post("/auth/google", json={"credential": _token(email="  Owner@Example.COM")})
     assert r.status_code == 200 and r.json() == {"email": OWNER, "owner": True}
     sc = r.headers["set-cookie"].lower()
@@ -87,6 +79,6 @@ def test_auth_route_sets_hardened_cookie_and_normalizes_email():
 
 
 def test_auth_route_rejects_unverified_email_without_cookie():
-    r = _auth_client().post("/auth/google", json={"credential": _token(email_verified=False)})
+    r = auth_client().post("/auth/google", json={"credential": _token(email_verified=False)})
     assert r.status_code == 401
     assert A.COOKIE_NAME not in r.headers.get("set-cookie", "")

@@ -28,3 +28,4 @@ Thumbs.db
 packaging/autostart/env.local.bat
 identity_debug.log
 model_filter.json
+session_revoked.json

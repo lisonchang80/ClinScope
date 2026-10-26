@@ -114,6 +114,8 @@ A.det_infer = fake_det_infer
 # 執行期檔寫到暫存夾
 A._ID_LOG = TMP / "identity_debug.log"
 A.MODEL_FILTER_FILE = TMP / "model_filter.json"
+A._REVOKED_FILE = TMP / "session_revoked.json"
+A._REVOKED.clear()
 
 
 @pytest.fixture
@@ -135,6 +137,15 @@ def fake_request(email=None, headers=None, cookie_token=None):
 
 def owner_cookie_header():
     return f"{A.COOKIE_NAME}={A.make_session(OWNER)}"
+
+
+def auth_client():
+    """只掛 /auth/* 路由的 FastAPI(TestClient 走 https 才收得到 Secure cookie)。"""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    app = FastAPI()
+    A._add_auth_routes(app)
+    return TestClient(app, base_url="https://testserver")
 
 
 def det_label():

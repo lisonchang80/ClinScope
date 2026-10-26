@@ -654,16 +654,55 @@ def _serializer():
     return _SER
 
 
+# 登出作廢清單:sid → 該 cookie 原本的到期時間(epoch 秒)。持久化(git-ignored),重啟後仍有效;過期項目自動丟棄。
+_REVOKED_FILE = ROOT / "session_revoked.json"
+
+
+def _load_revoked():
+    try:
+        now = datetime.now().timestamp()
+        d = json.loads(_REVOKED_FILE.read_text(encoding="utf-8"))
+        return {str(k): float(v) for k, v in d.items() if float(v) > now}
+    except Exception:
+        return {}
+
+
+_REVOKED = _load_revoked()
+
+
 def make_session(email):
-    return _serializer().dumps({"email": email})
+    return _serializer().dumps({"email": email, "sid": secrets.token_urlsafe(16)})
+
+
+def _session_payload(token):
+    """驗簽 + 驗期限 → (payload, 簽發時間);失敗回 (None, None)。"""
+    try:
+        data, ts = _serializer().loads(token, max_age=SESSION_MAX_AGE, return_timestamp=True)
+        return (data, ts) if isinstance(data, dict) else (None, None)
+    except Exception:
+        return None, None
 
 
 def read_session(token):
-    try:
-        data = _serializer().loads(token, max_age=SESSION_MAX_AGE)
-        return (data.get("email") or "").strip().lower() or None
-    except Exception:
+    data, _ = _session_payload(token)
+    if not data or not data.get("sid") or data["sid"] in _REVOKED:   # 無 sid(舊格式)或已登出 → 失效
         return None
+    return (data.get("email") or "").strip().lower() or None
+
+
+def revoke_session(token):
+    """登出:把這個 cookie 的 sid 記進作廢清單 —— cookie 值即使被複製走也不能再用(瀏覽器刪 cookie 只是第一層)。"""
+    data, ts = _session_payload(token)
+    if not data or not data.get("sid"):
+        return
+    now = datetime.now().timestamp()
+    for k in [k for k, exp in _REVOKED.items() if exp <= now]:
+        del _REVOKED[k]
+    _REVOKED[data["sid"]] = ts.timestamp() + SESSION_MAX_AGE
+    try:
+        _REVOKED_FILE.write_text(json.dumps(_REVOKED), encoding="utf-8")
+    except Exception:
+        pass
 
 
 def verify_google_credential(credential):
@@ -767,9 +806,10 @@ def _add_auth_routes(fastapi_app):
         return resp
 
     @fastapi_app.post("/auth/logout")
-    async def _auth_logout():
+    async def _auth_logout(request: Request):
+        revoke_session(request.cookies.get(COOKIE_NAME) or "")
         resp = JSONResponse({"ok": True})
-        resp.delete_cookie(COOKIE_NAME, path="/")
+        resp.delete_cookie(COOKIE_NAME, path="/", httponly=True, samesite="lax", secure=cookie_secure)
         return resp
 
 
