@@ -38,3 +38,16 @@ def test_revocation_survives_server_restart():
 def test_legacy_cookie_without_session_id_rejected():
     legacy = URLSafeTimedSerializer(A.SESSION_SECRET, salt="clinscope-session").dumps({"email": OWNER})
     assert not A._is_owner(fake_request(cookie_token=legacy))
+
+
+def test_auth_routes_refuse_cross_site_form_posts():
+    # 跨站 <form> 只能送 text/plain 等「簡單」型別;要求 application/json 迫使跨站請求走 CORS 預檢 → 被擋
+    tok = A.make_session(OWNER)
+    c = auth_client()
+    r = c.post("/auth/logout", content="{}",
+               headers={"Content-Type": "text/plain", "Cookie": f"{A.COOKIE_NAME}={tok}"})
+    assert r.status_code == 415
+    assert A._is_owner(fake_request(cookie_token=tok))          # 站主沒被別站登出
+    r = c.post("/auth/google", content='{"credential": "x"}', headers={"Content-Type": "text/plain"})
+    assert r.status_code == 415
+    assert "set-cookie" not in r.headers

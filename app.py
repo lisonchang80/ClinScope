@@ -789,8 +789,17 @@ def _add_auth_routes(fastapi_app):
     from fastapi.responses import JSONResponse
     cookie_secure = os.environ.get("CLINSCOPE_COOKIE_SECURE", "1") == "1"
 
+    def _not_json(request):
+        """跨站 <form> 只能送 text/plain 等簡單型別;只收 application/json → 跨站請求必須過 CORS 預檢而被擋(擋登入/登出 CSRF)。"""
+        ct = request.headers.get("content-type", "").split(";")[0].strip().lower()
+        if ct != "application/json":
+            return JSONResponse({"error": "content-type must be application/json"}, status_code=415)
+        return None
+
     @fastapi_app.post("/auth/google")
     async def _auth_google(request: Request):
+        if (bad := _not_json(request)) is not None:
+            return bad
         try:
             body = await request.json()
         except Exception:
@@ -807,6 +816,8 @@ def _add_auth_routes(fastapi_app):
 
     @fastapi_app.post("/auth/logout")
     async def _auth_logout(request: Request):
+        if (bad := _not_json(request)) is not None:
+            return bad
         revoke_session(request.cookies.get(COOKIE_NAME) or "")
         resp = JSONResponse({"ok": True})
         resp.delete_cookie(COOKIE_NAME, path="/", httponly=True, samesite="lax", secure=cookie_secure)
