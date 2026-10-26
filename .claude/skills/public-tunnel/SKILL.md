@@ -43,4 +43,6 @@ description: 維護/部署 ClinScope 公開網址 clinscope.tinghaochang.com(Clo
 - **登入 ≠ 不間斷**:固定網址只解決「找得到」,真正可連要本機開著 + server + cloudflared 都在跑。
 - **路徑有空格**:一律用完整路徑字串 `"C:\Program Files (x86)\cloudflared\cloudflared.exe"`;啟動用 `wscript` 跑 `.vbs`(`WScript.Shell.Run ..., 0, False`)可得「隱藏 + detached、撐過 session/Claude 關閉」。
 - **detached vs 背景任務**:用 run_in_background 起的 server/tunnel 會隨 session 結束被砍;要常駐請走 `.vbs`(wscript)那條。
+- **公開站關著時要驗新版,不要用 7860**(2026-10-26):tunnel 的 ingress 固定把 clinscope.tinghaochang.com 轉到 `localhost:7860`,只要有東西聽 7860 就等於重新公開。驗證改用別的埠(例 7870)、只綁 127.0.0.1、`CLINSCOPE_PUBLIC=1` 起臨時實例,驗完關掉,最後確認公開站仍是 502。
+- **公開模式會剔除危險的 `CLINSCOPE_ALLOWED_PATHS`**(2026-10-26 安全審查後):設成磁碟根、repo 根或家目錄時啟動 log 印「⚠ 公開站忽略會曝露 repo/家目錄的…項目」並拿掉;對外檔案只剩 `ClinScope-Setup.exe`。舊 skill 建議過的 `D:\` 已無效,不用再設。
 - **長閒置會整組掛掉(2026-06-19 實測)**:出現**錯誤 1033** 時查到 server(7860)+ cloudflared **兩個程序都不在**,且**自開機起未重開機**(排除 Windows Update)→ 長時間無人使用的空檔被系統回收。`502` 只死 tunnel(server 還在),`1033` 是連 server 都沒了——**先分清楚是哪個**(健康檢查那列),再決定只重 tunnel 還是跑 Startup VBS 整組拉起。最穩的「整組常駐」恢復一律走 `wscript` 跑 Startup 的 `clinscope_public.vbs`。
