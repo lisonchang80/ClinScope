@@ -149,12 +149,21 @@ def auth_client():
 
 
 def det_label():
-    return next(m["label"] for m in A.AVAILABLE if m["kind"] == "det")
+    return next(m["label"] for m in A.AVAILABLE if m["kind"] == "det" and A._visible_model(m["key"]))
 
 
 def cls_label():
-    return next(m["label"] for m in A.AVAILABLE
-                if m["kind"] == "cls" and (A.CARDS.get(m["key"]) or {}).get("classes"))
+    return next(m["label"] for m in A.AVAILABLE if m["kind"] == "cls" and A._visible_model(m["key"])
+                and (A.CARDS.get(m["key"]) or {}).get("classes"))
+
+
+def select_model(site, label, cookie=None, session=None):
+    """照 UI 順序切模型:先切科別(更新該 session 的模型下拉選項)再選模型 —— Gradio 會拒絕不在選項內的值。"""
+    disc = A.disc_of(A.BY_LABEL[label]["key"])
+    assert site.call("on_disc", {0: disc}, cookie=cookie, session=session)["success"]
+    msg = site.call("on_model", {0: label}, cookie=cookie, session=session)
+    assert msg["success"], msg
+    return msg
 
 
 def make_png(path, color=(200, 30, 30)):
