@@ -902,8 +902,22 @@ def gallery_items(S, pf):
             cap = f"{r['page']} · {r['prob'] * 100:.0f}%"
         else:
             cap = f"{r['total']} 物件"
-        out.append((p, cap))
+        out.append((_servable(p), cap))
     return out
+
+
+def _servable(p):
+    """公開站圖示檢視:原檔(範例夾/站主本地模式資料夾)不在 allowed_paths 內,先複製進 Gradio 快取
+    (以內容雜湊命名,與 Gradio 自己的做法相同)再交給 Gallery;原資料夾因此不必對外開放。桌面版直接用原路徑。"""
+    if not PUBLIC:
+        return p
+    try:
+        if Path(p).resolve().is_relative_to(_GRADIO_TMP):
+            return p
+        from gradio.processing_utils import save_file_to_cache
+        return save_file_to_cache(p, str(_GRADIO_TMP))
+    except Exception:
+        return p          # 交回原路徑 → Gradio 自身的路徑檢查會擋(fail-closed,不會因此對外提供)
 
 
 def _file_meta(p):
@@ -1394,14 +1408,33 @@ def _safe(name):
     return re.sub(r'[\\/:*?"<>|\s]+', "_", str(name)).strip("_") or "x"
 
 
+def _export_dir():
+    """匯出檔(CSV/ZIP)存放處。桌面版沿用 repo/exports;公開站改放系統暫存下的隨機子目錄 ——
+    不在 repo、不在 allowed_paths、也不在 Gradio 上傳暫存根 → 原檔無法被 /gradio_api/file= 猜路徑抓走,
+    只透過 Gradio 以內容雜湊命名的快取副本下載。順手清掉一天前的舊匯出。"""
+    if not PUBLIC:
+        exp = ROOT / "exports"
+        exp.mkdir(exist_ok=True)
+        return exp
+    base = Path(tempfile.gettempdir()) / "clinscope_exports"
+    base.mkdir(parents=True, exist_ok=True)
+    cutoff = datetime.now().timestamp() - 86400
+    for old in base.iterdir():
+        try:
+            if old.stat().st_mtime < cutoff:
+                shutil.rmtree(old, ignore_errors=True)
+        except OSError:
+            pass
+    return Path(tempfile.mkdtemp(dir=base))
+
+
 def on_csv(label, S, request: gr.Request = None):
     _guard_owner(request)
     res = S["results"]
     if not res:
         raise gr.Error("尚無計算結果可匯出。")
     spec = BY_LABEL[label]
-    exp = ROOT / "exports"
-    exp.mkdir(exist_ok=True)
+    exp = _export_dir()
     fn = exp / f"clinscope_{spec['key']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     with open(fn, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f)
@@ -1470,9 +1503,7 @@ def on_saveas_confirm_zip(mode, S, request: gr.Request = None):
         gr.Info("目前分頁沒有檔案可下載。")
         return gr.update(visible=False), gr.update()
     res, kind = S["results"], S["kind"]
-    exp = ROOT / "exports"
-    exp.mkdir(exist_ok=True)
-    zpath = exp / f"clinscope_{_safe(page)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+    zpath = _export_dir() / f"clinscope_{_safe(page)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
     used, n = {}, 0
     with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
         for p in pf:
@@ -2456,17 +2487,47 @@ def build():
     return demo
 
 
-def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **overrides):
-    """建構並啟動工作台。供 `python app.py`(__main__)與 packaging/run_desktop.py
-    (pywebview 桌面視窗,需 prevent_thread_lock=True)共用,避免啟動參數兩處重複。"""
-    # allowed_paths:工作台會服務本機資料夾內影像,預設開放各磁碟根(本機單人用)。
-    # 公開站可用環境變數 CLINSCOPE_ALLOWED_PATHS(分號分隔)收緊,例如只開 D:\ 不曝 C:\Users。
+def _unsafe_to_serve(p) -> bool:
+    """公開站不得對外提供的路徑:repo 根(含 models/、data/、reports/、packaging/autostart/env.local.bat…)
+    與使用者家目錄(含 .cloudflared 憑證、桌面/下載裡的影像)—— 本身、其內任何位置、或涵蓋它們的上層(如 D:\\、C:\\)。"""
+    try:
+        p = Path(p).resolve()
+    except Exception:
+        return True
+    for s in (ROOT, Path.home()):
+        s = s.resolve()
+        if p == s or p.is_relative_to(s) or s.is_relative_to(p):
+            return True
+    return False
+
+
+def _allowed_paths():
+    """Gradio allowed_paths —— 清單內任何檔案都能被**任何人**經 /gradio_api/file=<絕對路徑> 直接下載。
+    桌面/dev(非 PUBLIC,只綁 127.0.0.1):沿用預設開放各磁碟根,或 CLINSCOPE_ALLOWED_PATHS(分號分隔)。
+    公開站 fail-closed:預設只開桌面安裝檔;CLINSCOPE_ALLOWED_PATHS 中涵蓋/位於 repo 根或家目錄的項目一律剔除。
+    (工作台影像不靠 allowed_paths:圖示檢視由 _servable 複製進 Gradio 快取;匯出見 _export_dir。)"""
     env_paths = os.environ.get("CLINSCOPE_ALLOWED_PATHS", "").strip()
     if env_paths:
         allowed = [p.strip() for p in env_paths.split(";")
                    if p.strip() and Path(p.strip()).exists()]
+    elif PUBLIC:
+        allowed = []
     else:
         allowed = [f"{d}:\\" for d in "CDEFGHIJKLMNOPQRSTUVWXYZ" if Path(f"{d}:\\").exists()]
+    if PUBLIC:
+        dropped = [p for p in allowed if _unsafe_to_serve(p)]
+        if dropped:
+            print(f"[ClinScope] ⚠ 公開站忽略會曝露 repo/家目錄的 CLINSCOPE_ALLOWED_PATHS 項目: {dropped}")
+        allowed = [p for p in allowed if not _unsafe_to_serve(p)]
+        if _SETUP_EXE.exists():          # 下載桌面版按鈕(BRAND_HTML)只開這一個檔
+            allowed.append(str(_SETUP_EXE))
+    return allowed
+
+
+def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **overrides):
+    """建構並啟動工作台。供 `python app.py`(__main__)與 packaging/run_desktop.py
+    (pywebview 桌面視窗,需 prevent_thread_lock=True)共用,避免啟動參數兩處重複。"""
+    allowed = _allowed_paths()
     # auth:預設無(本機單人直用);公開站設 CLINSCOPE_AUTH_USER + CLINSCOPE_AUTH_PASS
     # 即啟用 Gradio 內建「帳號+密碼」登入(密碼只走環境變數,不寫進原始碼/版控)。
     _u, _p = os.environ.get("CLINSCOPE_AUTH_USER"), os.environ.get("CLINSCOPE_AUTH_PASS")

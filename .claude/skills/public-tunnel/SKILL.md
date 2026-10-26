@@ -31,7 +31,7 @@ description: 維護/部署 ClinScope 公開網址 clinscope.tinghaochang.com(Clo
 | **改誰是站主 / 誰能操作** | **app 層**,非 CF:改 `env.local.bat` 的 `CLINSCOPE_OWNER_EMAIL`(或程式預設 lisonchang80@gmail.com)。站主 = 站內用該 Google 帳號登入者;其餘匿名/他人 = 唯讀訪客。要驗實際收到的 email 看 `identity_debug.log`。 |
 | **重新上鎖(改回要登入才能看)** | Zero Trust → Access controls → Applications → `clinscope` → 移除那條 Bypass/Everyone policy(原「任何登入者」Allow 還在,移除 bypass 即恢復強制登入)。 |
 | **模型篩選 / 預設範例** | 站主登入後,模型列「⚙ 篩選」調分數門檻(預設 ≥85%)+ 手動隱藏 → 存 `model_filter.json`(git-ignored,套用到所有訪客)。預設畫面範例夾/模型:`CLINSCOPE_SAMPLE_DIR` / `CLINSCOPE_SAMPLE_MODEL`(預設 `06_真菌OpenFungi_fungi_50` + key `fungi`)。 |
-| **收緊檔案曝險** | 自啟腳本/啟動環境設 `CLINSCOPE_ALLOWED_PATHS=D:\`(只服務 D 槽、不曝 C:\Users);`app.py` `launch_app()` 已支援。亦可設 `CLINSCOPE_AUTH_USER/PASS` 改用 Gradio 密碼(但 Access 已是更強的邊緣驗證) |
+| **檔案曝險(allowed_paths)** | Gradio 會把 `allowed_paths` 內**任何檔案**經 `/gradio_api/file=<絕對路徑>` 交給任何人。公開站(`CLINSCOPE_PUBLIC=1`)預設**只開桌面安裝檔**;`CLINSCOPE_ALLOWED_PATHS` 裡涵蓋/位於 repo 根或家目錄的項目會被剔除(啟動 log 印 ⚠)——**不要再設 `D:\`**(它涵蓋 repo,舊版因此可被抓走 `env.local.bat`)。範例夾/本地模式影像改由 `_servable` 複製進 Gradio 快取再顯示,匯出檔放系統暫存隨機子目錄,都不需 allowed_paths。桌面/dev 版維持原行為。 |
 | **再掛別專案子網域** | `cloudflared tunnel route dns tinghaochang-sites x.tinghaochang.com` + `config.yml` ingress 加一條(或開新 tunnel) + **另建一個 Access app**(Access 綁單一主機名,不會自動涵蓋新子網域) |
 
 ## 坑(都實際踩過)
