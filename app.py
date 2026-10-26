@@ -667,7 +667,9 @@ def read_session(token):
 
 
 def verify_google_credential(credential):
-    """驗證 Google Sign-In 回傳的 ID token,回傳 claims(email/sub/...)。無 client id 則報錯。"""
+    """驗證 Google Sign-In 回傳的 ID token,回傳 claims(email/sub/...)。無 client id 則報錯。
+    google-auth 驗簽章 / aud / exp;此處再驗 iss 與 email_verified —— 未驗證的 email 不能當身分
+    (否則可註冊一個「掛著站主 email 但未驗證」的 Google 帳號冒充;非 Gmail 的站主 email 尤其危險)。"""
     if not GOOGLE_CLIENT_ID:
         raise ValueError("CLINSCOPE_GOOGLE_CLIENT_ID 未設定")
     from google.auth.transport import requests as g_requests
@@ -676,6 +678,10 @@ def verify_google_credential(credential):
                                    clock_skew_in_seconds=30)   # 容忍時鐘差,免「used too early」
     if info.get("iss") not in ("accounts.google.com", "https://accounts.google.com"):
         raise ValueError("invalid issuer")
+    if not (info.get("email") or "").strip():
+        raise ValueError("missing email")
+    if info.get("email_verified") not in (True, "true"):
+        raise ValueError("email not verified")
     return info
 
 
