@@ -174,7 +174,8 @@ class LiveSite:
     def n_inputs(self, fid):
         return len(self.demo.fns[fid].inputs)
 
-    def call(self, name, data=None, cookie=None, session=None, nth=0, event_data=None, timeout=30):
+    def call(self, name, data=None, cookie=None, session=None, nth=0, event_data=None, timeout=30,
+             headers=None):
         """直接打 /gradio_api/queue/join(與前端/攻擊者同一條路,不經 UI),回傳 process_completed 訊息。
         data 為 dict {輸入序號: 值} 或 list;未給的輸入(含 State)送 None。"""
         import httpx
@@ -187,7 +188,9 @@ class LiveSite:
         else:
             vals = list(data)
         sh = session or uuid.uuid4().hex[:12]
-        headers = {"Cookie": cookie} if cookie else {}
+        headers = dict(headers or {})
+        if cookie:
+            headers["Cookie"] = cookie
         r = httpx.post(f"{self.base}/gradio_api/queue/join",
                        json={"data": vals, "fn_index": fid, "session_hash": sh,
                              "event_data": event_data, "trigger_id": None},
