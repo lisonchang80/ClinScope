@@ -624,6 +624,7 @@ QUEUE_MAX_SIZE = 128
 # 公開站身分:僅登入 email == OWNER_EMAIL 為「站主」(可操作),其餘(含匿名)為訪客(唯讀)。
 OWNER_EMAIL = os.environ.get("CLINSCOPE_OWNER_EMAIL", "lisonchang80@gmail.com").strip().lower()
 _ID_LOG = Path(__file__).resolve().parent / "identity_debug.log"   # 記錄真流量看到的 email,便於確認(可日後移除)
+_ID_LOG_MAX_BYTES = 1_000_000   # 上限 1MB,超過就不再追加
 
 # ── 站內 Google 登入(取代 CF Access,讓路人可匿名唯讀瀏覽)────────────────────────
 # 前端 Google Sign-In → ID token(JWT)→ 後端驗簽/audience/issuer → 簽 itsdangerous cookie 記 email。
@@ -861,11 +862,14 @@ def on_identity(request: gr.Request):
     """載入時判定身分 → 身分列(含登入/登出鈕)+ 開/關(虛化)可操作按鈕。公開站專用。"""
     owner = _is_owner(request)
     email = _identity_email(request)
-    try:
-        with open(_ID_LOG, "a", encoding="utf-8") as f:
-            f.write(f"{datetime.now():%Y-%m-%d %H:%M:%S}\temail={email}\towner={owner}\tauth={AUTH_ENABLED}\n")
-    except Exception:
-        pass
+    # 只記登入者:匿名載入不寫檔(否則任何人直接狂打此事件就能無限長檔);檔案有上限
+    if email:
+        try:
+            if not _ID_LOG.exists() or _ID_LOG.stat().st_size < _ID_LOG_MAX_BYTES:
+                with open(_ID_LOG, "a", encoding="utf-8") as f:
+                    f.write(f"{datetime.now():%Y-%m-%d %H:%M:%S}\temail={email}\towner={owner}\tauth={AUTH_ENABLED}\n")
+        except Exception:
+            pass
     logout_btn = '<button class="cs-authbtn" id="cs-logout">登出</button>' if AUTH_ENABLED else ''
     if owner:
         bar = ('<div class="cs-idbar cs-owner">✅ 已登入站主 <b>' + _html.escape(email or OWNER_EMAIL)
