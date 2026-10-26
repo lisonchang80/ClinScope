@@ -2681,8 +2681,9 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
         fastapi_app = FastAPI()
         _add_auth_routes(fastapi_app)
         fastapi_app.add_middleware(_OwnerOnlyUploads)
+        # show_error=False:非預期例外內文(常含伺服器路徑)不回給瀏覽器、只印在 console;gr.Error 訊息照常顯示
         mounted = gr.mount_gradio_app(fastapi_app, demo, path="/", allowed_paths=allowed,
-                                      theme=THEME, css=CSS, show_error=True,
+                                      theme=THEME, css=CSS, show_error=False,
                                       max_file_size=f"{UPLOAD_MAX_FILE_MB}mb")
         server = uvicorn.Server(uvicorn.Config(mounted, host="127.0.0.1", port=port, log_level="warning"))
         if prevent_thread_lock:
