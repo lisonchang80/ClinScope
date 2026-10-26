@@ -771,8 +771,9 @@ def _req_email(request):
 
 
 def _identity_email(request):
-    """目前登入 email:站內 Google cookie;CF Access 標頭只在明確信任時採用(見 TRUST_CF_ACCESS_HEADER);皆無=匿名。"""
-    email = _cookie_email(request)
+    """目前登入 email:站內 Google cookie(僅站內登入啟用時);CF Access 標頭只在明確信任時採用
+    (見 TRUST_CF_ACCESS_HEADER);皆無=匿名。"""
+    email = _cookie_email(request) if AUTH_ENABLED else None
     if email:
         return email
     if TRUST_CF_ACCESS_HEADER and not AUTH_ENABLED:

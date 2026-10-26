@@ -65,3 +65,9 @@ def test_owner_email_compare_is_case_and_space_insensitive():
     assert A._is_owner(fake_request(email="  Owner@Example.COM "))
     assert not A._is_owner(fake_request(email="owner@example.com.evil.test"))
     assert not A._is_owner(fake_request(email=""))
+
+
+def test_site_login_cookie_ignored_when_site_login_disabled(monkeypatch):
+    # 拿掉 CLINSCOPE_GOOGLE_CLIENT_ID = 公開站沒有站主(全員唯讀);之前發出的 cookie 不能繼續當站主
+    monkeypatch.setattr(A, "AUTH_ENABLED", False)
+    assert not A._is_owner(fake_request(email=OWNER))
