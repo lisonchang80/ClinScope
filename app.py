@@ -732,10 +732,8 @@ def _identity_email(request):
 
 def _is_owner(request):
     """公開站:僅登入 email == OWNER_EMAIL 才是站主(fail-closed —— 匿名/不符一律訪客)。
-    桌面/dev(非 PUBLIC)或設 CLINSCOPE_FORCE_OWNER 時一律站主。"""
+    桌面/dev(非 PUBLIC,單人本機)一律站主。公開模式沒有任何放行捷徑(舊 CLINSCOPE_FORCE_OWNER 已移除)。"""
     if not PUBLIC:
-        return True
-    if os.environ.get("CLINSCOPE_FORCE_OWNER", "").strip():
         return True
     return _identity_email(request) == OWNER_EMAIL
 
@@ -2560,6 +2558,8 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
           f"disciplines={DISCIPLINES} | allowed_paths={allowed} | auth={'on' if auth else 'off'} | "
           f"mode={'PUBLIC(upload)' if PUBLIC else 'local(native-pick)'} | "
           f"google-login={'ON' if AUTH_ENABLED else 'off'}")
+    if PUBLIC and os.environ.get("CLINSCOPE_FORCE_OWNER", "").strip():
+        print("[ClinScope] ⚠ CLINSCOPE_FORCE_OWNER 已移除,公開模式一律忽略(站主只能經站內 Google 登入)。")
     if PUBLIC:
         _precompute_sample()      # 預先分類範例夾(供預設畫面),失敗不影響啟動
     demo = build()

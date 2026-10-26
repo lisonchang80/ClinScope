@@ -47,3 +47,21 @@ def test_session_secret_resolution():
         got = A._session_secret(weak)
         assert got != weak and len(got) >= 32
     assert A._session_secret(None) != A._session_secret(None)   # 每次啟動隨機
+
+
+# ── dev/桌面放行捷徑在公開模式一定關閉 ──
+def test_force_owner_env_is_ignored_on_public_site(monkeypatch):
+    monkeypatch.setenv("CLINSCOPE_FORCE_OWNER", "1")
+    assert not A._is_owner(fake_request())
+    assert not A._is_owner(None)
+
+
+def test_desktop_mode_is_single_user_owner(monkeypatch):
+    monkeypatch.setattr(A, "PUBLIC", False)
+    assert A._is_owner(None)
+
+
+def test_owner_email_compare_is_case_and_space_insensitive():
+    assert A._is_owner(fake_request(email="  Owner@Example.COM "))
+    assert not A._is_owner(fake_request(email="owner@example.com.evil.test"))
+    assert not A._is_owner(fake_request(email=""))
