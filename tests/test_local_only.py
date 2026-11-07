@@ -158,7 +158,7 @@ def test_desktop_launch_keeps_caller_middleware(monkeypatch):
 
 def test_public_launch_unchanged(monkeypatch):
     kw = _fake_launch(monkeypatch, public=True)
-    assert _mw_classes(kw) == [A._FrameGuard, A._SameOriginWriteGuard, A._OwnerOnlyUploads], \
+    assert _mw_classes(kw) == [A._FrameGuard, A._SameOriginWriteGuard, A._BodySizeLimit, A._OwnerOnlyUploads], \
         "公開站要接 tunnel 流量,不可掛本機限定"
     assert "server_port" not in kw, "公開站沿用啟動器的 GRADIO_SERVER_PORT=7860,不可搬家"
 
@@ -203,7 +203,8 @@ def test_uvicorn_public_path_stack_order(monkeypatch):
     monkeypatch.setattr(uvicorn, "Server", _FakeServer)
     mounted = A.launch_app(prevent_thread_lock=False, server_port=_free_port())
     assert [m.cls for m in mounted.user_middleware] == [
-        A._FrameGuard, A._StripCrossOriginCors, A._SameOriginWriteGuard, A._OwnerOnlyUploads]
+        A._FrameGuard, A._StripCrossOriginCors, A._SameOriginWriteGuard, A._BodySizeLimit,   # 本文上限(審查 GA-12)
+        A._OwnerOnlyUploads]
 
 
 # ── 真的起一個非公開實例(隨機埠),用 tunnel 會送的 Host 打 ──

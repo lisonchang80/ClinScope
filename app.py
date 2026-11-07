@@ -947,6 +947,103 @@ class _OwnerOnlyUploads:
         await self.app(scope, receive, send)
 
 
+# ── 請求本文上限(審查 2026-11-07 GA-12;照 GIS server/security.py 的 BodySizeLimit,改成純 ASGI)──
+# uvicorn 沒有本文上限:/auth/google 未登入就 await request.json(),/gradio_api/queue/join 也是匿名可打的
+# JSON 解析(pydantic)。匿名者連續送接近 Cloudflare 上限(約 100MB)的本文,同一台機器的 GIS/Portfolio 一起被拖慢。
+AUTH_BODY_LIMIT = 64 * 1024              # /auth/*:Google ID token 約 1–2KB
+# queue/join 等其他端點:最大的是站主分批上傳後送回的路徑清單(on_uploaded_paths,前端 JSON.stringify 成字串
+# 再包一層 queue/join)。量測(tests/test_body_limit.py 同一套算法,UPLOAD_MAX_FILES=5000 筆
+# %TEMP%\gradio\<sha256>\<檔名>):一般檔名 0.78MB、長中文檔名 1.19MB、124 字中文檔名 2.40MB;
+# 8MB 是最壞量測值的 3.3 倍。本站沒有把影像放進事件本文的元件(gallery 不當輸入、沒有 dataURL)。
+QUEUE_BODY_LIMIT = 8 * 1024 * 1024
+# 上傳與錄影轉檔交給 Gradio max_file_size(UPLOAD_MAX_FILE_MB)與 _OwnerOnlyUploads(非站主 403)
+_BODY_EXEMPT = re.compile(r"/gradio_api/(upload|process_recording)/?$")
+_DRAIN_413_LIMIT = 128 * 1024 * 1024     # 回 413 前讀掉(丟棄、不保留)的上限
+_DRAIN_413_TIMEOUT = 1.0                 # 秒:慢速送出也不能把 413 卡住
+
+
+def _body_limit(path):
+    """path 要給 scope["path"]。回位元組上限,None = 不限(交給 max_file_size)。"""
+    path = path or ""
+    if _BODY_EXEMPT.match(path):
+        return None
+    if path == "/auth" or path.startswith("/auth/"):
+        return AUTH_BODY_LIMIT
+    return QUEUE_BODY_LIMIT
+
+
+async def _drain_413(receive):
+    """回 413 前限量、限時讀掉(丟棄)用戶端還在送的本文:沒讀就關連線的話,用戶端會看到連線被中止而不是 413。"""
+    import asyncio
+
+    async def _read():
+        seen = 0
+        while seen <= _DRAIN_413_LIMIT:
+            msg = await receive()
+            if msg.get("type") != "http.request":
+                return
+            seen += len(msg.get("body", b""))
+            if not msg.get("more_body"):
+                return
+    try:
+        await asyncio.wait_for(_read(), _DRAIN_413_TIMEOUT)
+    except asyncio.TimeoutError:
+        pass
+
+
+class _BodySizeLimit:
+    """純 ASGI 本文上限:有 Content-Length 就先比(超過或不是數字 → 413,不讀進記憶體);
+    沒有 Content-Length(chunked)就邊收邊數,超過 → 413,沒超過才把緩衝好的本文原樣交給下一層。"""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        limit = _body_limit(scope.get("path", "")) if scope.get("type") == "http" else None
+        if limit is None:
+            await self.app(scope, receive, send)
+            return
+        declared = None
+        for k, v in scope.get("headers") or ():
+            if k.lower() == b"content-length":
+                declared = v.decode("latin-1").strip()
+                break
+        if declared is not None:
+            if not declared.isdigit() or int(declared) > limit:
+                await _drain_413(receive)
+                await _send_plain(send, 413, b'{"error":"request body too large"}', b"application/json")
+                return
+            await self.app(scope, receive, send)      # h11 依 Content-Length 切本文,不會多給
+            return
+        chunks, size, tail = [], 0, None
+        while True:
+            msg = await receive()
+            if msg.get("type") != "http.request":
+                tail = msg                             # http.disconnect:交給下一層自己看到
+                break
+            body = msg.get("body", b"") or b""
+            size += len(body)
+            if size > limit:
+                chunks.clear()
+                if msg.get("more_body"):
+                    await _drain_413(receive)
+                await _send_plain(send, 413, b'{"error":"request body too large"}', b"application/json")
+                return
+            chunks.append(body)
+            if not msg.get("more_body"):
+                break
+        pending = [{"type": "http.request", "body": b"".join(chunks), "more_body": False}]
+        if tail is not None:
+            pending.append(tail)
+
+        async def replay():
+            if pending:
+                return pending.pop(0)
+            return await receive()
+
+        await self.app(scope, replay, send)
+
+
 # 非公開模式(桌面/dev)只服務本機(審查 2026-11-07 CS-1/GA-1):共用 cloudflared tunnel 常駐、ingress 把
 # clinscope→localhost:7860、scopelab→localhost:7861,前面沒有 Access。非公開模式 allowed_paths=各磁碟根、
 # _is_owner 一律 True → 只要被 tunnel 轉到,網路上任何人都是站主、可經 /gradio_api/file= 讀整顆磁碟。
@@ -3023,9 +3120,10 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
         fastapi_app = FastAPI()
         _add_auth_routes(fastapi_app)
         # add_middleware 插在最前 = 最外層 → 實際順序(外→內):[_LocalOnly] → _FrameGuard → _StripCrossOriginCors
-        # → _SameOriginWriteGuard → _OwnerOnlyUploads → /auth/* 與掛在 "/" 的 Gradio(它自己的 CORS 在更裡面,
-        # 所以 _StripCrossOriginCors 拿得掉它加的 ACAO / ACAC)。
+        # → _SameOriginWriteGuard → _BodySizeLimit → _OwnerOnlyUploads → /auth/* 與掛在 "/" 的 Gradio(它自己的
+        # CORS 在更裡面,所以 _StripCrossOriginCors 拿得掉它加的 ACAO / ACAC)。
         fastapi_app.add_middleware(_OwnerOnlyUploads)
+        fastapi_app.add_middleware(_BodySizeLimit)       # /auth/* 64KB、其他 8MB、上傳交給 max_file_size(審查 GA-12)
         fastapi_app.add_middleware(_SameOriginWriteGuard)
         fastapi_app.add_middleware(_StripCrossOriginCors)
         fastapi_app.add_middleware(_FrameGuard)
@@ -3055,7 +3153,8 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
     # 沒設帳密時沒有任何登入身分;桌面版只綁 127.0.0.1,Host 為 127.0.0.1/localhost 時 Gradio 的 CORS 不放行
     # 非本機 Origin(非本機 Host 由 _LocalOnly 擋)。
     middleware = [Middleware(_FrameGuard), Middleware(_SameOriginWriteGuard)]
-    if PUBLIC:   # 未啟用站內登入的公開站:沒有站主 → 上傳端點全擋
+    if PUBLIC:   # 未啟用站內登入的公開站:沒有站主 → 上傳端點全擋;本文上限同站內登入路徑(審查 GA-12)
+        middleware.append(Middleware(_BodySizeLimit))
         middleware.append(Middleware(_OwnerOnlyUploads))
         kw["max_file_size"] = f"{UPLOAD_MAX_FILE_MB}mb"
     else:        # 桌面/dev:只服務本機(list 第一個 = 使用者中介層的最外層)
