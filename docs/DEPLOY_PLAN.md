@@ -12,19 +12,20 @@
 | A0 | 買網域（Cloudflare Registrar，DNS 自動在 CF） | 使用者 | ✅ 已購 **tinghaochang.com** |
 | A1 | 裝 `cloudflared`(winget 2026.5.2)、`tunnel login`、建 named tunnel `clinscope` (UUID e90e134d…；2026-07-04 已改名 `tinghaochang-sites`，腳本一律用 UUID 跑) | Claude | ✅ |
 | A2 | `clinscope.tinghaochang.com → http://localhost:7860`（`~/.cloudflared/config.yml` + DNS CNAME route） | Claude | ✅ |
-| A3 | **登入自動啟動**（無 admin→不能用 service；改 Startup 資料夾 `clinscope_public.vbs` 隱藏起 GPU server+tunnel） | Claude | ✅ |
-| A4 | Cloudflare Access（Self-hosted app `clinscope`、policy `任何登入者`=Everyone、登入方式 = Google OAuth IdP → 任何 Google 真人可進、擋 bot；**僅保護 `clinscope` 單一子網域,非整個 tinghaochang.com**） | Claude/使用者 | ✅ |
+| A3 | **登入自動啟動**（無 admin→不能用 service；改 Startup 資料夾 `.vbs`）。⚠️ **現況（2026-08-07 起）**：ClinScope 的 `clinscope_public.vbs` 已退役、**ClinScope 沒有自啟**；tunnel 改由 Startup 的 `cloudflared_tunnel.vbs` 起，**共用**給 gis / scopelab / harnesshub / tinghaochang.com | Claude | ✅→退役 |
+| A4 | Cloudflare Access（Self-hosted app `clinscope`、policy `任何登入者`=Everyone、登入方式 = Google OAuth IdP → 任何 Google 真人可進、擋 bot；**僅保護 `clinscope` 單一子網域,非整個 tinghaochang.com**）。⚠️ **現況（2026-07-06 起）**：clinscope 改 **Bypass（公開，匿名唯讀）**，登入改站內 Google Sign-In（見 `.claude/skills/public-tunnel/SKILL.md`） | Claude/使用者 | ✅→Bypass |
 
 > ✅ **2026-06-18 全鏈路上線並實證**：未登入連 `clinscope.tinghaochang.com` → HTTP 302 導向 `wandering-haze-5a99.cloudflareaccess.com`(Access 攔截)；用 Google 登入後進到 ClinScope。**登入方式 = Google OAuth**(OTP 已停用;policy=Everyone=任何 Google 真人,擋 bot)。Access 僅綁 `clinscope.tinghaochang.com` 單一主機名,其他子網域/apex 不受此規則影響。
 > **公開站用 GPU 開發版**(dev venv cu124 `python app.py`，非 CPU 安裝版；徽章顯示 GPU、權重走本機 repo 免下載)。
-> 固定網址 ≠ 不間斷：本機關機/睡眠/server 或 cloudflared 沒跑就連不上。**停掉公開站** = 工作管理員結束 `python.exe`(7860)+`cloudflared.exe`，或移除 Startup 的 `clinscope_public.vbs` 取消開機自啟。
-> ⚠️ **換網路(WiFi 切換 / 熱點↔WiFi / 睡眠喚醒)後常見 502「Host Error」**：cloudflared 連線卡在舊網路、沒乾淨重連(origin `localhost:7860` 本機仍 200)。修復=跑 `restart_tunnel.bat`(或工作管理員砍 `cloudflared.exe` 再重跑 `tunnel run`)；重開機走登入自啟則是全新連線、不受影響。2026-06-18 實證:熱點 172.20.10.4→WiFi 192.168.1.108 後 502,重啟 tunnel 立即恢復 302。
+> 固定網址 ≠ 不間斷：本機關機/睡眠/server 或 cloudflared 沒跑就連不上。**停掉公開站** = 只結束佔 7860 的 `python.exe`（關掉「ClinScope Server」視窗）。**不要結束 `cloudflared.exe`**：tunnel 是共用的，會連帶斷掉 gis / scopelab / harnesshub / 首頁；機器上也可能有別的 cloudflared（其他專案用自己的 `--config` 起）。ClinScope 2026-08-07 起沒有開機自啟，不必再刪 Startup 檔。
+> ⚠️ **換網路(WiFi 切換 / 熱點↔WiFi / 睡眠喚醒)後常見 502「Host Error」**：cloudflared 連線卡在舊網路、沒乾淨重連(origin `localhost:7860` 本機仍 200)。修復=跑 `restart_tunnel.bat`：執行時從 `%USERPROFILE%\.cloudflared\config.yml` 的 `tunnel:` 欄讀 UUID（讀不到就什麼都不做），只結束命令列含該 UUID 的 cloudflared，再經 Startup 的 `cloudflared_tunnel.vbs` 隱藏、detached 重起（見 `packaging/autostart/tunnel_ctl.ps1`）。**不要用 `taskkill /IM cloudflared.exe`**。重開機走登入自啟則是全新連線、不受影響。2026-06-18 實證:熱點 172.20.10.4→WiFi 192.168.1.108 後 502,重啟 tunnel 立即恢復 302（當時 Access 還沒改 Bypass；現在正常是 200）。
 
 ### Track A 部署產物（已從程式碼/系統確認）
 - `~/.cloudflared/`：`cert.pem`(origin 授權)、`<UUID>.json`(tunnel 憑證，**secret**)、`config.yml`(ingress)。
-- Startup 自啟：`%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\clinscope_public.vbs`(隱藏、detached)。
-- 手動啟動器：`packaging/autostart/start_public.bat`(可見視窗，除錯/手動開用)。
-- 換網路修復：`packaging/autostart/restart_tunnel.bat`(WiFi/熱點切換後出現 502 → 只重啟 tunnel，server 不動)。
+- Startup 自啟：ClinScope **沒有**（`clinscope_public.vbs` 2026-08-07 退役）；共用 tunnel = `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\cloudflared_tunnel.vbs`(隱藏、detached，不在本 repo)。
+- 手動啟動器：`packaging/autostart/start_public.bat`(server 開可見視窗，除錯/手動開用；tunnel 已在跑就不再起，沒在跑才經 Startup VBS 起；讀不到 UUID 就整個停下)。
+- 換網路修復：`packaging/autostart/restart_tunnel.bat`(WiFi/熱點切換後出現 502 → 只重啟這條共用 tunnel，server 不動、其他 cloudflared 不動)。
+- tunnel 小工具：`packaging/autostart/tunnel_ctl.ps1`（`check` / `status` / `ensure` / `restart`；UUID 執行時讀 config.yml，公開 repo 不寫死）。
 - Cloudflare 帳號 `Hao800922@gmail.com`、Zero Trust team `wandering-haze-5a99`、Access app `clinscope`(destination=`clinscope.tinghaochang.com` **單一主機名,非整域**;policy `任何登入者`=Everyone)。
 - 登入方式 = **Google OAuth IdP**:Google Cloud 專案 `plenary-treat-288305`(My First Project)→ OAuth client `ClinScope-Cloudflare`、consent screen External + **已發布 Production**(基本 scope email/profile 免審核、無 100 人上限)、redirect URI `https://wandering-haze-5a99.cloudflareaccess.com/cdn-cgi/access/callback`;該 app 已停用 One-time PIN(只留 Google)。要再保護別的子網域需「另建」Access app(或用萬用 `*.tinghaochang.com`)。
 
