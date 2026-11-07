@@ -82,7 +82,7 @@ $aria = (Resolve-Path "C:\Users\hao80\AppData\Local\Microsoft\WinGet\Packages\ar
 {"key": "<key>", "kind": "cls", "label": "<emoji 中文 — 來源(染色)>",
  "path": ROOT / "models" / "<name>_resnet50.pt", "blurb": "<一句說明>"},
 ```
-app 只列「權重檔存在」的模型。**改完要重啟 server 才生效**：先 `TaskStop` 舊的（或 port 7860 沒在聽就直接起），再 `python app.py`（背景），`curl http://127.0.0.1:7860/config` 驗 HTTP 200。
+app 只列「權重檔存在」的模型。**改完要重啟 server 才生效**：先 `TaskStop` 舊的（或 port 7862 沒在聽就直接起），再 `python app.py`（背景；非公開模式預設 7862，**不要**設 `GRADIO_SERVER_PORT=7860`——那是公開站 tunnel 入口），`curl http://127.0.0.1:7862/config` 驗 HTTP 200。
 **注意**：別在某模型「訓練中」就重啟前端 —— 會去載被覆寫到一半的權重。
 
 ### batch6(2026-06-14)收錄/工具補充

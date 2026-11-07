@@ -10,7 +10,9 @@ while individual tracks are still training.
 
 Run:
     .\.venv\Scripts\python.exe app.py
-then open http://127.0.0.1:7860
+then open http://127.0.0.1:7862
+(desktop/dev default port is 7862 -- 7860 is the public tunnel entry; GRADIO_SERVER_PORT overrides.
+ Non-public mode only serves localhost: requests via Cloudflare or with a non-local Host get 403.)
 """
 from pathlib import Path
 import csv
@@ -612,6 +614,7 @@ SAMPLE = {"label": None, "files": [], "results": {}}   # 啟動時由 _precomput
 # 訪客瀏覽器看不到且阻塞請求 → 改用瀏覽器端「分批上傳」(繞過 Cloudflare 單次 ~100MB 上限)。
 # 本機桌面/dev 不設此旗標,保留原生選夾。
 PUBLIC = bool(os.environ.get("CLINSCOPE_PUBLIC", "").strip())
+DEV_PORT = 7862   # 非公開(桌面/dev)預設埠;不可等於 tunnel ingress 埠(7860 clinscope / 7861 scopelab)
 # Gradio 上傳暫存根目錄:分批上傳後,前端回傳的伺服器路徑必須落在此目錄內才接受(擋路徑注入)。
 _GRADIO_TMP = Path(os.environ.get("GRADIO_TEMP_DIR") or (Path(tempfile.gettempdir()) / "gradio")).resolve()
 # 公開站上傳上限(只有站主能上傳,見 _OwnerOnlyUploads):單檔(Gradio max_file_size;Cloudflare 單次本就 ~100MB)、
@@ -849,6 +852,63 @@ class _OwnerOnlyUploads:
                 from starlette.responses import PlainTextResponse
                 await PlainTextResponse("僅站主可上傳", status_code=403)(scope, receive, send)
                 return
+        await self.app(scope, receive, send)
+
+
+# 非公開模式(桌面/dev)只服務本機(審查 2026-11-07 CS-1/GA-1):共用 cloudflared tunnel 常駐、ingress 把
+# clinscope→localhost:7860、scopelab→localhost:7861,前面沒有 Access。非公開模式 allowed_paths=各磁碟根、
+# _is_owner 一律 True → 只要被 tunnel 轉到,網路上任何人都是站主、可經 /gradio_api/file= 讀整顆磁碟。
+# 所以不論埠號:帶 Cloudflare 標頭,或 Host 不是本機(也擋 DNS rebinding)→ 一律不往下送。
+_LOCAL_HOSTS = frozenset({"127.0.0.1", "localhost", "[::1]", "::1"})
+_CF_HEADERS = (b"cf-connecting-ip", b"cf-ray", b"cf-visitor")
+_LOCAL_ONLY_MSG = "這個程式只在本機開放（非公開模式）；公開站請用 CLINSCOPE_PUBLIC=1 啟動。"
+
+
+def _host_only(host):
+    """Host 標頭去掉埠號(小寫):'127.0.0.1:7862'→'127.0.0.1'、'[::1]:7862'→'[::1]'、'::1'→'::1'。"""
+    h = (host or "").strip().lower()
+    if h.startswith("["):          # [v6] 或 [v6]:port;括號後接其他東西(如 '[::1].evil')原樣回傳 → 不會被當本機
+        end = h.find("]")
+        rest = h[end + 1:] if end != -1 else "x"
+        return h[:end + 1] if rest == "" or (rest[:1] == ":" and rest[1:].isdigit()) else h
+    if h.count(":") == 1:          # name:port / v4:port;兩個以上冒號 = 沒加括號的 IPv6,原樣
+        return h.split(":", 1)[0]
+    return h
+
+
+def _from_tunnel_or_foreign(headers):
+    """ASGI headers(bytes 對)→ 是否應擋:帶 CF 標頭、cdn-loop 含 cloudflare、沒有 Host 或任一 Host 非本機。"""
+    hosts = []
+    for k, v in headers:
+        k = k.lower()
+        if k in _CF_HEADERS:
+            return True
+        if k == b"cdn-loop" and b"cloudflare" in v.lower():
+            return True
+        if k == b"host":
+            hosts.append(v.decode("latin-1"))
+    return not hosts or any(_host_only(h) not in _LOCAL_HOSTS for h in hosts)
+
+
+class _LocalOnly:
+    """非公開模式 ASGI 中介層(純 ASGI,不碰 body):http → 403 純文字;websocket → close 1008;其他(lifespan)照常。"""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        kind = scope.get("type")
+        if kind in ("http", "websocket") and _from_tunnel_or_foreign(scope.get("headers") or ()):
+            if kind == "websocket":
+                await send({"type": "websocket.close", "code": 1008})
+                return
+            body = _LOCAL_ONLY_MSG.encode("utf-8")
+            await send({"type": "http.response.start", "status": 403,
+                        "headers": [(b"content-type", b"text/plain; charset=utf-8"),
+                                    (b"content-length", str(len(body)).encode("ascii")),
+                                    (b"cache-control", b"no-store")]})
+            await send({"type": "http.response.body", "body": body})
+            return
         await self.app(scope, receive, send)
 
 
@@ -2664,10 +2724,11 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
     # 即啟用 Gradio 內建「帳號+密碼」登入(密碼只走環境變數,不寫進原始碼/版控)。
     _u, _p = os.environ.get("CLINSCOPE_AUTH_USER"), os.environ.get("CLINSCOPE_AUTH_PASS")
     auth = (_u, _p) if (_u and _p) else None
-    port = int(server_port or os.environ.get("GRADIO_SERVER_PORT", 7860) or 7860)
+    # 非公開(桌面/dev)預設 7862:7860/7861 是共用 tunnel 的 clinscope/scopelab 入口。公開啟動器明確設 7860。
+    port = int(server_port or os.environ.get("GRADIO_SERVER_PORT") or (7860 if PUBLIC else DEV_PORT))
     print(f"[ClinScope] device={DEVICE.type} | {len(AVAILABLE)} models | "
           f"disciplines={DISCIPLINES} | allowed_paths={allowed} | auth={'on' if auth else 'off'} | "
-          f"mode={'PUBLIC(upload)' if PUBLIC else 'local(native-pick)'} | "
+          f"mode={'PUBLIC(upload)' if PUBLIC else 'local(native-pick, localhost-only)'} | port={port} | "
           f"google-login={'ON' if AUTH_ENABLED else 'off'}")
     if PUBLIC and os.environ.get("CLINSCOPE_FORCE_OWNER", "").strip():
         print("[ClinScope] ⚠ CLINSCOPE_FORCE_OWNER 已移除,公開模式一律忽略(站主只能經站內 Google 登入)。")
@@ -2681,6 +2742,8 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
         fastapi_app = FastAPI()
         _add_auth_routes(fastapi_app)
         fastapi_app.add_middleware(_OwnerOnlyUploads)
+        if not PUBLIC:   # 縱深(目前 AUTH_ENABLED 必為 PUBLIC):add_middleware 插在最前 = 最外層
+            fastapi_app.add_middleware(_LocalOnly)
         # show_error=False:非預期例外內文(常含伺服器路徑)不回給瀏覽器、只印在 console;gr.Error 訊息照常顯示
         mounted = gr.mount_gradio_app(fastapi_app, demo, path="/", allowed_paths=allowed,
                                       theme=THEME, css=CSS, show_error=False,
@@ -2696,12 +2759,20 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
               prevent_thread_lock=prevent_thread_lock, inbrowser=inbrowser)
     if auth:
         kw["auth"] = auth
+    from starlette.middleware import Middleware
+    middleware = []
     if PUBLIC:   # 未啟用站內登入的公開站:沒有站主 → 上傳端點全擋
-        from starlette.middleware import Middleware
-        kw["app_kwargs"] = {"middleware": [Middleware(_OwnerOnlyUploads)]}
+        middleware.append(Middleware(_OwnerOnlyUploads))
         kw["max_file_size"] = f"{UPLOAD_MAX_FILE_MB}mb"
+    else:        # 桌面/dev:只服務本機(list 第一個 = 使用者中介層的最外層)
+        middleware.append(Middleware(_LocalOnly))
+    app_kwargs = dict(overrides.pop("app_kwargs", None) or {})
+    app_kwargs["middleware"] = middleware + list(app_kwargs.get("middleware") or [])
+    kw["app_kwargs"] = app_kwargs
     if server_port:
         kw["server_port"] = server_port
+    elif not PUBLIC:   # 公開站沿用 Gradio 讀 GRADIO_SERVER_PORT(啟動器設 7860),行為不變
+        kw["server_port"] = port
     kw.update(overrides)
     return demo.launch(**kw)
 

@@ -150,7 +150,7 @@ flowchart TB
 ```
 分類 track：prepare_data.py → train_resnet.py → predict.py
 偵測 track：prepare_yolo.py → train_yolo.py → predict_yolo.py
-統一前端  ：app.py（Gradio, 127.0.0.1:7860）
+統一前端  ：app.py（Gradio；桌面／開發 127.0.0.1:7862，公開站 CLINSCOPE_PUBLIC=1 走 7860）
 ```
 
 pipeline 已通用化，新增一條 track 不必改核心程式 —— 只要備好資料、訓練、在 `app.py` 的 `REGISTRY` 加一條。完整流程與踩過的坑見 `.claude/skills/add-dataset-track/`。
@@ -174,7 +174,7 @@ pip install -r requirements.txt
 ```powershell
 # 啟動統一前端（上傳圖 → 選模型 → 辨識）
 .\.venv\Scripts\python.exe app.py
-# 然後開 http://127.0.0.1:7860
+# 然後開 http://127.0.0.1:7862（桌面／開發預設埠；7860 是公開站 tunnel 入口，非公開模式只服務本機、經 tunnel 來的請求一律 403）
 
 # 訓練一條分類 track（範例）
 .\.venv\Scripts\python.exe -u src\train_resnet.py --data-dir data\<name>_split --epochs 15 --title "<標題>"

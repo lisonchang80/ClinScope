@@ -6,7 +6,7 @@
 打包後(PyInstaller)以本檔為進入點 → 使用者雙擊 exe 即見桌面視窗,不需懂瀏覽器/網址。
 
 環境變數:
-  CLINSCOPE_PORT          伺服器埠(預設 7860)
+  CLINSCOPE_PORT          伺服器埠(預設 7862;7860/7861 是共用 tunnel 的公開入口,桌面版不可用)
   CLINSCOPE_DESKTOP_SMOKE =1 時只驗「伺服器起得來、HTTP 回 200」就結束,不開視窗(供 CI/無頭測試)
 """
 from __future__ import annotations
@@ -33,7 +33,7 @@ for _name in ("stdout", "stderr"):
         except Exception:
             pass
 
-PORT = int(os.environ.get("CLINSCOPE_PORT", "7860"))
+PORT = int(os.environ.get("CLINSCOPE_PORT", "7862"))
 URL = f"http://127.0.0.1:{PORT}"
 SMOKE = os.environ.get("CLINSCOPE_DESKTOP_SMOKE") == "1"
 
