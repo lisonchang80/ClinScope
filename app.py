@@ -23,7 +23,9 @@ import re
 import secrets
 import shutil
 import tempfile
-from collections import Counter
+import threading
+import time
+from collections import Counter, OrderedDict
 from datetime import datetime
 
 import numpy as np
@@ -536,6 +538,11 @@ def model_choices(disc: str):
     return [(f"{_score_tier(m['key'])} {m['label']}", m["label"])
             for m in AVAILABLE if disc_of(m["key"]) == disc and _visible_model(m["key"])]
 
+# 真正的 GPU 推論(cls_rank / det_infer 呼叫本身)同時只跑一份(審查 2026-11-07 CS-6):on_batch / on_single 的
+# concurrency_id="gpu" 槽沒涵蓋點圖偵測(on_select / on_bridge → _select_core)。只包推論那一行,
+# 不推論的點選、改分類不受影響;權重下載(W.ensure_file)在鎖外。
+_GPU_LOCK = threading.Lock()
+
 _cls_cache: dict = {}
 _yolo_cache: dict = {}
 _sahi_cache: dict = {}
@@ -633,7 +640,18 @@ _ID_LOG_MAX_BYTES = 1_000_000   # 上限 1MB,超過就不再追加
 # 前端 Google Sign-In → ID token(JWT)→ 後端驗簽/audience/issuer → 簽 itsdangerous cookie 記 email。
 # 需設 CLINSCOPE_GOOGLE_CLIENT_ID 才啟用;未設時公開站沒有站主(全員唯讀),除非明確信任 CF Access 標頭。
 GOOGLE_CLIENT_ID = os.environ.get("CLINSCOPE_GOOGLE_CLIENT_ID", "").strip()
-COOKIE_NAME = "cs_session"
+
+
+def _cookie_name(secure):
+    """Secure(https 公開站)用 __Host- 前綴(審查 2026-11-07 GA-3):瀏覽器只收「Secure、Path=/、沒有 Domain、
+    由本站 https 設下」的同名 cookie → 兄弟子網域無法用 Domain=.tinghaochang.com 丟一顆進來,把站主換成
+    訪客或攻擊者帳號。本機 http 開發(CLINSCOPE_COOKIE_SECURE=0)瀏覽器不收 __Host-,維持原名。"""
+    return "__Host-cs_session" if secure else "cs_session"
+
+
+COOKIE_SECURE = os.environ.get("CLINSCOPE_COOKIE_SECURE", "1") == "1"
+COOKIE_NAME = _cookie_name(COOKIE_SECURE)
+_LEGACY_COOKIE_NAME = "cs_session"       # 改名前發的 cookie:不再讀,登出時順手清掉
 SESSION_MAX_AGE = 60 * 60 * 24 * 30      # 30 天
 AUTH_ENABLED = bool(PUBLIC and GOOGLE_CLIENT_ID)   # 站內 Google 登入是否啟用(啟用才 mount 路由 + 顯示登入鈕)
 _PUBLIC_DEFAULT_SECRET = "dev-insecure-change-me"   # 舊版預設值,寫在公開 repo 裡 → 絕不可拿來簽 cookie
@@ -666,19 +684,82 @@ def _serializer():
 
 
 # 登出作廢清單:sid → 該 cookie 原本的到期時間(epoch 秒)。持久化(git-ignored),重啟後仍有效;過期項目自動丟棄。
+# 審查 2026-11-07 CS-9:只記站主的 sid(訪客 cookie 本來就沒權限,也避免任何 Google 帳號靠「登入→登出」迴圈灌大)、
+# 有上限、先寫同目錄 tmp 再 os.replace(寫到一半被殺不會留下半個檔);檔案在但解析失敗 → fail-closed。
 _REVOKED_FILE = ROOT / "session_revoked.json"
+_REVOKED_MAX = 1000
+# 作廢清單檔損毀時 = 該次啟動時間:簽發時間早於它的 cookie 一律失效、要重登(否則已登出、可能已外流的
+# 站主 cookie 會靜默復活)。0 = 不限制(正常情況)。持久化在作廢檔本身的保留鍵 _NOT_BEFORE_KEY(不是 sid、
+# 不算進 _REVOKED_MAX),之後每次重啟都還原;過了 SESSION_MAX_AGE(之前簽發的 cookie 都已自然過期)才丟掉。
+_NOT_BEFORE = 0.0
+_NOT_BEFORE_KEY = "__not_before__"     # sid 是 token_urlsafe(16)(22 字、無底線開頭),不會撞名
+
+
+def _write_revoked(sids, not_before):
+    """作廢檔原子寫入:同目錄 tmp + fsync + os.replace(寫到一半被殺不會留下半個檔)。成功回 True。"""
+    d = dict(sids)
+    if not_before and not_before + SESSION_MAX_AGE > time.time():
+        d[_NOT_BEFORE_KEY] = not_before
+    tmp = _REVOKED_FILE.with_name(_REVOKED_FILE.name + ".tmp")
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(json.dumps(d))
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, _REVOKED_FILE)
+        return True
+    except Exception as e:
+        print(f"[ClinScope] ⚠ 登出作廢清單寫入失敗({type(e).__name__}),本次變更只在記憶體內有效。")
+        return False
 
 
 def _load_revoked():
+    """讀作廢檔 → 回傳 {sid: 到期 epoch},並把檔內的 not_before(若還沒過期)還原到 _NOT_BEFORE。"""
+    global _NOT_BEFORE
+    now = time.time()
     try:
-        now = datetime.now().timestamp()
-        d = json.loads(_REVOKED_FILE.read_text(encoding="utf-8"))
-        return {str(k): float(v) for k, v in d.items() if float(v) > now}
+        raw = _REVOKED_FILE.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return {}                                  # 第一次啟動 / 從沒人登出過
+    except Exception as e:
+        raw, err = None, e
+    else:
+        try:
+            d = json.loads(raw)
+            if not isinstance(d, dict):
+                raise ValueError("not a JSON object")
+            nb = float(d.pop(_NOT_BEFORE_KEY, 0) or 0)
+            sids = {str(k): float(v) for k, v in d.items() if float(v) > now}
+            _NOT_BEFORE = nb if (nb and nb + SESSION_MAX_AGE > now) else 0.0
+            return sids
+        except Exception as e:
+            err = e
+    bad = _REVOKED_FILE.with_name(f"{_REVOKED_FILE.name}.corrupt-{datetime.now():%Y%m%d-%H%M%S}")
+    try:
+        _REVOKED_FILE.replace(bad)
+        renamed = True
     except Exception:
-        return {}
+        bad, renamed = _REVOKED_FILE, False
+    print(f"[ClinScope] ⚠ 登出作廢清單讀不出來({type(err).__name__}),壞檔保留為 {bad.name};"
+          "本次啟動前簽發的登入 cookie 一律失效,需重新登入。")
+    _NOT_BEFORE = now
+    # not_before 寫進新的作廢檔 → 下次重啟(壞檔已改名)仍 fail-closed。
+    # 新檔寫不進去(例如磁碟滿)就把壞檔搬回原處:否則「沒有作廢檔」會被當成正常首次啟動,
+    # 舊 cookie 在下次重啟復活(CS-9 複驗)。
+    if renamed and not _write_revoked({}, now):
+        try:
+            bad.replace(_REVOKED_FILE)
+        except Exception:
+            pass
+    # 改名失敗:壞檔原地留著(不覆蓋),下次重啟會再走這支 fail-closed
+    return {}
 
 
 _REVOKED = _load_revoked()
+
+
+def _save_revoked():
+    _write_revoked(_REVOKED, _NOT_BEFORE)
 
 
 def make_session(email):
@@ -695,25 +776,29 @@ def _session_payload(token):
 
 
 def read_session(token):
-    data, _ = _session_payload(token)
+    data, ts = _session_payload(token)
     if not data or not data.get("sid") or data["sid"] in _REVOKED:   # 無 sid(舊格式)或已登出 → 失效
+        return None
+    if _NOT_BEFORE and ts.timestamp() < _NOT_BEFORE:                  # 作廢清單損毀那次啟動前簽發 → 失效
         return None
     return (data.get("email") or "").strip().lower() or None
 
 
 def revoke_session(token):
-    """登出:把這個 cookie 的 sid 記進作廢清單 —— cookie 值即使被複製走也不能再用(瀏覽器刪 cookie 只是第一層)。"""
+    """登出:把站主 cookie 的 sid 記進作廢清單 —— cookie 值即使被複製走也不能再用(瀏覽器刪 cookie 只是第一層)。
+    非站主的 cookie 沒有任何權限(等同匿名),不記。"""
     data, ts = _session_payload(token)
     if not data or not data.get("sid"):
         return
-    now = datetime.now().timestamp()
+    if (data.get("email") or "").strip().lower() != OWNER_EMAIL:
+        return
+    now = time.time()
     for k in [k for k, exp in _REVOKED.items() if exp <= now]:
         del _REVOKED[k]
     _REVOKED[data["sid"]] = ts.timestamp() + SESSION_MAX_AGE
-    try:
-        _REVOKED_FILE.write_text(json.dumps(_REVOKED), encoding="utf-8")
-    except Exception:
-        pass
+    while len(_REVOKED) > _REVOKED_MAX:                 # 超過上限:剔除最早到期的
+        del _REVOKED[min(_REVOKED, key=_REVOKED.get)]
+    _save_revoked()
 
 
 def verify_google_credential(credential):
@@ -799,10 +884,12 @@ def _add_auth_routes(fastapi_app):
     """掛在 Gradio 底層 FastAPI 上的登入/登出端點(站內 Google 登入)。"""
     from fastapi import Request
     from fastapi.responses import JSONResponse
-    cookie_secure = os.environ.get("CLINSCOPE_COOKIE_SECURE", "1") == "1"
+    cookie_secure = COOKIE_SECURE
 
     def _not_json(request):
-        """跨站 <form> 只能送 text/plain 等簡單型別;只收 application/json → 跨站請求必須過 CORS 預檢而被擋(擋登入/登出 CSRF)。"""
+        """縱深防禦:只收 application/json(跨站 <form> 只能送 text/plain 等簡單型別)。⚠️ 這不是主防線 ——
+        Gradio 內建 CORS 在 Host 非 localhost 時對任何 Origin 回 ACAO + credentials,兄弟子網域的預檢會過;
+        主防線是 _SameOriginWriteGuard(非同源寫入 403)+ _StripCrossOriginCors(審查 2026-11-07 GA-3)。"""
         ct = request.headers.get("content-type", "").split(";")[0].strip().lower()
         if ct != "application/json":
             return JSONResponse({"error": "content-type must be application/json"}, status_code=415)
@@ -819,7 +906,9 @@ def _add_auth_routes(fastapi_app):
         try:
             info = verify_google_credential((body or {}).get("credential", ""))
         except Exception as e:
-            return JSONResponse({"error": f"invalid credential: {e}"}, status_code=401)
+            # 例外內文(預期的 client id、時鐘差、設定缺漏…)只印在 console,不回給匿名呼叫者(審查 GA-10)
+            print(f"[ClinScope] rejected Google credential: {type(e).__name__}: {str(e)[:200]}")
+            return JSONResponse({"error": "invalid credential"}, status_code=401)
         email = (info.get("email") or "").strip().lower()
         resp = JSONResponse({"email": email, "owner": email == OWNER_EMAIL})
         resp.set_cookie(COOKIE_NAME, make_session(email), max_age=SESSION_MAX_AGE,
@@ -833,13 +922,16 @@ def _add_auth_routes(fastapi_app):
         revoke_session(request.cookies.get(COOKIE_NAME) or "")
         resp = JSONResponse({"ok": True})
         resp.delete_cookie(COOKIE_NAME, path="/", httponly=True, samesite="lax", secure=cookie_secure)
+        if _LEGACY_COOKIE_NAME != COOKIE_NAME and _LEGACY_COOKIE_NAME in request.cookies:
+            resp.delete_cookie(_LEGACY_COOKIE_NAME, path="/", httponly=True, samesite="lax", secure=cookie_secure)
         return resp
 
 
 class _OwnerOnlyUploads:
     """公開站 ASGI 中介層:Gradio 的 /gradio_api/upload(及錄影處理 /process_recording)對任何人開放 →
-    匿名可無限寫入伺服器暫存塞爆硬碟。公開站訪客沒有任何上傳功能,只有站主的分批上傳會用 → 非站主一律 403。"""
-    _PATHS = ("/upload", "/process_recording")
+    匿名可無限寫入伺服器暫存塞爆硬碟。公開站訪客沒有任何上傳功能,只有站主的分批上傳會用 → 非站主一律 403。
+    /component_server 本站沒有用到,但 Gradio 會先把整個 multipart body 讀完才回 404(審查 CS-2)→ 一併擋。"""
+    _PATHS = ("/upload", "/process_recording", "/component_server")
 
     def __init__(self, app):
         self.app = app
@@ -912,6 +1004,131 @@ class _LocalOnly:
         await self.app(scope, receive, send)
 
 
+# ── 跨子網域 / 跨站防線(審查 2026-11-07 GA-3 / GA-8;邏輯同 GIS server/security.py、Portfolio FrameGuard)──
+# SameSite=Lax 擋不住兄弟子網域(evil.tinghaochang.com → clinscope.tinghaochang.com 算 same-site,cookie 照送);
+# Gradio 的 CustomCORSMiddleware 在 Host 不是 localhost 時對任何 Origin 都反射 ACAO + credentials。
+_SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+_CORS_GRANT_HEADERS = (b"access-control-allow-origin", b"access-control-allow-credentials")
+
+
+def _origin_matches_host(origin, host):
+    """Origin 的 host[:port] 是否就是這個請求的 Host(舊瀏覽器沒有 Fetch Metadata 時的後備比對)。"""
+    from urllib.parse import urlsplit
+    host = (host or "").strip().lower()
+    try:
+        return bool(host) and urlsplit(origin or "").netloc.lower() == host
+    except Exception:
+        return False
+
+
+def _same_origin_request(headers):
+    """瀏覽器說這個請求來自本站嗎?Sec-Fetch-Site 優先;沒有就比 Origin 與 Host;兩者都沒有 = 非瀏覽器
+    (curl/腳本,不會自動帶受害者 cookie)→ 放行。"""
+    site = headers.get("sec-fetch-site")
+    if site is not None:
+        return site.strip().lower() in ("same-origin", "none")
+    origin = headers.get("origin")
+    if origin is None:
+        return True
+    return _origin_matches_host(origin, headers.get("host"))
+
+
+async def _send_plain(send, status, body, ctype=b"text/plain; charset=utf-8"):
+    await send({"type": "http.response.start", "status": status,
+                "headers": [(b"content-type", ctype), (b"content-length", str(len(body)).encode("ascii")),
+                            (b"cache-control", b"no-store")]})
+    await send({"type": "http.response.body", "body": body})
+
+
+class _SameOriginWriteGuard:
+    """非 GET/HEAD/OPTIONS(/gradio_api/queue/join、/upload、/auth/*…)一律要同源,否則 403(不讀 body)。"""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") == "http" and scope.get("method") not in _SAFE_METHODS:
+            from starlette.datastructures import Headers
+            if not _same_origin_request(Headers(scope=scope)):
+                await _send_plain(send, 403, b'{"error":"cross-site request blocked"}', b"application/json")
+                return
+        await self.app(scope, receive, send)
+
+
+class _StripCrossOriginCors:
+    """Origin 不是本站時,拿掉 Gradio 加上的 ACAO / ACAC(預檢與一般回應都拿)→ 別站連 GET(queue/data、/config)
+    也讀不到回應。必須掛在 Gradio 子 app 的 CORS **外面**才拿得到它加的標頭(見 launch_app)。"""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+        from starlette.datastructures import Headers
+        h = Headers(scope=scope)
+        origin = h.get("origin")
+        if origin is None or _origin_matches_host(origin, h.get("host")):
+            await self.app(scope, receive, send)
+            return
+
+        async def _send(message):
+            if message["type"] == "http.response.start":
+                message = {**message, "headers": [(k, v) for k, v in message.get("headers", [])
+                                                  if k.lower() not in _CORS_GRANT_HEADERS]}
+            await send(message)
+
+        await self.app(scope, receive, _send)
+
+
+class _FrameGuard:
+    """防點擊劫持:同站子網域的 iframe 會帶站主 cookie,嵌入本站就能誘騙站主點按鈕(請求是本站文件自己發的,
+    同源檢查擋不到)→ 所有回應只允許同源嵌入。純 ASGI,只在 http.response.start 加標頭。"""
+    HEADERS = [(b"x-frame-options", b"SAMEORIGIN"),
+               (b"content-security-policy", b"frame-ancestors 'self'")]
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def _send(message):
+            if message["type"] == "http.response.start":
+                message = {**message, "headers": [*message.get("headers", []), *self.HEADERS]}
+            await send(message)
+
+        await self.app(scope, receive, _send)
+
+
+# ── 公開站不替任何人下載外部 URL(審查 2026-11-07 CS-2)──
+# Gradio preprocess 對每個非 State 輸入都跑 async_move_files_to_cache:值長得像 FileData、path 是 http URL 就
+# 直接下載進快取(無大小上限、query 不同不去重),而且在事件函式(_guard_owner)之前。本站沒有任何事件需要
+# 伺服器端抓 URL(站主上傳走 on_uploaded_paths 的路徑 JSON;輸出都是本機檔)→ 公開模式啟動時整條換掉。
+_URL_DOWNLOAD_FUNCS = ("async_ssrf_protected_download", "ssrf_protected_download", "save_url_to_cache")
+
+
+def _refuse_url_download(url, *a, **k):
+    raise ValueError("ClinScope 公開站不下載外部 URL")
+
+
+async def _refuse_url_download_async(url, *a, **k):
+    raise ValueError("ClinScope 公開站不下載外部 URL")
+
+
+def _disable_url_downloads():
+    from gradio import processing_utils as pu
+    missing = [n for n in _URL_DOWNLOAD_FUNCS if not hasattr(pu, n)]
+    if missing:   # Gradio 升級改名 → 寧可不啟動,也不要靜默失效
+        raise RuntimeError(f"gradio.processing_utils 找不到 {missing}(Gradio 改版?)→ 先更新 app._disable_url_downloads")
+    pu.async_ssrf_protected_download = _refuse_url_download_async
+    pu.ssrf_protected_download = _refuse_url_download
+    pu.save_url_to_cache = _refuse_url_download
+
+
 def _guard_owner(request):
     """後端縱深防禦:非站主直接呼叫寫入/計算端點時擋下(UI 虛化只是第一層)。"""
     if not _is_owner(request):
@@ -964,6 +1181,10 @@ def model_classes(spec):
     c = CARDS.get(spec["key"]) or {}
     raw = c.get("classes")
     if not raw:
+        if PUBLIC:
+            # 公開站:這條在 on_model → render 裡、沒有身分檢查 → 不為了列類別在事件裡載權重(訪客不碰 GPU、
+            # 不靜默下載)。卡片缺 classes 時先不列類別分頁,重跑 src/gen_model_cards.py 補卡(審查 CS-5)。
+            return []
         raw = load_fm(spec["fm"])["classes"] if spec.get("fm") else load_cls(W.ensure_local(spec))[1]
     return [prettify(x) for x in raw]
 
@@ -1075,16 +1296,38 @@ def gallery_items(S, pf):
     return out
 
 
+_SERVABLE_MAX = 10000
+_SERVABLE_CACHE: "OrderedDict[tuple, str]" = OrderedDict()   # (resolve 後路徑, 大小, mtime_ns) → 快取副本路徑(LRU)
+_SERVABLE_LOCK = threading.Lock()
+
+
 def _servable(p):
     """公開站圖示檢視:原檔(範例夾/站主本地模式資料夾)不在 allowed_paths 內,先複製進 Gradio 快取
-    (以內容雜湊命名,與 Gradio 自己的做法相同)再交給 Gallery;原資料夾因此不必對外開放。桌面版直接用原路徑。"""
+    (以內容雜湊命名,與 Gradio 自己的做法相同)再交給 Gallery;原資料夾因此不必對外開放。桌面版直接用原路徑。
+    快取副本以 (路徑, 大小, mtime) 記住(審查 CS-7):save_file_to_cache 每次都整檔 SHA-256,圖示檢視每次 render
+    都重算整頁太貴;命中且副本還在(delete_cache 可能清掉)就直接用,原檔變了就重算。"""
     if not PUBLIC:
         return p
     try:
-        if Path(p).resolve().is_relative_to(_GRADIO_TMP):
+        rp = Path(p).resolve()
+        if rp.is_relative_to(_GRADIO_TMP):
             return p
+        st = rp.stat()
+        key = (str(rp), st.st_size, st.st_mtime_ns)
+        with _SERVABLE_LOCK:
+            hit = _SERVABLE_CACHE.get(key)
+            if hit is not None:
+                _SERVABLE_CACHE.move_to_end(key)
+        if hit is not None and os.path.isfile(hit):
+            return hit
         from gradio.processing_utils import save_file_to_cache
-        return save_file_to_cache(p, str(_GRADIO_TMP))
+        out = save_file_to_cache(p, str(_GRADIO_TMP))
+        with _SERVABLE_LOCK:
+            _SERVABLE_CACHE[key] = out
+            _SERVABLE_CACHE.move_to_end(key)
+            while len(_SERVABLE_CACHE) > _SERVABLE_MAX:
+                _SERVABLE_CACHE.popitem(last=False)
+        return out
     except Exception:
         return p          # 交回原路徑 → Gradio 自身的路徑檢查會擋(fail-closed,不會因此對外提供)
 
@@ -1376,7 +1619,9 @@ def on_uploaded_paths(paths_json, S, request: gr.Request = None):
         if inside and rp.is_file():
             imgs.append(str(rp))
     kept, total = [], 0
-    for p in sorted(set(imgs)):                  # 單次載入上限:檔數 / 總量,超過的略過並提示
+    # 單次載入上限:檔數 / 總量,超過的略過並提示。依「檔名」排序(Gradio 上傳路徑是 <暫存根>/<內容 SHA>/<檔名>,
+    # 依完整路徑排 = 依內容雜湊、等於隨機 —— 審查 CS-10);前端 UPLOAD_JS 已先依同一規則截斷,這裡是第二道防線。
+    for p in sorted(set(imgs), key=lambda q: (Path(q).name.lower(), q)):
         sz = Path(p).stat().st_size
         if len(kept) >= UPLOAD_MAX_FILES or total + sz > UPLOAD_MAX_TOTAL_MB * 1048576:
             break
@@ -1462,12 +1707,14 @@ def on_batch(label, thr, S, progress=gr.Progress(), request: gr.Request = None):
         except Exception:
             continue
         if spec["kind"] == "cls":
-            ranked = cls_rank(img, spec)
+            with _GPU_LOCK:             # 每張各自拿鎖:站主點圖偵測可插在兩張之間,不必等整批跑完
+                ranked = cls_rank(img, spec)
             top, prob = ranked[0]
             res[p] = {"page": top if prob >= float(thr) else NULLPAGE,
                       "prob": prob, "ranked": ranked[:6], "manual": False}
         else:
-            counts, _, total = det_infer(img, spec, float(thr))
+            with _GPU_LOCK:
+                counts, _, total = det_infer(img, spec, float(thr))
             res[p] = {"counts": counts, "total": total}
     S["results"], S["page"], S["selected"] = res, TOTAL, None
     pr, gal, df, cs = render(S)
@@ -1484,13 +1731,15 @@ def on_single(label, thr, S, progress=gr.Progress(), request: gr.Request = None)
         W.ensure_file(rel, progress=progress)
     img = _open_rgb(sel)
     if spec["kind"] == "cls":
-        ranked = cls_rank(img, spec)
+        with _GPU_LOCK:
+            ranked = cls_rank(img, spec)
         top, prob = ranked[0]
         S["results"][sel] = {"page": top if prob >= float(thr) else NULLPAGE,
                              "prob": prob, "ranked": ranked[:6], "manual": False}
         pv, meta = img, meta_text_cls(sel, S["results"][sel])
     else:
-        counts, annotated, total = det_infer(img, spec, float(thr))
+        with _GPU_LOCK:
+            counts, annotated, total = det_infer(img, spec, float(thr))
         S["results"][sel] = {"counts": counts, "total": total}
         pv, meta = annotated, meta_text_det(sel, S["results"][sel])
     pr, gal, df, cs = render(S)
@@ -1534,7 +1783,9 @@ def _select_core(S, label, thr, idx, progress=None, request=None):
     # det:點選即以目前門檻產生標註圖(首次用此模型先下載權重)
     for rel in W.pending_rels(spec):
         W.ensure_file(rel, progress=progress)
-    counts, annotated, total = det_infer(_open_rgb(p), spec, float(thr))
+    img = _open_rgb(p)
+    with _GPU_LOCK:   # 點圖偵測不在 concurrency_id="gpu" 槽裡 → 靠這把鎖跟批次/單張序列化(審查 CS-6)
+        counts, annotated, total = det_infer(img, spec, float(thr))
     S["results"][p] = {"counts": counts, "total": total}
     return S, gr.update(), annotated, meta_text_det(p, S["results"][p])
 
@@ -1674,6 +1925,9 @@ def on_saveas_confirm(mode, S):
     return gr.update(visible=False)
 
 
+_PRECOMPRESSED_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+
+
 def on_saveas_confirm_zip(mode, S, request: gr.Request = None):
     """公開站:選好檔名格式後 → 依格式命名打包成 zip 供瀏覽器下載(取代寫入 server 硬碟,
     因為遠端訪客本來就不該、也無法寫檔到 server)。回傳(關對話框, 顯示可下載的 zip)。"""
@@ -1688,7 +1942,8 @@ def on_saveas_confirm_zip(mode, S, request: gr.Request = None):
     res, kind = S["results"], S["kind"]
     zpath = _export_dir() / f"clinscope_{_safe(page)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
     used, n = {}, 0
-    with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
+    # JPEG/PNG/WebP/GIF 本身已壓縮:DEFLATE 慢約 7 倍、幾乎不變小 → STORED;BMP/TIFF 照壓(level 1 兼顧速度)(審查 CS-8)
+    with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED, compresslevel=1) as z:
         for p in pf:
             cls = page if page != TOTAL else ((res.get(p, {}).get("page") or "未分類") if kind == "cls" else "全部")
             arc = _format_name(mode, cls, Path(p))
@@ -1699,7 +1954,9 @@ def on_saveas_confirm_zip(mode, S, request: gr.Request = None):
             else:
                 used[k] = 0
             try:
-                z.write(p, arcname=arc)
+                z.write(p, arcname=arc, compress_type=(zipfile.ZIP_STORED
+                                                       if Path(p).suffix.lower() in _PRECOMPRESSED_EXTS
+                                                       else zipfile.ZIP_DEFLATED))
                 n += 1
             except Exception:
                 pass
@@ -2315,6 +2572,7 @@ UPLOAD_JS = ("""
   if (window.__cs_up_init) return;
   window.__cs_up_init = true;
   const BATCH_MB = __BATCH_MB__, BATCH_N = __BATCH_N__;
+  const MAX_FILES = __UPLOAD_MAX_FILES__, MAX_TOTAL_MB = __UPLOAD_MAX_TOTAL_MB__;   // 與後端單次上限同一組數字
   const IMG_RE = /\\.(jpe?g|png|bmp|tiff?|webp|gif)$/i;
   const st = document.createElement('style');
   st.textContent = `
@@ -2359,10 +2617,11 @@ UPLOAD_JS = ("""
     if (titleEl()) titleEl().textContent = '⚠️ 上傳未完成';
     if (sub()) sub().innerHTML = msg;
   };
-  const showPrep = (n, mb) => {      // 選好夾:先出遮罩(不定量動畫),消除靜默空窗
+  const showPrep = (n, mb, skipped) => {      // 選好夾:先出遮罩(不定量動畫),消除靜默空窗
     ov.classList.remove('err', 'det');
     if (titleEl()) titleEl().textContent = '⏳ 上傳影像中…';
-    if (sub()) sub().textContent = '準備上傳 ' + n + ' 張影像（約 ' + mb.toFixed(0) + ' MB）…';
+    if (sub()) sub().textContent = '準備上傳 ' + n + ' 張影像（約 ' + mb.toFixed(0) + ' MB）'
+      + (skipped ? '；超過單次上限，其餘 ' + skipped + ' 張不上傳' : '') + '…';
     ov.classList.add('on');
   };
   const setProgress = (frac, bi, nb) => {   // 真實百分比
@@ -2387,9 +2646,23 @@ UPLOAD_JS = ("""
   });
   const startUpload = async (allFiles) => {
     if (busy) return; busy = true;
-    const imgs = allFiles.filter((f) => IMG_RE.test(f.name));
-    const total = imgs.reduce((s, f) => s + (f.size || 0), 0);
-    showPrep(imgs.length, total / 1048576);
+    // 依檔名排序(與後端 on_uploaded_paths 同一規則,同名再比資料夾內相對路徑)後先套單次上限:
+    // 超出的不上傳(不白花 tunnel 流量與暫存),保留的是依檔名的前 N 張,不是隨機子集。
+    const cands = allFiles.filter((f) => IMG_RE.test(f.name));
+    const nameKey = (f) => f.name.toLowerCase();
+    cands.sort((a, b) => {
+      const x = nameKey(a), y = nameKey(b);
+      if (x !== y) return x < y ? -1 : 1;
+      const p = a.webkitRelativePath || '', q = b.webkitRelativePath || '';
+      return p < q ? -1 : (p > q ? 1 : 0);
+    });
+    const imgs = []; let total = 0;
+    for (const f of cands) {
+      if (imgs.length >= MAX_FILES || total + (f.size || 0) > MAX_TOTAL_MB * 1048576) break;
+      imgs.push(f); total += (f.size || 0);
+    }
+    const skipped = cands.length - imgs.length;
+    showPrep(imgs.length, total / 1048576, skipped);
     if (!imgs.length) { fail('這個資料夾裡沒有支援的影像檔（jpg/png/tif/bmp/webp/gif）。'); return; }
     // 貪婪打包:每批 < BATCH_MB 且 < BATCH_N 檔;單檔超大就自成一批
     const MAXB = BATCH_MB * 1048576, batches = []; let cur = [], cb = 0;
@@ -2405,9 +2678,15 @@ UPLOAD_JS = ("""
       const e2 = statusEl();
       if (e2 && e2.value && e2.value !== base) {
         const nf = window.__cs_up_failed || 0;
+        const skipNote = skipped ? '另有 <b>' + skipped + '</b> 張超過單次上限（' + MAX_FILES + ' 張／' + MAX_TOTAL_MB
+          + ' MB，依檔名排序取前面的）未上傳。' : '';
         if (nf > 0) { ov.classList.add('err'); ov.classList.remove('det');
           if (titleEl()) titleEl().textContent = '⚠️ 部分批次未上傳';
-          if (sub()) sub().innerHTML = '已載入成功上傳的影像，但有 <b>' + nf + '</b> 批失敗（可能太大或中斷）。可稍後重試遺漏的部分。';
+          if (sub()) sub().innerHTML = '已載入成功上傳的影像，但有 <b>' + nf + '</b> 批失敗（可能太大或中斷）。可稍後重試遺漏的部分。' + skipNote;
+          clearInterval(poll); poll = null; busy = false;
+        } else if (skipped) { ov.classList.add('err'); ov.classList.remove('det');
+          if (titleEl()) titleEl().textContent = '⚠️ 已略過部分影像';
+          if (sub()) sub().innerHTML = '已載入 <b>' + imgs.length + '</b> 張。' + skipNote;
           clearInterval(poll); poll = null; busy = false;
         } else hide();
       }
@@ -2450,7 +2729,8 @@ UPLOAD_JS = ("""
     }
   }, true);
 }
-""").replace("__BATCH_MB__", str(BATCH_MB)).replace("__BATCH_N__", str(BATCH_N))
+""").replace("__BATCH_MB__", str(BATCH_MB)).replace("__BATCH_N__", str(BATCH_N)) \
+    .replace("__UPLOAD_MAX_FILES__", str(UPLOAD_MAX_FILES)).replace("__UPLOAD_MAX_TOTAL_MB__", str(UPLOAD_MAX_TOTAL_MB))
 
 
 # 站內 Google 登入前端:載入 GSI SDK → 匿名時把官方 Google 按鈕 render 進身分列的 #cs-gbtn;
@@ -2733,6 +3013,7 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
     if PUBLIC and os.environ.get("CLINSCOPE_FORCE_OWNER", "").strip():
         print("[ClinScope] ⚠ CLINSCOPE_FORCE_OWNER 已移除,公開模式一律忽略(站主只能經站內 Google 登入)。")
     if PUBLIC:
+        _disable_url_downloads()  # 不替任何人下載外部 URL(審查 CS-2);Gradio 改名找不到就拒絕啟動
         _precompute_sample()      # 預先分類範例夾(供預設畫面),失敗不影響啟動
     demo = build()
     if AUTH_ENABLED:
@@ -2741,8 +3022,14 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
         from fastapi import FastAPI
         fastapi_app = FastAPI()
         _add_auth_routes(fastapi_app)
+        # add_middleware 插在最前 = 最外層 → 實際順序(外→內):[_LocalOnly] → _FrameGuard → _StripCrossOriginCors
+        # → _SameOriginWriteGuard → _OwnerOnlyUploads → /auth/* 與掛在 "/" 的 Gradio(它自己的 CORS 在更裡面,
+        # 所以 _StripCrossOriginCors 拿得掉它加的 ACAO / ACAC)。
         fastapi_app.add_middleware(_OwnerOnlyUploads)
-        if not PUBLIC:   # 縱深(目前 AUTH_ENABLED 必為 PUBLIC):add_middleware 插在最前 = 最外層
+        fastapi_app.add_middleware(_SameOriginWriteGuard)
+        fastapi_app.add_middleware(_StripCrossOriginCors)
+        fastapi_app.add_middleware(_FrameGuard)
+        if not PUBLIC:   # 縱深(目前 AUTH_ENABLED 必為 PUBLIC):本機限定永遠在最外層
             fastapi_app.add_middleware(_LocalOnly)
         # show_error=False:非預期例外內文(常含伺服器路徑)不回給瀏覽器、只印在 console;gr.Error 訊息照常顯示
         mounted = gr.mount_gradio_app(fastapi_app, demo, path="/", allowed_paths=allowed,
@@ -2760,12 +3047,19 @@ def launch_app(prevent_thread_lock=False, inbrowser=False, server_port=None, **o
     if auth:
         kw["auth"] = auth
     from starlette.middleware import Middleware
-    middleware = []
+    # 防框架 + 同源寫入防線兩種模式都掛(桌面版:使用者瀏覽器裡的惡意網頁仍可對 127.0.0.1 發 POST)。
+    # 這條路徑的使用者中介層在 Gradio 自己的 CORS「裡面」→ 拿不掉它加的 ACAO,所以不掛 _StripCrossOriginCors。
+    # 已知缺口:未啟用站內登入的公開站若設了 CLINSCOPE_AUTH_USER/PASS(Gradio 內建帳密登入),Gradio 的登入
+    # cookie 是 SameSite=None,Host 非 localhost 時 CORS 又對任何 Origin 回 ACAO + credentials → 外站可帶著
+    # 這顆 cookie 讀到 GET 回應(寫入仍被 _SameOriginWriteGuard 擋)。要堵就改走站內 Google 登入(uvicorn 路徑)。
+    # 沒設帳密時沒有任何登入身分;桌面版只綁 127.0.0.1,Host 為 127.0.0.1/localhost 時 Gradio 的 CORS 不放行
+    # 非本機 Origin(非本機 Host 由 _LocalOnly 擋)。
+    middleware = [Middleware(_FrameGuard), Middleware(_SameOriginWriteGuard)]
     if PUBLIC:   # 未啟用站內登入的公開站:沒有站主 → 上傳端點全擋
         middleware.append(Middleware(_OwnerOnlyUploads))
         kw["max_file_size"] = f"{UPLOAD_MAX_FILE_MB}mb"
     else:        # 桌面/dev:只服務本機(list 第一個 = 使用者中介層的最外層)
-        middleware.append(Middleware(_LocalOnly))
+        middleware.insert(0, Middleware(_LocalOnly))
     app_kwargs = dict(overrides.pop("app_kwargs", None) or {})
     app_kwargs["middleware"] = middleware + list(app_kwargs.get("middleware") or [])
     kw["app_kwargs"] = app_kwargs

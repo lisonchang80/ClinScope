@@ -79,3 +79,28 @@ def test_public_site_without_site_login_also_blocks_uploads(monkeypatch):
     monkeypatch.setattr(A, "AUTH_ENABLED", False)
     s = start_site()
     assert upload(s, [make_png(TMP / "nologin_up.png")]).status_code == 403
+
+
+# ── 上限依檔名套用、前端先截斷(審查 2026-11-07 CS-10)──
+def _in_sha_dir(sha, name, color):
+    # Gradio 的上傳路徑是 <暫存根>/<內容 SHA>/<檔名> → 依完整路徑排序 = 依內容雜湊(等於隨機)
+    d = A._GRADIO_TMP / "cs10" / sha
+    d.mkdir(parents=True, exist_ok=True)
+    return str(make_png(d / name, color))
+
+
+def test_upload_caps_keep_the_first_files_by_name(monkeypatch):
+    files = [_in_sha_dir("aaa", "c.png", (3, 3, 3)), _in_sha_dir("zzz", "a.png", (1, 1, 1)),
+             _in_sha_dir("mmm", "B.png", (2, 2, 2))]
+    monkeypatch.setattr(A, "UPLOAD_MAX_FILES", 2)
+    S = A.new_state(A.AVAILABLE[0]["label"])
+    out = A.on_uploaded_paths(json.dumps(files), S, fake_request(OWNER))
+    assert [os.path.basename(p) for p in out[0]["files"]] == ["a.png", "B.png"]
+    assert "略過 1" in out[6]
+
+
+def test_upload_js_knows_the_caps_and_truncates_before_sending():
+    js = A.UPLOAD_JS
+    assert "__UPLOAD_MAX" not in js and "__BATCH" not in js
+    assert f"MAX_FILES = {A.UPLOAD_MAX_FILES}" in js and f"MAX_TOTAL_MB = {A.UPLOAD_MAX_TOTAL_MB}" in js
+    assert "webkitRelativePath" in js and ".sort(" in js

@@ -9,7 +9,10 @@
   "discipline": "細胞學",
   "task": "classification",
   "model_type": "ResNet-50",
-  "metrics": null,
+  "metrics": {
+    "val_acc": 0.9704,
+    "val_acc_source": "external_summary.json:in_dist_val_acc"
+  },
   "experiment_summary": "細胞學:子宮頸抹片單顆細胞 5 類 — 正常(表層-中層/旁基底)、異常(挖空細胞 koilocyte/角化不良)、化生 metaplastic。Pap 染色明場。",
   "caveats": [],
   "source": null,
@@ -17,5 +20,13 @@
   "split_method": null,
   "weights": "models/sipakmed_resnet50.pt",
   "status": "registered",
-  "batch": "batch 1-5"
+  "batch": "batch 1-5",
+  "num_classes": 5,
+  "classes": [
+    "Dyskeratotic",
+    "Koilocytotic",
+    "Metaplastic",
+    "Parabasal",
+    "Superficial-Intermediate"
+  ]
 }

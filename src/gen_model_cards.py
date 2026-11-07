@@ -166,6 +166,32 @@ def cls_metrics(rdir):
     return out or None
 
 
+def external_metrics(rdir):
+    """缺 summary.json 時的後備成績:外部驗證報告裡的 in-distribution val acc(審查 CS-5)。"""
+    p = os.path.join(ROOT, "reports", rdir, "external_summary.json")
+    if not os.path.exists(p):
+        return None
+    d = json.load(open(p, encoding="utf-8"))
+    v = d.get("in_dist_val_acc")
+    return {"val_acc": round(v, 4), "val_acc_source": "external_summary.json:in_dist_val_acc"} if v is not None else None
+
+
+def ckpt_classes(weights_rel):
+    """缺 summary.json 時從 ResNet checkpoint 的 ckpt['classes'] 補類別(CPU 載入,不碰 GPU;審查 CS-5)。
+    沒有 classes 的卡會讓 app.py 在事件裡為了列類別而載權重。"""
+    p = os.path.join(ROOT, weights_rel)
+    if not (p.endswith(".pt") and os.path.exists(p)):
+        return None
+    try:
+        import sklearn  # noqa: F401  本機 torch 先於 sklearn import 會 segfault 139 → 先載 sklearn
+    except Exception:
+        pass
+    import torch
+    ckpt = torch.load(p, map_location="cpu", weights_only=False)
+    classes = ckpt.get("classes") if isinstance(ckpt, dict) else None
+    return [str(c) for c in classes] if classes else None
+
+
 def det_metrics(rdir):
     p = os.path.join(ROOT, "reports", "yolo", rdir, "results.csv")
     if not os.path.exists(p):
@@ -193,7 +219,7 @@ def main():
         key, kind = e["key"], e["kind"]
         is_det = kind == "det"
         rdir = (DET_DIR if is_det else CLS_DIR).get(key, key)
-        metrics = det_metrics(rdir) if is_det else cls_metrics(rdir)
+        metrics = det_metrics(rdir) if is_det else (cls_metrics(rdir) or external_metrics(rdir))
         weights_abs = os.path.join(ROOT, e["weights"])
         card = {
             "key": key,
@@ -219,6 +245,10 @@ def main():
         if metrics and "num_classes" in (metrics or {}):
             card["num_classes"] = metrics.pop("num_classes")
             card["classes"] = metrics.pop("classes", None)
+        elif not is_det:
+            cc = ckpt_classes(e["weights"])
+            if cc:
+                card["num_classes"], card["classes"] = len(cc), cc
         json.dump(card, open(os.path.join(OUT, key + ".json"), "w", encoding="utf-8"),
                   ensure_ascii=False, indent=2)
         index.append({"key": key, "name_zh": card["name"]["zh"], "name_en": card["name"]["en"],

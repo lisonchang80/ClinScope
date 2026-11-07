@@ -128,7 +128,10 @@
       "name_en": "Pap",
       "task": "classification",
       "discipline": "細胞學",
-      "metrics": null,
+      "metrics": {
+        "val_acc": 0.9704,
+        "val_acc_source": "external_summary.json:in_dist_val_acc"
+      },
       "status": "registered"
     },
     {

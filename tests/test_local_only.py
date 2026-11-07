@@ -132,7 +132,8 @@ def _fake_launch(monkeypatch, public, env_port=None, **launch_kw):
 
 def test_desktop_launch_mounts_local_only_and_defaults_off_tunnel_port(monkeypatch):
     kw = _fake_launch(monkeypatch, public=False)
-    assert _mw_classes(kw) == [A._LocalOnly]
+    # 本機限定在最外層;防框架 + 同源寫入防線(GA-8 / GA-3)接在後面
+    assert _mw_classes(kw) == [A._LocalOnly, A._FrameGuard, A._SameOriginWriteGuard]
     assert kw["server_port"] == 7862, "非公開沒指定埠時不可落在 tunnel 入口 7860"
 
 
@@ -150,13 +151,15 @@ def test_desktop_launch_keeps_caller_middleware(monkeypatch):
 
     kw = _fake_launch(monkeypatch, public=False, app_kwargs={"middleware": [Middleware(_Other)],
                                                               "docs_url": None})
-    assert _mw_classes(kw) == [A._LocalOnly, _Other], "本機限定要在最外層,且不可蓋掉呼叫端的中介層"
+    assert _mw_classes(kw) == [A._LocalOnly, A._FrameGuard, A._SameOriginWriteGuard, _Other], \
+        "本機限定要在最外層,且不可蓋掉呼叫端的中介層"
     assert kw["app_kwargs"]["docs_url"] is None
 
 
 def test_public_launch_unchanged(monkeypatch):
     kw = _fake_launch(monkeypatch, public=True)
-    assert _mw_classes(kw) == [A._OwnerOnlyUploads], "公開站要接 tunnel 流量,不可掛本機限定"
+    assert _mw_classes(kw) == [A._FrameGuard, A._SameOriginWriteGuard, A._OwnerOnlyUploads], \
+        "公開站要接 tunnel 流量,不可掛本機限定"
     assert "server_port" not in kw, "公開站沿用啟動器的 GRADIO_SERVER_PORT=7860,不可搬家"
 
 
@@ -179,6 +182,28 @@ def test_uvicorn_path_mounts_local_only_outermost_when_not_public(monkeypatch):
     mounted = A.launch_app(prevent_thread_lock=False, server_port=_free_port())
     assert mounted.user_middleware[0].cls is A._LocalOnly
     assert A._OwnerOnlyUploads in [m.cls for m in mounted.user_middleware]
+
+
+def test_uvicorn_public_path_stack_order(monkeypatch):
+    # 外層 FastAPI 包住掛在 "/" 的 Gradio:拿掉 ACAO 的那層一定要在 Gradio 自己的 CORS 外面(GA-3)
+    import uvicorn
+    monkeypatch.setattr(A, "PUBLIC", True)
+    monkeypatch.setattr(A, "AUTH_ENABLED", True)
+    monkeypatch.setattr(A, "_precompute_sample", lambda: None)
+    monkeypatch.setattr(A, "build", lambda: object())
+    monkeypatch.setattr(A.gr, "mount_gradio_app", lambda app, demo, **k: app)
+
+    class _FakeServer:
+        def __init__(self, config):
+            self.config = config
+
+        def run(self):
+            pass
+
+    monkeypatch.setattr(uvicorn, "Server", _FakeServer)
+    mounted = A.launch_app(prevent_thread_lock=False, server_port=_free_port())
+    assert [m.cls for m in mounted.user_middleware] == [
+        A._FrameGuard, A._StripCrossOriginCors, A._SameOriginWriteGuard, A._OwnerOnlyUploads]
 
 
 # ── 真的起一個非公開實例(隨機埠),用 tunnel 會送的 Host 打 ──
@@ -227,3 +252,13 @@ def test_live_desktop_mode_blocks_tunnel_requests(desktop_site):
     assert httpx.get(f"{desktop_site}/", timeout=10).status_code == 200
     if WIN_INI.exists():   # 證明上面的 403 來自本機限定(本機 Host 下桌面模式本來就開放磁碟根)
         assert httpx.get(url, timeout=10).status_code == 200
+
+
+def test_live_desktop_mode_frame_and_cross_site_guards(desktop_site):
+    # 桌面版 Host 是本機 → _LocalOnly 放行;但使用者瀏覽器裡的惡意網頁仍可對 127.0.0.1 發 POST(GA-3 / GA-8)
+    r = httpx.get(f"{desktop_site}/", timeout=10)
+    assert r.headers.get("x-frame-options") == "SAMEORIGIN"
+    assert "frame-ancestors 'self'" in r.headers.get("content-security-policy", "")
+    r = httpx.post(f"{desktop_site}/gradio_api/queue/join", json={"data": [], "fn_index": 0, "session_hash": "x"},
+                   headers={"Sec-Fetch-Site": "cross-site", "Origin": "https://evil.example"}, timeout=10)
+    assert r.status_code == 403
